@@ -98,6 +98,7 @@ export {
   LIBELLES_CHAINES,
   LIBELLES_PLATEFORMES,
   PLATEFORMES_AUTORISATION,
+  PLATEFORMES_PAR_SORTIE,
   schemaMetadataProjet,
   schemaSaisieProjet,
   SORTIES,
@@ -110,10 +111,12 @@ export {
   type FichierProjet,
   type MetadataProjet,
   type PlateformeAutorisation,
+  type ProblemeExport,
   type Projet,
   type ReponseCreationProjet,
   type SaisieAutorisation,
   type SaisieProjet,
   type Sortie,
+  type VerificationExport,
 } from "./projets.ts";
 export { slug } from "./slug.ts";

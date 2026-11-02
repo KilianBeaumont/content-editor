@@ -220,3 +220,24 @@ export const schemaMetadataProjet = z.object({
   sessionClaude: z.string().nullable(),
   creeLe: z.string(),
 }) satisfies z.ZodType<MetadataProjet>;
+
+export const PLATEFORMES_PAR_SORTIE: Record<Sortie, readonly PlateformeAutorisation[]> = {
+  youtube: ["youtube"],
+  "youtube-piste-en": ["youtube"],
+  "formats-courts": ["tiktok", "instagram", "youtube"],
+  instagram: ["instagram"],
+  "podcast-fr": ["spotify", "deezer", "apple-podcasts"],
+  "podcast-en": ["spotify", "deezer", "apple-podcasts"],
+};
+
+export interface ProblemeExport {
+  niveau: "blocage" | "avertissement";
+  message: string;
+  sorties: Sortie[];
+}
+
+export interface VerificationExport {
+  exportable: boolean;
+  sortiesBloquees: Sortie[];
+  problemes: ProblemeExport[];
+}

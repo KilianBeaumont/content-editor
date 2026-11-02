@@ -18,12 +18,14 @@ import {
   type ReponseListeAuteurs,
   type SaisieProjet,
   type Sortie,
+  type VerificationExport,
 } from "@editeur/shared";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { envoyerFichier, envoyerJson, lireJson, messageErreur } from "../../api.ts";
 import { ChampTexte } from "../../composants/Champs.tsx";
 import { Message } from "../../composants/Message.tsx";
+import { Verification } from "../../composants/Verification.tsx";
 import { BadgeAccord } from "../auteurs-artistes/AuteursArtistes.tsx";
 import { ChoixFichiers, destinationParDefaut, libelleDestination, type Choix } from "./ChoixFichiers.tsx";
 import { CHAMPS_AUTEUR_VIDES, SectionAuteur, type ChampsAuteur } from "./SectionAuteur.tsx";
@@ -103,6 +105,7 @@ export function NouveauProjet() {
   const [enCours, setEnCours] = useState(false);
   const [cree, setCree] = useState<ReponseCreationProjet | null>(null);
   const [erreurPreuve, setErreurPreuve] = useState<string | null>(null);
+  const [verification, setVerification] = useState<VerificationExport | null>(null);
 
   const chargerInbox = useCallback(() => {
     lireJson<ReponseInbox>("/api/inbox")
@@ -203,6 +206,9 @@ export function NouveauProjet() {
         }
       }
       setCree(reponse);
+      lireJson<VerificationExport>(`/api/projets/${reponse.projet.id}/verification`)
+        .then(setVerification)
+        .catch(() => setVerification(null));
       window.scrollTo({ top: 0 });
     } catch (e) {
       setErreur(messageErreur(e));
@@ -213,6 +219,7 @@ export function NouveauProjet() {
 
   function recommencer() {
     setCree(null);
+    setVerification(null);
     setFormulaire(formulaireVide());
     setAuteur(CHAMPS_AUTEUR_VIDES);
     setChoix(new Map());
@@ -257,6 +264,8 @@ export function NouveauProjet() {
             </Message>
           )}
           {erreurPreuve && <Message type="erreur">Le projet est créé, mais la preuve n'a pas pu être enregistrée : {erreurPreuve}</Message>}
+          <h3>Avant l'export</h3>
+          {verification === null ? <p className="note">Vérification…</p> : <Verification verification={verification} />}
           <p className="note">L'écran Projet (suivi, plan de montage, aperçus) arrive à l'étape 9.</p>
           <div className="actions">
             <button type="button" className="bouton bouton-principal" onClick={recommencer}>

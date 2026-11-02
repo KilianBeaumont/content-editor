@@ -29,7 +29,7 @@ Phase 1 (le socle), en cours.
 | 5 | Bibliothèque d'assets | ✅ |
 | 6 | Inbox : rushes déposés ou glissés dans l'interface | ✅ |
 | 7 | Création d'un projet depuis l'inbox : sorties voulues, consignes de montage, pistes FR et EN, auteur, artistes, assets | ✅ |
-| 8 | Règles d'autorisation avant export | à venir |
+| 8 | Règles d'autorisation avant export | ✅ |
 | 9 | Tableau de bord et écran Projet | à venir |
 | 10 | Modifier, renommer, supprimer un projet | à venir |
 | 11 | Lanceur à double-cliquer (Windows et Mac) | à venir |
@@ -154,7 +154,26 @@ Ce que fait l'outil :
 - il écrit `metadata.json` (titre, sorties, consignes, notes, auteur, autorisation…) ;
 - il ajoute le projet à l'historique de l'auteur, des artistes et des assets choisis.
 
+Après la création, la page indique ce qui bloquerait l'export (voir ci-dessous).
+
 Deux projets ne peuvent pas avoir le même nom (même date et même titre), même sur deux chaînes différentes. L'écran Projet (suivi, modification, plan de montage) arrive à l'étape 9.
+
+### Savoir si un projet peut être exporté
+
+L'outil vérifie les droits avant tout export. Le résultat s'affiche après la création du projet (et sur l'écran Projet à partir de l'étape 9) :
+
+| Situation | Effet |
+| --- | --- |
+| Récit d'un autre auteur sans autorisation obtenue, sans preuve, ou sans accord pour la lecture | Bloque tout l'export |
+| Version anglaise sans accord pour la traduction | Bloque la piste audio EN et le podcast EN, pas la version française |
+| Aucune plateforme autorisée pour une sortie (par exemple ni Spotify, ni Deezer, ni Apple Podcasts pour un podcast) | Bloque cette sortie |
+| Une partie seulement des plateformes autorisée (par exemple TikTok mais pas Instagram pour les formats courts) | Avertissement |
+| Artiste coché ou dossier `assets/<artiste>/` avec des fichiers, sans fiche ou sans accord complet (date et preuve) | Bloque tout l'export |
+| Asset de la bibliothèque introuvable, ou visuel d'artiste dont la réutilisation n'est pas autorisée | Bloque tout l'export |
+| Monétisation non acceptée par l'auteur ou l'artiste | Avertissement : ne pas monétiser la vidéo |
+| Histoire personnelle sans signature | Avertissement |
+
+Pour débloquer : compléter la fiche de l'artiste (Auteurs et artistes), ou l'autorisation du projet (écran Projet, étape 10).
 
 ### Ajouter un asset à la bibliothèque
 
@@ -253,4 +272,4 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | `npm run check` | Vérifier les types et le style (aucun `any`) |
 | `npm test` | Lancer les tests |
 
-Organisation du travail : une branche par étape (`phase-1/etape-N-nom`). À la fin de chaque étape, la vérifier dans l'interface, puis ouvrir et fusionner la pull request sur GitHub.
+Organisation du travail : chaque étape est vérifiée dans l'interface, puis commitée et poussée directement sur `main`.
