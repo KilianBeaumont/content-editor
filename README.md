@@ -26,9 +26,9 @@ Phase 1 (le socle), en cours.
 | 2 | Écran Paramètres, vérification des programmes et de Claude | ✅ |
 | 3 | Fiches artistes, accords et preuves | ✅ |
 | 4 | Fiches auteurs et autrices | ✅ |
-| 5 | Bibliothèque d'assets | à venir |
+| 5 | Bibliothèque d'assets | ✅ |
 | 6 | Inbox : rushes déposés ou glissés dans l'interface | à venir |
-| 7 | Création d'un projet | à venir |
+| 7 | Création d'un projet : pistes audio FR et EN pour les récits, choix des assets de la bibliothèque | à venir |
 | 8 | Règles d'autorisation avant export | à venir |
 | 9 | Tableau de bord et écran Projet | à venir |
 | 10 | Modifier, renommer, supprimer un projet | à venir |
@@ -112,12 +112,52 @@ Bon à savoir :
 
 L'autorisation de lire un récit (date, traduction anglaise, monétisation, plateformes, preuve) ne se met pas sur la fiche de l'auteur : elle se renseigne dans le projet de chaque récit, car elle peut varier d'une histoire à l'autre. Ce sera possible à l'étape 7. La liste des récits de l'auteur se remplira alors automatiquement.
 
+### Ajouter un asset à la bibliothèque
+
+La bibliothèque contient ce qui sert dans plusieurs vidéos. Sept types :
+
+| Type | Exemples | Dossier |
+| --- | --- | --- |
+| Police | polices de l'identité graphique | `polices/` |
+| Image | logos, illustrations, fonds, modèles de miniatures | `images/` |
+| Vidéo | génériques, transitions, animations | `videos/` |
+| Musique | musiques de fond ou de générique | `musiques/` |
+| Ambiance sonore | pluie, vent, taverne, forêt, en boucle sous la narration | `ambiances/` |
+| Son ponctuel | whoosh, pop, impact | `sons/` |
+| Voix | phrases qui reviennent d'une vidéo à l'autre (intro, outro, « abonne-toi »), en FR ou en EN | `voix/` |
+
+Chaque type existe pour les trois emplacements : **Commun aux deux chaînes**, **Création** et **Récits**. Les composants animés paramétrables (cartouche avec un nom, bouton d'abonnement) arriveront en phase 3.
+
+1. **Bibliothèque** → **+ Ajouter un asset**.
+2. Choisir le **fichier** (jusqu'à 4 Go). Le type est deviné d'après le format ; le changer si besoin (par exemple « Son ponctuel » au lieu de « Musique »).
+3. Choisir la **chaîne**. Le fichier sera rangé dans `bibliotheque/<chaîne>/<type>/` avec un nom sans accents ni espaces.
+4. Écrire une **description** : ce que c'est et quand l'utiliser. C'est elle que Claude lira pour proposer l'asset au montage.
+5. Ajouter des **étiquettes** pour regrouper les assets : « identité », « générique », « halloween », le nom d'une série… Les étiquettes déjà utilisées sont proposées en un clic.
+6. Pour une **voix**, indiquer sa **langue** (obligatoire). Pour une image ou une vidéo qui contient du texte, l'indiquer aussi : aucun texte en français ne doit apparaître sur les visuels des récits.
+7. Indiquer **qui l'a créé** :
+   - toi ;
+   - un artiste : le choisir dans la liste. Son accord doit être valide et autoriser la réutilisation, sinon l'asset est marqué « À vérifier » ;
+   - une source externe (banque de sons, musique libre…) : noter la licence et la mention à mettre dans la description des vidéos.
+8. **Ajouter à la bibliothèque**. Une barre montre l'avancement de l'envoi, avec un bouton **Annuler**. Garde la page ouverte jusqu'au bout : le navigateur te prévient si tu essaies de la quitter.
+
+Tu peux aussi déposer des fichiers directement dans les dossiers de `bibliotheque/` avec l'Explorateur ou le Finder. Ils apparaissent dans **Fichiers hors catalogue**, en bas de l'écran Bibliothèque : **Ajouter au catalogue** pour les décrire.
+
+Bon à savoir :
+- Chaque carte affiche un aperçu : image, vidéo, police (« Aa »), ou l'extension pour les sons. La page de l'asset permet d'écouter, de regarder ou de tester la police.
+- Filtres par chaîne, par type et par étiquette (clic sur une étiquette sous les filtres), et recherche dans les noms et descriptions.
+- « ✗ À vérifier » signale un fichier introuvable ou un problème d'accord d'artiste. Le détail est sur la page de l'asset.
+- L'emplacement d'un asset (chaîne, type) ne se change pas depuis l'interface. Pour le changer : le mettre à la corbeille et l'ajouter de nouveau.
+- Les assets propres à une seule vidéo (illustrations d'un récit, visuels d'un artiste invité) ne vont pas dans la bibliothèque mais dans le dossier `assets/` du projet : ce sera possible à la création du projet (étape 7) et depuis l'écran Projet.
+- La liste **Utilisations** d'un asset de la bibliothèque se remplira quand tu le choisiras pour une vidéo (étape 7) puis au montage (phase 3).
+- `bibliotheque/catalogue.json` reste modifiable à la main. Une entrée mal écrite est signalée, ignorée par l'outil, et conservée telle quelle dans le fichier.
+
 ### Supprimer une fiche et la récupérer
 
 - Sur la fiche : **Mettre la fiche à la corbeille**, puis confirmer.
 - La fiche est déplacée dans `creations/corbeille/artistes/` ou `creations/corbeille/auteurs/`, avec la date dans le nom. Rien n'est effacé.
 - Pour la récupérer : déplacer le dossier à la main dans `artistes/` ou `auteurs/`, et lui redonner son nom d'origine (sans la date).
 - Une fiche liée à au moins une vidéo ou un récit ne peut pas être supprimée : elle sert d'historique des collaborations.
+- Même principe pour un asset de la bibliothèque : **Mettre à la corbeille** sur sa page déplace le fichier dans `corbeille/bibliotheque/` et le retire du catalogue. Pour le récupérer, remettre le fichier dans son dossier (sans la date dans le nom), puis **Ajouter au catalogue**. Un asset qui a servi dans une vidéo est conservé.
 - La corbeille ne se vide jamais toute seule : c'est à toi de le faire à la main.
 
 ### Modifier un guide de style
@@ -149,6 +189,10 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | Le test Claude signale une clé API | Retirer la variable `ANTHROPIC_API_KEY` de l'environnement et se reconnecter à Claude Code avec l'abonnement |
 | Le test Claude signale une limite atteinte | Attendre l'heure de réinitialisation affichée |
 | « Fiches illisibles » dans Auteurs et artistes | Un `fiche.json` modifié à la main est abîmé, ou un dossier est mal nommé : corriger d'après le message |
+| « catalogue.json n'est pas un JSON valide » dans Bibliothèque | Le fichier a été abîmé à la main : corriger la virgule ou l'accolade indiquée dans le message |
+| « Entrées ignorées » dans Bibliothèque | Une entrée de `catalogue.json` est incomplète ou mal écrite : la corriger d'après le message |
+| « Fichier trop volumineux » à l'envoi | La limite est de 4 Go pour la bibliothèque et de 50 Mo pour une preuve d'accord |
+| « Envoi interrompu » dans le terminal, ou « La connexion avec le serveur a été coupée » à l'écran | La page a été fermée ou rechargée pendant l'envoi, ou le serveur a redémarré : recommencer l'envoi en gardant la page ouverte. Aucun fichier partiel n'est conservé |
 | Après une mise à jour, l'interface ne répond plus | Relancer l'outil (et `npm install` si de nouvelles dépendances ont été ajoutées) |
 
 ## Développement

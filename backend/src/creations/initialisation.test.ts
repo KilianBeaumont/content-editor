@@ -28,9 +28,9 @@ describe("initialiserCreations", () => {
       "corbeille",
       "chaine-creation",
       "chaine-recits",
-      "bibliotheque/commun/identite",
-      "bibliotheque/recits/ambiances-sonores",
-      "bibliotheque/creation/modeles-miniatures",
+      "bibliotheque/commun/polices",
+      "bibliotheque/recits/ambiances",
+      "bibliotheque/creation/voix",
       "bibliotheque/catalogue.json",
       "parametres.json",
       ...CATEGORIES.flatMap((categorie) => [

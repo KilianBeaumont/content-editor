@@ -91,23 +91,16 @@ creations/
 
   bibliotheque/                       assets réutilisables dans plusieurs vidéos
     catalogue.json                    inventaire de tous les assets réutilisables
-    commun/
-      identite/                       logos, couleurs, polices
-      composants/                     éléments animés : bouton abonnement, cartouche nom, logo animé
-      sons/                           bruitages d'interface, transitions sonores
+    commun/                           mêmes sous-dossiers pour creation/ et recits/
+      polices/
+      images/                         logos, illustrations, fonds, modèles de miniatures
+      videos/                         génériques, transitions, animations
+      musiques/
+      ambiances/                      pluie, vent, taverne : en boucle sous la narration
+      sons/                           sons ponctuels : whoosh, pop, impact
+      voix/                           phrases réutilisables (intro, outro), en FR ou en EN
     creation/
-      identite/
-      composants/
-      generiques/
-      musiques/
-      modeles-miniatures/
     recits/
-      identite/
-      composants/
-      generiques/
-      musiques/
-      ambiances-sonores/
-      modeles-miniatures/
 
   artistes/                           une fiche par artiste collaborateur
     nom-artiste/
@@ -249,7 +242,9 @@ Les résultats réels (stats notées par l'utilisateur) alimentent `hooks.md` au
 | Exemples | Logos, bouton abonnement, cartouche avec le nom d'une personne, génériques, musiques, polices | Illustrations d'un récit, décor, personnages dessinés pour cette histoire |
 | Qui les crée | L'utilisateur (identité graphique faite par lui) | L'utilisateur ou un artiste invité |
 
-Les éléments animés de la bibliothèque (cartouche nom, bouton abonnement, logo animé) sont des composants paramétrables : on leur passe un texte, une couleur ou une durée, et ils s'insèrent dans n'importe quelle vidéo. L'identité graphique (couleurs, polices, logos) est centralisée dans `identite/` pour que tous les composants l'utilisent.
+Types d'assets : police, image, vidéo, musique, ambiance sonore, son ponctuel, voix (avec sa langue, FR ou EN). Les assets se regroupent par étiquettes libres (« identité », « générique », « halloween »…).
+
+Les éléments animés (cartouche nom, bouton abonnement, logo animé) seront des composants Remotion paramétrables, ajoutés en phase 3 : on leur passe un texte, une couleur ou une durée, et ils s'insèrent dans n'importe quelle vidéo. Ils utilisent les polices et les images étiquetées « identité » de la bibliothèque.
 
 Un asset de vidéo peut être promu dans la bibliothèque s'il devient réutilisable et que ses droits le permettent.
 
@@ -261,20 +256,23 @@ Un asset de vidéo peut être promu dans la bibliothèque s'il devient réutilis
 {
   "assets": [
     {
-      "id": "cartouche-nom-recits",
-      "type": "composant",
+      "id": "outro-recits-en",
+      "type": "voix",
       "chaine": "recits",
-      "chemin": "recits/composants/cartouche-nom",
-      "description": "Affiche le nom d'un auteur ou d'un artiste en bas à gauche",
-      "parametres": ["nom", "role"],
+      "chemin": "recits/voix/outro-recits-en.wav",
+      "description": "Phrase de fin : invitation à s'abonner, en anglais",
+      "etiquettes": ["outro"],
+      "langue": "en",
       "source": "utilisateur",
+      "artiste": null,
+      "licence": "",
       "utilisations": ["2026-11-06_le-dernier-dragon"]
     }
   ]
 }
 ```
 
-Le champ `utilisations` garde l'historique des vidéos qui ont utilisé l'asset.
+`chemin` est relatif à `bibliotheque/`. `langue` vaut `fr`, `en` ou `null` (obligatoire pour une voix, possible pour une image ou une vidéo qui contient du texte). `source` vaut `utilisateur`, `artiste` (avec l'identifiant de sa fiche dans `artiste`) ou `externe` (avec les conditions dans `licence`). Le champ `utilisations` garde l'historique des vidéos qui ont utilisé l'asset.
 
 ### Les artistes invités
 
@@ -330,7 +328,7 @@ Exemple pour un récit :
     "preuve": "autorisation/message-2026-11-01.png"
   },
   "artistes": ["nom-artiste"],
-  "assetsBibliotheque": ["cartouche-nom-recits", "generique-recits"],
+  "assetsBibliotheque": ["outro-recits-en", "generique-recits"],
   "langues": ["fr", "en"],
   "versionValidee": "v3",
   "datePublicationPrevue": "2026-11-06"

@@ -2,6 +2,7 @@ import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { Readable } from "node:stream";
 import {
+  EXTENSIONS_PREUVE,
   FICHE_ARTISTE_VIDE,
   schemaFicheArtiste,
   type AccordArtiste,
@@ -32,7 +33,6 @@ const ARTISTES: DossierFiches<FicheArtiste> = {
   vide: FICHE_ARTISTE_VIDE,
 };
 const DOSSIER_ACCORD = "accord";
-export const EXTENSIONS_PREUVE = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".pdf", ".txt", ".eml"] as const;
 
 export async function statutAccord(dossier: string, accord: AccordArtiste): Promise<StatutAccord> {
   const problemes: string[] = [];

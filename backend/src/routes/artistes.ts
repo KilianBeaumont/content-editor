@@ -1,4 +1,4 @@
-import { schemaSaisieArtiste, type Artiste, type ReponseListeArtistes } from "@editeur/shared";
+import { schemaSaisieArtiste, TAILLE_MAX_PREUVE, type Artiste, type ReponseListeArtistes } from "@editeur/shared";
 import type { FastifyPluginAsync } from "fastify";
 import {
   creerArtiste,
@@ -10,8 +10,6 @@ import {
 } from "../artistes/artistes.ts";
 import type { Contexte } from "../contexte.ts";
 import { ErreurHttp } from "../erreurs.ts";
-
-const TAILLE_MAX_PREUVE = 50 * 1024 * 1024;
 
 interface ParametresId {
   Params: { id: string };

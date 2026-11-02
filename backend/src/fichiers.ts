@@ -38,7 +38,7 @@ export async function lireTexte(chemin: string): Promise<string> {
   return texte.charCodeAt(0) === 0xfeff ? texte.slice(1) : texte;
 }
 
-function estObjet(valeur: unknown): valeur is Record<string, unknown> {
+export function estObjet(valeur: unknown): valeur is Record<string, unknown> {
   return typeof valeur === "object" && valeur !== null && !Array.isArray(valeur);
 }
 

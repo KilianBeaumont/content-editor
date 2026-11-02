@@ -31,6 +31,9 @@ export async function enregistrerFlux(flux: Readable, dossier: string, nom: stri
   const temporaire = join(dossier, `.${randomUUID()}.tmp`);
   try {
     await pipeline(flux, createWriteStream(temporaire, { flags: "wx" }));
+    if ("truncated" in flux && flux.truncated === true) {
+      throw new ErreurHttp(413, "Fichier trop volumineux.");
+    }
     await renommer(temporaire, join(dossier, nom));
   } catch (erreur) {
     await rm(temporaire, { force: true });

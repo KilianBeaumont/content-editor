@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { schemaLiens, schemaNomFiche, schemaSaisieLiens, type FicheIllisible } from "./fiches.ts";
 
+export const TAILLE_MAX_PREUVE = 50 * 1024 * 1024;
+export const EXTENSIONS_PREUVE = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".pdf", ".txt", ".eml"] as const;
+
 export interface AccordArtiste {
   date: string | null;
   monetisation: boolean;
