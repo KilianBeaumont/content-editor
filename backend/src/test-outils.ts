@@ -31,7 +31,7 @@ export async function preparerEnvironnementTest(dossierInterface?: string): Prom
   const dossier = await mkdtemp(join(tmpdir(), "editeur-test-"));
   const contexte: Contexte = {
     racineDepot: join(dossier, "depot"),
-    config: { creations: join(dossier, "creations"), binaires: { ...CONFIG_PAR_DEFAUT.binaires } },
+    config: { creations: join(dossier, "creations"), modeles: join(dossier, "modeles"), binaires: { ...CONFIG_PAR_DEFAUT.binaires } },
   };
   await mkdir(contexte.racineDepot);
   await initialiserCreations(contexte.config.creations);
@@ -42,7 +42,7 @@ export async function preparerEnvironnementTest(dossierInterface?: string): Prom
     app,
     nettoyer: async () => {
       await app.close();
-      await rm(dossier, { recursive: true, force: true });
+      await rm(dossier, { recursive: true, force: true, maxRetries: 10, retryDelay: 20 });
     },
   };
 }

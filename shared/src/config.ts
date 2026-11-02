@@ -9,11 +9,13 @@ export interface BinairesMachine {
 
 export interface ConfigMachine {
   creations: string;
+  modeles: string;
   binaires: BinairesMachine;
 }
 
 export const schemaConfigMachine = z.object({
   creations: z.string().trim().min(1),
+  modeles: z.string().trim().min(1),
   binaires: z.object({
     ffmpeg: z.string().trim().min(1),
     ffprobe: z.string().trim().min(1),

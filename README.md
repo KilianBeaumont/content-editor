@@ -34,7 +34,17 @@ Phase 1 (le socle) terminée.
 | 10 | Modifier, renommer, supprimer un projet | ✅ |
 | 11 | Lanceur à double-cliquer (Windows et Mac) | ✅ |
 
-Les phases suivantes (transcription, plan de montage, aperçus, exports, formats courts, podcast, statistiques) viendront après.
+Phase 2 (analyse), en cours. Pour obtenir une première vidéo au plus vite, on fait la transcription, puis directement la phase 3 pour un vlog ; l'analyse des vidéos d'inspiration vient ensuite.
+
+| Étape | Contenu | État |
+| --- | --- | --- |
+| 2.1 | File de tâches avec progression en direct | ✅ |
+| 2.2 | whisper.cpp : modèle, téléchargement, essai | ✅ |
+| 2.3 | Transcription des rushes d'un projet | à venir |
+| Phase 3 | Plan de montage par Claude, aperçu, commentaires | à venir |
+| 2.4 à 2.6 | Écran Guides et analyse des vidéos d'inspiration | à venir |
+
+Les phases suivantes (exports, formats courts, podcast, statistiques) viendront après.
 
 ## Installer l'outil sur une machine
 
@@ -44,14 +54,20 @@ Les phases suivantes (transcription, plan de montage, aperçus, exports, formats
    - **Node.js 24** ou plus récent ;
    - **ffmpeg** et **ffprobe** ;
    - **Claude Code** (`claude`), puis s'y connecter avec l'abonnement Claude (`claude` dans un terminal, puis suivre la connexion). Ne jamais créer ni renseigner de clé API.
-   - whisper.cpp viendra en phase 2 : il n'est pas encore utilisé.
+   - **whisper.cpp**, pour la transcription :
+     - Windows (carte NVIDIA) : télécharger `whisper-bin-win-cuda-12.4.0-x64.zip` sur la page des versions de https://github.com/ggml-org/whisper.cpp (dernier build `bNNNN` qui contient des fichiers), le décompresser dans `outils/whisper/bin/` à côté du dépôt ;
+     - Mac : `brew install whisper-cpp` (accéléré par Metal).
 2. Double-cliquer sur le lanceur (voir « Lancer l'outil ») : la première fois, il installe tout ce qu'il faut.
 3. Ouvrir l'écran **Paramètres**.
 4. Section **Cette machine** :
    - **Dossier creations** : l'emplacement de tes créations. Par défaut `../creations`, à côté du dépôt. S'il n'existe pas, il est créé avec toute l'arborescence quand tu enregistres.
+   - **Dossier des modèles whisper** : où ranger les modèles de transcription. Par défaut `../outils/whisper/modeles`.
    - Chemins de **ffmpeg**, **ffprobe**, **claude** et **whisper** : laisse le nom seul si le programme est trouvé, sinon mets le chemin complet. Chaque champ affiche si le programme est trouvé, avec sa version.
    - **Enregistrer**, puis **Revérifier les programmes** si tu as installé quelque chose entre-temps.
-5. Section **Claude** : **Tester la connexion**. Le résultat doit indiquer l'abonnement (pas de clé API) et affiche ton utilisation sur 5 heures et sur 7 jours.
+5. Section **Transcription** :
+   - si le modèle est **absent** : **Télécharger le modèle** (environ 1,6 Go, vérifié automatiquement) ;
+   - puis **Tester whisper.cpp** : le résultat indique si la carte graphique est utilisée (CUDA sur le PC, Metal sur le Mac) ou le processeur (plus lent).
+6. Section **Claude** : **Tester la connexion**. Le résultat doit indiquer l'abonnement (pas de clé API) et affiche ton utilisation sur 5 heures et sur 7 jours.
 
 Ces réglages sont propres à chaque machine (fichier `config.local.json`, jamais partagé). Les **Réglages communs** (préréglages d'export, modèle de transcription, modèle Claude, rendus simultanés) sont enregistrés dans `creations/parametres.json` et suivent le dossier `creations/`.
 
@@ -172,6 +188,14 @@ Ce que fait l'outil :
 Après la création, la page indique ce qui bloquerait l'export (voir ci-dessous) et propose **Ouvrir le projet**.
 
 Deux projets ne peuvent pas avoir le même nom (même date et même titre), même sur deux chaînes différentes.
+
+### Suivre les tâches longues
+
+Les traitements longs (téléchargement du modèle, essai de whisper, et bientôt transcriptions et rendus) passent dans une **file de tâches**, une à la fois. Sur le **Tableau de bord**, la section **Tâches en cours** montre en direct pour chacune : l'étape, une barre de progression, le pourcentage et le temps restant estimé.
+- **Annuler** arrête une tâche en cours ou retire une tâche en attente.
+- Une tâche **échouée** affiche la raison ; **Relancer** la recommence avec les mêmes réglages.
+- Si l'outil est fermé pendant une tâche, elle apparaît **Interrompue** au redémarrage : **Relancer**.
+- **Effacer l'historique** vide la liste des tâches terminées (enregistrée dans `creations/taches.json`).
 
 ### Suivre ses projets
 
@@ -299,6 +323,8 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | « Fiches illisibles » dans Auteurs et artistes | Un `fiche.json` modifié à la main est abîmé, ou un dossier est mal nommé : corriger d'après le message |
 | « catalogue.json n'est pas un JSON valide » dans Bibliothèque | Le fichier a été abîmé à la main : corriger la virgule ou l'accolade indiquée dans le message |
 | « Entrées ignorées » dans Bibliothèque | Une entrée de `catalogue.json` est incomplète ou mal écrite : la corriger d'après le message |
+| « whisper.cpp introuvable » ou « Modèle … absent » | Paramètres : vérifier le chemin de whisper-cli et le dossier des modèles, puis **Télécharger le modèle** |
+| L'essai de whisper indique « sur le processeur » | Sur le PC, vérifier que la version CUDA est installée et le pilote NVIDIA à jour ; la transcription marche quand même, plus lentement |
 | « ffprobe est introuvable » dans Inbox | Installer ffmpeg (qui contient ffprobe) ou renseigner le chemin de ffprobe dans **Paramètres** |
 | « Espace disque insuffisant » | Libérer de la place sur le disque qui contient `creations/`, ou déplacer `creations/` sur un autre disque (Paramètres) |
 | « Un projet existe déjà sous le nom … » | Changer la date ou le titre |

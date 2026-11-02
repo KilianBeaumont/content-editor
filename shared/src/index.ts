@@ -132,3 +132,15 @@ export {
   type VerificationExport,
 } from "./projets.ts";
 export { slug } from "./slug.ts";
+export {
+  ETATS_TACHE,
+  LIBELLES_ETATS_TACHE,
+  tacheActive,
+  TYPES_TACHE,
+  type EtatTache,
+  type ParametresTache,
+  type ReponseTaches,
+  type Tache,
+  type TypeTache,
+} from "./taches.ts";
+export type { EtatModeleWhisper, MotTranscrit, SegmentTranscrit } from "./transcriptions.ts";

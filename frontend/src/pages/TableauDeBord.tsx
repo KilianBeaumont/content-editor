@@ -5,11 +5,13 @@ import {
   type ReponseInbox,
   type ReponseListeProjets,
   type ResumeProjet,
+  tacheActive,
 } from "@editeur/shared";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { lireJson, messageErreur } from "../api.ts";
+import { envoyerJson, lireJson, messageErreur } from "../api.ts";
 import { Message } from "../composants/Message.tsx";
+import { ListeTaches, useTaches } from "../composants/Taches.tsx";
 
 const JOUR = 24 * 3600 * 1000;
 
@@ -38,6 +40,9 @@ export function TableauDeBord() {
   const [liste, setListe] = useState<ReponseListeProjets | null>(null);
   const [inbox, setInbox] = useState<number | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  const { taches } = useTaches();
+  const actives = taches.filter(tacheActive);
+  const recentes = taches.filter((tache) => !tacheActive(tache)).slice(0, 5);
 
   useEffect(() => {
     lireJson<ReponseListeProjets>("/api/projets")
@@ -149,7 +154,18 @@ export function TableauDeBord() {
 
           <section className="section">
             <h2>Tâches en cours</h2>
-            <p className="note">Les transcriptions, analyses et rendus apparaîtront ici avec leur progression, à partir de la phase 2.</p>
+            <ListeTaches taches={actives} vide="Aucune tâche en cours." />
+            {recentes.length > 0 && (
+              <>
+                <div className="entete-section">
+                  <h3>Terminées récemment</h3>
+                  <button type="button" className="bouton bouton-discret" onClick={() => void envoyerJson("DELETE", "/api/taches/terminees")}>
+                    Effacer l'historique
+                  </button>
+                </div>
+                <ListeTaches taches={recentes} vide="" />
+              </>
+            )}
           </section>
         </>
       )}

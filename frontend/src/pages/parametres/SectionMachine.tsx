@@ -14,7 +14,7 @@ const BINAIRES: Array<{ nom: NomBinaire; libelle: string; note?: string }> = [
   { nom: "ffmpeg", libelle: "ffmpeg" },
   { nom: "ffprobe", libelle: "ffprobe" },
   { nom: "claude", libelle: "Claude Code (claude)" },
-  { nom: "whisper", libelle: "whisper.cpp (whisper-cli)", note: "Utilisé à partir de la phase 2." },
+  { nom: "whisper", libelle: "whisper.cpp (whisper-cli)", note: "Pour la transcription : voir la section Transcription ci-dessous." },
 ];
 
 function EtatBinaire({ diagnostic }: { diagnostic: DiagnosticBinaire | undefined }) {
@@ -87,6 +87,13 @@ export function SectionMachine({ surEnregistrement }: { surEnregistrement: () =>
             valeur={config.creations}
             surChangement={(creations) => setConfig({ ...config, creations })}
             aide="S'il n'existe pas, il est créé avec toute l'arborescence à l'enregistrement."
+          />
+          <ChampTexte
+            large
+            libelle="Dossier des modèles whisper"
+            valeur={config.modeles}
+            surChangement={(modeles) => setConfig({ ...config, modeles })}
+            aide="Où ranger les modèles de transcription (fichiers ggml-….bin, environ 1,6 Go chacun)."
           />
           {BINAIRES.map(({ nom, libelle, note }) => (
             <ChampTexte

@@ -13,6 +13,10 @@ import { routesAuteurs } from "./routes/auteurs.ts";
 import { routesBibliotheque } from "./routes/bibliotheque.ts";
 import { routesInbox } from "./routes/inbox.ts";
 import { routesProjets } from "./routes/projets.ts";
+import { routesTaches } from "./routes/taches.ts";
+import { routesWhisper } from "./routes/whisper.ts";
+import { executeurs } from "./taches/executeurs.ts";
+import { FileDeTaches } from "./taches/file.ts";
 import { routesFichiers } from "./routes/fichiers.ts";
 import { routesParametres } from "./routes/parametres.ts";
 import { routesSante } from "./routes/sante.ts";
@@ -44,7 +48,10 @@ function codeHttp(err: unknown): number | undefined {
 }
 
 export async function creerApp(options: OptionsApp): Promise<FastifyInstance> {
-  const app = Fastify();
+  const app = Fastify({ forceCloseConnections: true });
+  const { contexte } = options;
+  const taches = new FileDeTaches(() => join(contexte.config.creations, "taches.json"), executeurs(contexte));
+  await taches.charger();
 
   app.setErrorHandler((err, _requete, reponse) => {
     if (err instanceof ErreurHttp) {
@@ -89,6 +96,8 @@ export async function creerApp(options: OptionsApp): Promise<FastifyInstance> {
   await app.register(routesBibliotheque(options.contexte), { prefix: "/api" });
   await app.register(routesInbox(options.contexte), { prefix: "/api" });
   await app.register(routesProjets(options.contexte), { prefix: "/api" });
+  await app.register(routesTaches(taches), { prefix: "/api" });
+  await app.register(routesWhisper(options.contexte, taches), { prefix: "/api" });
   await app.register(routesFichiers(options.contexte), { prefix: "/api" });
 
   app.setNotFoundHandler(async (requete, reponse) => {

@@ -506,3 +506,8 @@ Dépôts étudiés (clonés dans `../inspiration`). L'étude complète, avec ce 
 - **Frameworks** : backend Node 24 + TypeScript + Fastify ; frontend React + Vite + React Router ; `shared/` pour les interfaces communes. React est retenu parce que Remotion est en React : les composants animés servent à la fois à l'aperçu dans l'interface et au rendu.
 - **Transcription** : whisper.cpp en local (modèle visé : `large-v3-turbo`), lancé comme un binaire externe, accéléré par CUDA ou Vulkan sous Windows et par Metal sur Mac. À valider sur de vrais rushes en phase 2, en comparaison avec `@remotion/whisper-webgpu`.
 - **Rendu** : ffmpeg pour les coupes, la concaténation et la normalisation audio ; Remotion pour les composants animés, les sous-titres animés et les récits.
+
+### Décisions prises (2026-11-03)
+
+- **Ordre après la phase 1** : pour obtenir une première vidéo montée au plus vite, la phase 2 commence par la file de tâches, whisper.cpp et la transcription des rushes, puis on passe à la phase 3 (plan, aperçu, commentaires) pour un vlog. L'écran Guides et l'analyse des vidéos d'inspiration viennent ensuite ; d'ici là, `style.md` et `hooks.md` se modifient à la main.
+- **whisper.cpp sur le PC** : installé dans un dossier `outils/` hors du dépôt, version CUDA pour la RTX 5060 ; sur le Mac, via Homebrew (Metal).
