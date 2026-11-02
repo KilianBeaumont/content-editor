@@ -1,0 +1,29 @@
+{
+  "name": "editeur-video",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "backend",
+    "frontend"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,magenta \"npm run dev -w @editeur/backend\" \"npm run dev -w @editeur/frontend\"",
+    "build": "npm run build -w @editeur/frontend",
+    "start": "npm run start -w @editeur/backend",
+    "check": "tsc -p shared && tsc -p backend && tsc -p frontend && eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.19.2",
+    "concurrently": "^10.0.6",
+    "eslint": "^10.14.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.0.5"
+  }
+}

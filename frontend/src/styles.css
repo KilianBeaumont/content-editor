@@ -1,0 +1,95 @@
+:root {
+  --fond: #f6f5f2;
+  --surface: #ffffff;
+  --texte: #1f1d1a;
+  --texte-doux: #6b665e;
+  --bordure: #e2ded6;
+  --accent: #6a4bc4;
+  --ok: #2f7d4f;
+  --erreur: #b3362f;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--texte);
+  background: var(--fond);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #17161a;
+    --surface: #1f1e23;
+    --texte: #ecebe8;
+    --texte-doux: #a29d95;
+    --bordure: #34323a;
+    --accent: #a48bf0;
+    --ok: #5cc28a;
+    --erreur: #ef7a72;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--fond);
+}
+
+.application {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100vh;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 20px 12px;
+  background: var(--surface);
+  border-right: 1px solid var(--bordure);
+}
+
+.menu-titre {
+  margin: 0 0 16px 10px;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.menu a {
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: var(--texte-doux);
+  text-decoration: none;
+}
+
+.menu a:hover {
+  color: var(--texte);
+}
+
+.menu a.active {
+  color: var(--texte);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  font-weight: 600;
+}
+
+.contenu {
+  padding: 28px 36px;
+  max-width: 1200px;
+}
+
+h1 {
+  margin-top: 0;
+  font-size: 1.6rem;
+}
+
+.etat-ok {
+  color: var(--ok);
+}
+
+.etat-injoignable {
+  color: var(--erreur);
+}
+
+.a-venir {
+  color: var(--texte-doux);
+}

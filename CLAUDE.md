@@ -114,6 +114,11 @@ creations/
       fiche.json
       accord/                         preuve d'accord écrit
 
+  auteurs/                            une fiche par auteur ou autrice de récits
+    nom-auteur/
+      fiche.json                      nom, liens, contact, liste de ses récits
+                                      (l'autorisation de chaque récit reste dans le projet)
+
   chaine-creation/
     2026-11-08_premiere-carte/
       rushes/                         jamais modifiés
@@ -153,10 +158,15 @@ creations/
       metadata.json
       stats.json
 
-  parametres.json                     réglages de l'outil, modifiables depuis l'interface
+  corbeille/                          projets supprimés depuis l'interface, restaurables
+                                      (vidée uniquement à la main par l'utilisateur)
+
+  parametres.json                     réglages communs aux machines, modifiables depuis l'interface
 ```
 
 Nommage des dossiers de projet : `AAAA-MM-JJ_titre-en-kebab-case` (date de publication prévue).
+
+Réglages propres à chaque machine (chemin de `creations/`, chemins de `ffmpeg`, `ffprobe`, `claude`, whisper.cpp) : dans `config.local.json` à la racine du dépôt, non versionné, modifiable depuis l'écran Paramètres. Tout le reste est dans `creations/parametres.json`.
 
 ## 5. Guides de style et inspiration
 
@@ -356,7 +366,8 @@ L'utilisateur ne veut pas taper de commandes au quotidien. Tout le travail lourd
 
 ### Architecture
 
-- **Un seul dépôt TypeScript** avec deux parties : `backend/` et `frontend/`. Tout tourne en local et s'ouvre dans le navigateur sur `localhost`.
+- **Un seul dépôt TypeScript** (npm workspaces) avec trois parties : `backend/` (Node 24 + Fastify), `frontend/` (React + Vite + React Router) et `shared/` (interfaces communes). Tout tourne en local et s'ouvre dans le navigateur sur `localhost`.
+- **Windows et macOS** : l'outil doit fonctionner sur les deux (station Windows principale + MacBook). Aucune dépendance Python. Chemins des binaires externes (`ffmpeg`, `ffprobe`, `claude`, whisper.cpp) réglables dans `parametres.json`. Tous les chemins enregistrés dans les JSON sont relatifs à `creations/`.
 - **Backend** : une API HTTP pour toutes les opérations (créer, lire, modifier, supprimer projets, assets, artistes, auteurs, guides, stats, paramètres) et une file de tâches pour les traitements longs (transcription, analyse, rendu d'aperçu, rendu final, export podcast).
 - **Progression en temps réel** : chaque tâche remonte son avancement (étape en cours, pourcentage lu dans la sortie de ffmpeg ou de Remotion, temps restant estimé) vers l'interface via Server-Sent Events ou WebSocket.
 - **Prévisualisation** : le backend sert les aperçus et les exports en streaming (requêtes HTTP Range) pour les lire directement dans le navigateur.
@@ -449,12 +460,15 @@ L'utilisateur travaillera tous les jours avec cet outil. La démarche est donc :
 1. Étudier les dépôts ci-dessous, les tester sur de vrais rushes, repérer ce qui fonctionne bien (méthode, architecture, qualité de rendu).
 2. Construire un outil propre à l'utilisateur, adapté à son arborescence, ses guides de style, sa bibliothèque et ses règles, en reprenant les bonnes idées de ces dépôts plutôt qu'en les adoptant tels quels.
 
-Dépôts à étudier :
+Dépôts étudiés (clonés dans `../inspiration`). L'étude complète, avec ce qu'on reprend, ce qu'on écarte et les licences, est dans `docs/inspirations.md`. On s'inspire, on ne copie aucun fichier.
 
-- `browser-use/video-use` : montage depuis un dossier de rushes, propose une stratégie et attend validation avant de rendre. Proche du fonctionnement voulu.
-- `remotion-dev/skills` : bonnes pratiques officielles Remotion (vidéo en React et TypeScript), utile pour les sous-titres animés, textes et visuels des récits.
-- `jperrello/shorts` : découpe en étapes indépendantes (transcription, recadrage 9:16, sous-titres, normalisation, découpe). Bon modèle d'architecture.
-- `AgriciDaniel/claude-shorts` : vidéo longue vers formats courts, sous-titres animés rendus avec Remotion.
+- `browser-use/video-use` (MIT) : montage depuis un dossier de rushes, propose une stratégie et attend validation avant de rendre. Méthode, règles de rendu ffmpeg, format du plan.
+- `diffusionstudio/editor` (MPL-2.0, aucune copie) : éditeur piloté par agent. Monorepo, modèle de tâches, bibliothèque, lancement de `claude`.
+- `jipraks/yt-short-clipper` (MIT) : vidéo YouTube vers formats courts. Flux « proposer puis sélectionner », recadrage 9:16, sous-titres mot à mot.
+- `yihui-dev/awesome-opus5-5-videos` (prompts aux auteurs) : animations écrites en code par Claude. Inspiration pour les composants animés.
+- `remotion-dev/skills` : bonnes pratiques officielles Remotion. Player React, rendu depuis Node, sous-titres, compositions paramétrées.
+- `jperrello/shorts` (sans licence, idées seulement) : étapes atomiques en skills, `claude -p` par abonnement, profil de style des vidéos de référence.
+- `AgriciDaniel/claude-shorts` (MIT) : vidéo longue vers formats courts. Notation des extraits, recalage des bornes, rendu Remotion.
 
 ## 12. Conventions de code
 
@@ -470,6 +484,11 @@ Dépôts à étudier :
 - Nom de l'univers et des deux chaînes.
 - Identité graphique des deux chaînes (créée par l'utilisateur, à intégrer dans `bibliotheque/*/identite/`).
 - Hébergeur de podcast.
-- Outil de transcription : local (Whisper) ou API.
 - Abonnement Claude suffisant pour le volume (Pro ou Max), à juger après quelques semaines d'usage réel.
-- Frameworks du backend et du frontend : à choisir avec l'utilisateur au démarrage, en restant sur le plus simple.
+- Emplacement de `creations/` et partage entre le PC Windows et le MacBook (PC seul, disque externe ou synchronisation). En attendant, tous les chemins enregistrés sont relatifs à `creations/`, et on évite de placer `travail/` et `versions/` dans un dossier synchronisé.
+
+### Décisions prises (2026-11-02)
+
+- **Frameworks** : backend Node 24 + TypeScript + Fastify ; frontend React + Vite + React Router ; `shared/` pour les interfaces communes. React est retenu parce que Remotion est en React : les composants animés servent à la fois à l'aperçu dans l'interface et au rendu.
+- **Transcription** : whisper.cpp en local (modèle visé : `large-v3-turbo`), lancé comme un binaire externe, accéléré par CUDA ou Vulkan sous Windows et par Metal sur Mac. À valider sur de vrais rushes en phase 2, en comparaison avec `@remotion/whisper-webgpu`.
+- **Rendu** : ffmpeg pour les coupes, la concaténation et la normalisation audio ; Remotion pour les composants animés, les sous-titres animés et les récits.
