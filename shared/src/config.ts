@@ -43,6 +43,30 @@ export interface Parametres {
   rendusSimultanes: number;
 }
 
+const dimension = z.number().int().min(16).max(8192);
+const loudness = z.number().min(-40).max(0);
+
+const schemaPreReglageVideo = z.object({
+  largeur: dimension,
+  hauteur: dimension,
+  loudnessLufs: loudness,
+}) satisfies z.ZodType<PreReglageVideo>;
+
+export const schemaParametres = z.object({
+  version: z.literal(1),
+  exports: z.object({
+    youtube: schemaPreReglageVideo,
+    formatCourt: schemaPreReglageVideo,
+    apercu: z.object({ largeur: dimension }),
+    instagram: z.object({ largeur: dimension, hauteur: dimension }),
+    podcast: z.object({ debitKbps: z.number().int().min(32).max(320), loudnessLufs: loudness }),
+    pochettePodcast: z.object({ cote: z.number().int().min(500).max(5000) }),
+  }),
+  transcription: z.object({ modele: z.string().trim().min(1) }),
+  claude: z.object({ modele: z.string().trim().min(1).nullable() }),
+  rendusSimultanes: z.number().int().min(1).max(8),
+}) satisfies z.ZodType<Parametres>;
+
 export const PARAMETRES_PAR_DEFAUT: Parametres = {
   version: 1,
   exports: {
