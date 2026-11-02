@@ -1,4 +1,6 @@
 import {
+  schemaAjoutFichiers,
+  schemaModificationProjet,
   schemaSaisieProjet,
   TAILLE_MAX_PREUVE,
   type DetailProjet,
@@ -6,12 +8,20 @@ import {
   type ReponseCreationProjet,
   type ReponseFichiersProjet,
   type ReponseListeProjets,
+  type ReponseModificationProjet,
   type VerificationExport,
 } from "@editeur/shared";
 import type { FastifyPluginAsync } from "fastify";
 import type { Contexte } from "../contexte.ts";
 import { ErreurHttp } from "../erreurs.ts";
-import { creerProjet, enregistrerPreuveAutorisation, lireProjet } from "../projets/projets.ts";
+import {
+  ajouterFichiersProjet,
+  creerProjet,
+  enregistrerPreuveAutorisation,
+  lireProjet,
+  modifierProjet,
+  supprimerProjet,
+} from "../projets/projets.ts";
 import { fichiersProjet, lireDetailProjet, listerProjets } from "../projets/liste.ts";
 import { verifierExportable } from "../projets/verification.ts";
 
@@ -32,6 +42,18 @@ export function routesProjets(contexte: Contexte): FastifyPluginAsync {
     app.get("/projets", async (): Promise<ReponseListeProjets> => listerProjets(creations()));
 
     app.get<ParametresId>("/projets/:id", async (requete): Promise<DetailProjet> => lireDetailProjet(creations(), requete.params.id));
+
+    app.put<ParametresId>("/projets/:id", async (requete): Promise<ReponseModificationProjet> =>
+      modifierProjet(creations(), requete.params.id, schemaModificationProjet.parse(requete.body)),
+    );
+
+    app.delete<ParametresId>("/projets/:id", async (requete): Promise<{ corbeille: string; avertissements: string[] }> =>
+      supprimerProjet(creations(), requete.params.id),
+    );
+
+    app.post<ParametresId>("/projets/:id/fichiers", async (requete): Promise<Projet> =>
+      ajouterFichiersProjet(creations(), requete.params.id, schemaAjoutFichiers.parse(requete.body).fichiers),
+    );
 
     app.get<ParametresId>("/projets/:id/fichiers", async (requete): Promise<ReponseFichiersProjet> =>
       fichiersProjet(creations(), requete.params.id, contexte.config.binaires.ffprobe),

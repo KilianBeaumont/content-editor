@@ -102,6 +102,18 @@ export function ficheALaCorbeille<T>(creations: string, type: DossierFiches<T>, 
   return mettreALaCorbeille(creations, `${type.racine}/${id}`, type.racine);
 }
 
+export function memeListe(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((element, index) => element === b[index]);
+}
+
+export function remplacerReference(liste: string[], ancien: string | null, nouveau: string | null): string[] {
+  const sans = liste.filter((element) => element !== ancien && element !== nouveau);
+  const position = ancien === null ? -1 : liste.indexOf(ancien);
+  if (nouveau === null) return sans;
+  if (position < 0) return liste.includes(nouveau) ? liste : [...liste, nouveau];
+  return [...sans.slice(0, position), nouveau, ...sans.slice(position)];
+}
+
 export function trierParNom<T extends { fiche: { nom: string } }>(elements: T[]): T[] {
   return elements.sort((a, b) => a.fiche.nom.localeCompare(b.fiche.nom, "fr"));
 }

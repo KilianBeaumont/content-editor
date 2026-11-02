@@ -31,7 +31,7 @@ Phase 1 (le socle), en cours.
 | 7 | Création d'un projet depuis l'inbox : sorties voulues, consignes de montage, pistes FR et EN, auteur, artistes, assets | ✅ |
 | 8 | Règles d'autorisation avant export | ✅ |
 | 9 | Tableau de bord et écran Projet | ✅ |
-| 10 | Modifier, renommer, supprimer un projet | à venir |
+| 10 | Modifier, renommer, supprimer un projet | ✅ |
 | 11 | Lanceur à double-cliquer (Windows et Mac) | à venir |
 
 Les phases suivantes (transcription, plan de montage, aperçus, exports, formats courts, podcast, statistiques) viendront après.
@@ -173,7 +173,17 @@ Un clic sur un projet ouvre l'**écran Projet** :
 - les artistes et les assets de la bibliothèque choisis ;
 - les fichiers, rangés par dossier, avec leur durée, leur résolution et ta note. Un clic sur un fichier l'affiche.
 
-Pour l'instant l'écran Projet est en lecture seule : la modification arrive à l'étape 10, le plan de montage et les aperçus en phase 3.
+Le plan de montage et les aperçus arrivent en phase 3.
+
+### Modifier un projet, ajouter des fichiers, le mettre à la corbeille
+
+Depuis l'écran Projet :
+- **Modifier** : titre, date, catégorie, version anglaise, sorties, consignes, description (FR et EN), notes des fichiers, auteur et autorisation (avec une nouvelle preuve), artistes, assets de la bibliothèque. Pour ton histoire, la case **futur roman** rappelle avant l'export de n'en publier que des extraits.
+  - Si la **date** ou le **titre** change, le dossier est **renommé** (`AAAA-MM-JJ_titre`) et les fiches des artistes, de l'auteur et de la bibliothèque sont mises à jour. Ferme d'abord les fichiers du projet ouverts dans un autre programme.
+  - La **chaîne** ne se change pas : crée un nouveau projet et déplace les fichiers.
+  - Ajouter un artiste crée son dossier `assets/<artiste>/` ; passer en version anglaise crée `voix/en/` et les dossiers d'export anglais. Rien n'est supprimé quand tu retires quelque chose.
+- **Ajouter des fichiers** : choisir des fichiers de l'inbox (ou en glisser de nouveaux), leur place et une note, puis **Ranger … dans le projet**. Comme à la création, ils sont déplacés sans être modifiés, et tout est remis dans l'inbox en cas d'échec.
+- **Mettre le projet à la corbeille** : le dossier entier, rushes compris, va dans `corbeille/projets/`, et le projet disparaît de l'historique des fiches. Pour le récupérer : remettre le dossier à la main dans `chaine-creation/` ou `chaine-recits/` sans la date ajoutée à la fin du nom.
 
 ### Savoir si un projet peut être exporté
 
@@ -189,8 +199,9 @@ L'outil vérifie les droits avant tout export. Le résultat s'affiche après la 
 | Asset de la bibliothèque introuvable, ou visuel d'artiste dont la réutilisation n'est pas autorisée | Bloque tout l'export |
 | Monétisation non acceptée par l'auteur ou l'artiste | Avertissement : ne pas monétiser la vidéo |
 | Histoire personnelle sans signature | Avertissement |
+| Histoire marquée « futur roman » avec une sortie longue (YouTube, podcast) | Avertissement : n'en publier que des extraits |
 
-Pour débloquer : compléter la fiche de l'artiste (Auteurs et artistes), ou l'autorisation du projet (écran Projet, étape 10).
+Pour débloquer : compléter la fiche de l'artiste (Auteurs et artistes), ou l'autorisation du projet (écran Projet → **Modifier**).
 
 ### Ajouter un asset à la bibliothèque
 
@@ -274,6 +285,7 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | « ffprobe est introuvable » dans Inbox | Installer ffmpeg (qui contient ffprobe) ou renseigner le chemin de ffprobe dans **Paramètres** |
 | « Espace disque insuffisant » | Libérer de la place sur le disque qui contient `creations/`, ou déplacer `creations/` sur un autre disque (Paramètres) |
 | « Un projet existe déjà sous le nom … » | Changer la date ou le titre |
+| « Impossible de renommer le dossier » ou « Impossible de déplacer le projet » | Un fichier du projet est ouvert (lecteur vidéo, logiciel de montage, Explorateur dans le dossier) : le fermer puis recommencer |
 | « Impossible de déplacer … Rien n'a été créé » | Un fichier était ouvert dans un autre programme ou le disque est plein : fermer le programme ou libérer de la place, puis recommencer. Les fichiers sont restés dans l'inbox |
 | « Fichier trop volumineux » à l'envoi | La limite est de 4 Go pour la bibliothèque et de 50 Mo pour une preuve d'accord |
 | « Envoi interrompu » dans le terminal, ou « La connexion avec le serveur a été coupée » à l'écran | La page a été fermée ou rechargée pendant l'envoi, ou le serveur a redémarré : recommencer l'envoi en gardant la page ouverte. Aucun fichier partiel n'est conservé |

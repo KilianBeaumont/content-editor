@@ -13,15 +13,17 @@ import {
   type ReponseListeArtistes,
   type VerificationExport,
 } from "@editeur/shared";
-import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
-import { formaterTaille, lireJson, messageErreur } from "../../api.ts";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
+import { envoyerJson, formaterTaille, lireJson, messageErreur } from "../../api.ts";
 import { ApercuFichier } from "../../composants/ApercuFichier.tsx";
 import { Message } from "../../composants/Message.tsx";
 import { Verification } from "../../composants/Verification.tsx";
 import { dureeMedia, resumeMedia } from "../../medias.ts";
 import { BadgeAccord } from "../auteurs-artistes/AuteursArtistes.tsx";
 import { formaterDate } from "../TableauDeBord.tsx";
+import { AjoutFichiers } from "./AjoutFichiers.tsx";
+import type { EtatRetourProjet } from "./ModifierProjet.tsx";
 
 function Etapes({ etape }: { etape: DetailProjet["etape"] }) {
   const atteinte = ETAPES_PROJET.indexOf(etape);
@@ -116,9 +118,12 @@ export function PageProjet() {
   const [artistes, setArtistes] = useState<ReponseListeArtistes["artistes"]>([]);
   const [bibliotheque, setBibliotheque] = useState<ReponseBibliotheque["elements"]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [ajout, setAjout] = useState(false);
+  const naviguer = useNavigate();
+  const { state } = useLocation();
+  const avertissements = (state as EtatRetourProjet | null)?.avertissements ?? [];
 
-  useEffect(() => {
-    setProjet(null);
+  const charger = useCallback(() => {
     lireJson<DetailProjet>(`/api/projets/${id}`)
       .then(setProjet)
       .catch((e: unknown) => setErreur(messageErreur(e)));
@@ -128,13 +133,30 @@ export function PageProjet() {
     lireJson<VerificationExport>(`/api/projets/${id}/verification`)
       .then(setVerification)
       .catch(() => setVerification(null));
+  }, [id]);
+
+  useEffect(() => {
+    setProjet(null);
+    charger();
     lireJson<ReponseListeArtistes>("/api/artistes")
       .then((liste) => setArtistes(liste.artistes))
       .catch(() => setArtistes([]));
     lireJson<ReponseBibliotheque>("/api/bibliotheque")
       .then((reponse) => setBibliotheque(reponse.elements))
       .catch(() => setBibliotheque([]));
-  }, [id]);
+  }, [charger]);
+
+  async function mettreALaCorbeille() {
+    if (projet === null) return;
+    const message = `Mettre « ${projet.metadata.titre.fr} » à la corbeille ? Le dossier entier, rushes compris, sera déplacé dans corbeille/projets/.`;
+    if (!window.confirm(message)) return;
+    try {
+      await envoyerJson("DELETE", `/api/projets/${projet.id}`);
+      void naviguer("/");
+    } catch (e) {
+      setErreur(messageErreur(e));
+    }
+  }
 
   const retour = (
     <p>
@@ -164,21 +186,38 @@ export function PageProjet() {
           <h1>{metadata.titre.fr}</h1>
           {metadata.titre.en && <p className="note titre-en">{metadata.titre.en}</p>}
         </div>
-        <span className="carte-badges">
-          <span className="badge">{LIBELLES_CHAINES[metadata.chaine]}</span>
-          <span className="badge">{LIBELLES_CATEGORIES[metadata.categorie]}</span>
-          {metadata.langues.includes("en") && <span className="badge">FR + EN</span>}
+        <span className="ligne-actions">
+          <Link className="bouton bouton-principal" to={`/projets/${projet.id}/modifier`}>
+            Modifier
+          </Link>
+          <button type="button" className="bouton" onClick={() => setAjout(true)}>
+            Ajouter des fichiers
+          </button>
         </span>
       </div>
+      <p className="carte-badges">
+        <span className="badge">{LIBELLES_CHAINES[metadata.chaine]}</span>
+        <span className="badge">{LIBELLES_CATEGORIES[metadata.categorie]}</span>
+        {metadata.langues.includes("en") && <span className="badge">FR + EN</span>}
+        {metadata.futurRoman && <span className="badge badge-alerte">Futur roman : extraits seulement</span>}
+      </p>
+      {avertissements.length > 0 && (
+        <Message type="alerte">
+          <ul>
+            {avertissements.map((avertissement) => (
+              <li key={avertissement}>{avertissement}</li>
+            ))}
+          </ul>
+        </Message>
+      )}
+      {erreur && <Message type="erreur">{erreur}</Message>}
       <p className="section-intro">
         Publication prévue le {formaterDate(metadata.datePublicationPrevue)} · <code>{projet.chemin}</code>
       </p>
 
       <section className="section">
         <Etapes etape={projet.etape} />
-        <p className="note">
-          La proposition de plan de montage et les aperçus arrivent en phase 3. La modification du projet arrive à l'étape 10.
-        </p>
+        <p className="note">La proposition de plan de montage et les aperçus arrivent en phase 3.</p>
       </section>
 
       <section className="section">
@@ -199,6 +238,13 @@ export function PageProjet() {
             </li>
           ))}
         </ul>
+        {(metadata.description.fr || metadata.description.en) && (
+          <>
+            <h3>Description</h3>
+            <Texte libelle="Français" valeur={metadata.description.fr} />
+            <Texte libelle="Anglais" valeur={metadata.description.en} />
+          </>
+        )}
         <h3>Consignes de montage</h3>
         {consignesVides ? (
           <p className="note">Aucune consigne.</p>
@@ -297,7 +343,26 @@ export function PageProjet() {
         </section>
       )}
 
+      {ajout && (
+        <AjoutFichiers
+          projet={projet}
+          nomsArtistes={new Map(artistes.map((artiste) => [artiste.id, artiste.fiche.nom]))}
+          surAjout={charger}
+          surFermeture={() => setAjout(false)}
+        />
+      )}
       {fichiers === null ? <p className="note">Chargement des fichiers…</p> : <Fichiers projet={projet} fichiers={fichiers} />}
+
+      <section className="section">
+        <h2>Corbeille</h2>
+        <p className="section-intro">
+          Déplace le dossier entier du projet dans <code>corbeille/projets/</code>, rushes compris. Rien n'est effacé : tu peux le
+          remettre à la main dans <code>{projet.chemin.split("/")[0]}/</code>.
+        </p>
+        <button type="button" className="bouton bouton-danger" onClick={() => void mettreALaCorbeille()}>
+          Mettre le projet à la corbeille
+        </button>
+      </section>
     </>
   );
 }

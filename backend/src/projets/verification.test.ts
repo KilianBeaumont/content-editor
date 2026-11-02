@@ -27,6 +27,7 @@ const RECIT: SaisieProjet = {
   autorisation: AUTORISATION,
   artistes: [],
   assetsBibliotheque: [],
+  futurRoman: false,
 };
 
 describe("vérification avant export", () => {

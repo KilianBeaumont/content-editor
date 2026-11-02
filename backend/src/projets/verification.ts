@@ -61,6 +61,12 @@ export async function verifierExportable(creations: string, projet: Projet): Pro
   if (auteur !== null && auteur.estUtilisateur && auteur.nom.trim() === "") {
     avertir("Signature manquante : la vidéo doit commencer par « Une histoire originale de … ».");
   }
+  if (metadata.futurRoman) {
+    const longues = metadata.sorties.filter((sortie) => sortie !== "formats-courts" && sortie !== "instagram");
+    if (longues.length > 0) {
+      avertir("Histoire destinée à devenir un roman : n'en publier que des extraits, jamais l'histoire entière.", longues);
+    }
+  }
   if (auteur !== null && !auteur.estUtilisateur) {
     const nom = auteur.nom || "l'auteur";
     if (autorisation === null || !autorisation.obtenue) {

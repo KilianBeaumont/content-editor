@@ -24,6 +24,7 @@ import { z } from "zod";
 import { lireArtiste } from "../artistes/artistes.ts";
 import { mettreALaCorbeille } from "../corbeille.ts";
 import { codeErreur, ErreurHttp } from "../erreurs.ts";
+import { memeListe, remplacerReference } from "../fiches.ts";
 import {
   CheminInterditError,
   cheminSur,
@@ -306,16 +307,20 @@ export function supprimerAsset(creations: string, id: string): Promise<{ corbeil
   });
 }
 
-export function ajouterUtilisations(creations: string, ids: string[], projet: string): Promise<void> {
+export function lierUtilisations(creations: string, ancien: string | null, nouveau: string | null, ids: string[]): Promise<void> {
   return enSerie(async () => {
     const catalogue = await lireCatalogue(creations);
     const { assets } = analyser(catalogue.entrees);
     const positions = new Map(assets.map(({ asset, position }) => [position, asset]));
+    let modifie = false;
     const entrees = catalogue.entrees.map((brut, position) => {
       const asset = positions.get(position);
-      if (asset === undefined || !ids.includes(asset.id) || asset.utilisations.includes(projet)) return brut;
-      return { ...asset, utilisations: [...asset.utilisations, projet] };
+      if (asset === undefined) return brut;
+      const utilisations = remplacerReference(asset.utilisations, ancien, ids.includes(asset.id) ? nouveau : null);
+      if (memeListe(utilisations, asset.utilisations)) return brut;
+      modifie = true;
+      return { ...asset, utilisations };
     });
-    await ecrireCatalogue(creations, { ...catalogue, entrees });
+    if (modifie) await ecrireCatalogue(creations, { ...catalogue, entrees });
   });
 }

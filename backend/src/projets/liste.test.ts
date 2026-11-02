@@ -18,6 +18,7 @@ const VLOG: SaisieProjet = {
   autorisation: null,
   artistes: [],
   assetsBibliotheque: [],
+  futurRoman: false,
 };
 
 describe("liste et détail des projets", () => {

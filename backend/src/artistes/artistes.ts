@@ -22,6 +22,8 @@ import {
   listerFiches,
   trierParNom,
   type DossierFiches,
+  memeListe,
+  remplacerReference,
 } from "../fiches.ts";
 import { cheminSur, existe } from "../fichiers.ts";
 import { enregistrerFlux, nomLibre, verifierExtension } from "../televersement.ts";
@@ -118,9 +120,10 @@ export async function enregistrerPreuve(
   return lireArtiste(creations, id);
 }
 
-export async function ajouterVideoArtiste(creations: string, id: string, projet: string): Promise<void> {
+export async function lierVideoArtiste(creations: string, id: string, ancien: string | null, nouveau: string | null): Promise<void> {
   const { fiche } = await lireArtiste(creations, id);
-  if (!fiche.videos.includes(projet)) {
-    await ecrireFiche(creations, ARTISTES, id, { ...fiche, videos: [...fiche.videos, projet] });
+  const videos = remplacerReference(fiche.videos, ancien, nouveau);
+  if (!memeListe(videos, fiche.videos)) {
+    await ecrireFiche(creations, ARTISTES, id, { ...fiche, videos });
   }
 }

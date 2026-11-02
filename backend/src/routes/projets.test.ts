@@ -22,6 +22,7 @@ const VLOG: SaisieProjet = {
   autorisation: null,
   artistes: [],
   assetsBibliotheque: [],
+  futurRoman: false,
 };
 
 const RECIT: SaisieProjet = {
@@ -49,6 +50,7 @@ const RECIT: SaisieProjet = {
   },
   artistes: ["aurore"],
   assetsBibliotheque: ["generique"],
+  futurRoman: false,
 };
 
 describe("création de projet", () => {

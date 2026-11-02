@@ -15,6 +15,8 @@ import {
   listerFiches,
   trierParNom,
   type DossierFiches,
+  memeListe,
+  remplacerReference,
 } from "../fiches.ts";
 
 const AUTEURS: DossierFiches<FicheAuteur> = {
@@ -57,9 +59,10 @@ export async function supprimerAuteur(creations: string, id: string): Promise<st
   return ficheALaCorbeille(creations, AUTEURS, id);
 }
 
-export async function ajouterRecitAuteur(creations: string, id: string, projet: string): Promise<void> {
+export async function lierRecitAuteur(creations: string, id: string, ancien: string | null, nouveau: string | null): Promise<void> {
   const { fiche } = await lireAuteur(creations, id);
-  if (!fiche.recits.includes(projet)) {
-    await ecrireFiche(creations, AUTEURS, id, { ...fiche, recits: [...fiche.recits, projet] });
+  const recits = remplacerReference(fiche.recits, ancien, nouveau);
+  if (!memeListe(recits, fiche.recits)) {
+    await ecrireFiche(creations, AUTEURS, id, { ...fiche, recits });
   }
 }

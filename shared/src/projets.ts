@@ -126,6 +126,7 @@ export interface SaisieProjet {
   autorisation: SaisieAutorisation | null;
   artistes: string[];
   assetsBibliotheque: string[];
+  futurRoman: boolean;
 }
 
 export interface MetadataProjet {
@@ -146,6 +147,7 @@ export interface MetadataProjet {
   datePublicationPrevue: string;
   sessionClaude: string | null;
   creeLe: string;
+  futurRoman: boolean;
 }
 
 export interface Projet {
@@ -200,6 +202,7 @@ export const schemaSaisieProjet = z.object({
   autorisation: schemaSaisieAutorisation.nullable(),
   artistes: z.array(z.string()),
   assetsBibliotheque: z.array(z.string()),
+  futurRoman: z.boolean(),
 }) satisfies z.ZodType<SaisieProjet>;
 
 export const schemaMetadataProjet = z.object({
@@ -220,6 +223,7 @@ export const schemaMetadataProjet = z.object({
   datePublicationPrevue: z.iso.date(),
   sessionClaude: z.string().nullable(),
   creeLe: z.string(),
+  futurRoman: z.boolean(),
 }) satisfies z.ZodType<MetadataProjet>;
 
 export const PLATEFORMES_PAR_SORTIE: Record<Sortie, readonly PlateformeAutorisation[]> = {
@@ -285,3 +289,22 @@ export interface ReponseFichiersProjet {
   fichiers: FichierMedia[];
   ffprobeDisponible: boolean;
 }
+
+export interface ModificationProjet extends Omit<SaisieProjet, "chaine" | "fichiers"> {
+  description: { fr: string; en: string };
+  notes: Record<string, string>;
+}
+
+export interface ReponseModificationProjet {
+  projet: Projet;
+  avertissements: string[];
+}
+
+export const schemaModificationProjet = schemaSaisieProjet.omit({ chaine: true, fichiers: true }).extend({
+  description: z.object({ fr: texte(5000), en: texte(5000) }),
+  notes: z.record(z.string(), texte(1000)),
+}) satisfies z.ZodType<ModificationProjet>;
+
+export const schemaAjoutFichiers = z.object({
+  fichiers: schemaSaisieProjet.shape.fichiers.min(1, "Choisis au moins un fichier."),
+});

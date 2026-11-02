@@ -6,6 +6,7 @@ import {
   type SaisieAutorisation,
 } from "@editeur/shared";
 import { Link } from "react-router";
+import { ApercuFichier } from "../../composants/ApercuFichier.tsx";
 import { ChampTexte } from "../../composants/Champs.tsx";
 
 export interface ChampsAuteur {
@@ -15,6 +16,7 @@ export interface ChampsAuteur {
   source: string;
   autorisation: SaisieAutorisation;
   preuve: File | null;
+  futurRoman: boolean;
 }
 
 export const CHAMPS_AUTEUR_VIDES: ChampsAuteur = {
@@ -31,6 +33,7 @@ export const CHAMPS_AUTEUR_VIDES: ChampsAuteur = {
     plateformes: [],
   },
   preuve: null,
+  futurRoman: false,
 };
 
 interface ProprietesSectionAuteur {
@@ -39,6 +42,7 @@ interface ProprietesSectionAuteur {
   auteurs: Auteur[];
   surActualiser: () => void;
   anglais: boolean;
+  preuveActuelle?: string | null;
 }
 
 function Case({ libelle, valeur, surChangement }: { libelle: string; valeur: boolean; surChangement: (valeur: boolean) => void }) {
@@ -50,7 +54,7 @@ function Case({ libelle, valeur, surChangement }: { libelle: string; valeur: boo
   );
 }
 
-export function SectionAuteur({ champs, surChangement, auteurs, surActualiser, anglais }: ProprietesSectionAuteur) {
+export function SectionAuteur({ champs, surChangement, auteurs, surActualiser, anglais, preuveActuelle = null }: ProprietesSectionAuteur) {
   const { autorisation } = champs;
   const modifierAutorisation = (changement: Partial<SaisieAutorisation>) =>
     surChangement({ autorisation: { ...autorisation, ...changement } });
@@ -70,14 +74,21 @@ export function SectionAuteur({ champs, surChangement, auteurs, surActualiser, a
       </div>
 
       {champs.mode === "moi" ? (
-        <ChampTexte
-          large
-          libelle="Signature"
-          valeur={champs.nomUtilisateur}
-          surChangement={(nomUtilisateur) => surChangement({ nomUtilisateur })}
-          indication="ton pseudo"
-          aide="La vidéo commencera par « Une histoire originale de … », avec un renvoi vers la chaîne Création."
-        />
+        <>
+          <ChampTexte
+            large
+            libelle="Signature"
+            valeur={champs.nomUtilisateur}
+            surChangement={(nomUtilisateur) => surChangement({ nomUtilisateur })}
+            indication="ton pseudo"
+            aide="La vidéo commencera par « Une histoire originale de … », avec un renvoi vers la chaîne Création."
+          />
+          <Case
+            libelle="Histoire destinée à devenir un roman : n'en publier que des extraits"
+            valeur={champs.futurRoman}
+            surChangement={(futurRoman) => surChangement({ futurRoman })}
+          />
+        </>
       ) : (
         <>
           <label className="champ">
@@ -148,8 +159,9 @@ export function SectionAuteur({ champs, surChangement, auteurs, surActualiser, a
               />
             ))}
           </div>
+          {preuveActuelle !== null && <ApercuFichier chemin={preuveActuelle} />}
           <label className="champ">
-            <span className="champ-libelle">Preuve de l'accord</span>
+            <span className="champ-libelle">{preuveActuelle !== null ? "Remplacer la preuve" : "Preuve de l'accord"}</span>
             <input
               type="file"
               accept={EXTENSIONS_PREUVE.join(",")}

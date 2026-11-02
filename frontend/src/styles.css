@@ -795,3 +795,7 @@ input[type="file"] {
   width: 10%;
   text-align: right;
 }
+
+.actions-section {
+  margin: -10px 0 24px;
+}
