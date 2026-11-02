@@ -3,6 +3,18 @@ import { z } from "zod";
 z.config(z.locales.fr());
 
 export type { ReponseConfigMachine, ReponseErreur, ReponseSante } from "./api.ts";
+export {
+  FICHE_ARTISTE_VIDE,
+  schemaFicheArtiste,
+  schemaSaisieArtiste,
+  type AccordArtiste,
+  type Artiste,
+  type ArtisteIllisible,
+  type FicheArtiste,
+  type ReponseListeArtistes,
+  type SaisieArtiste,
+  type StatutAccord,
+} from "./artistes.ts";
 export { CATEGORIES, LIBELLES_CATEGORIES, type Categorie } from "./categories.ts";
 export {
   PARAMETRES_PAR_DEFAUT,

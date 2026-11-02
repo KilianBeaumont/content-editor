@@ -1,4 +1,6 @@
 import { NavLink, Route, Routes } from "react-router";
+import { AuteursArtistes } from "./pages/auteurs-artistes/AuteursArtistes.tsx";
+import { PageArtiste } from "./pages/auteurs-artistes/PageArtiste.tsx";
 import { AVenir } from "./pages/AVenir.tsx";
 import { Parametres } from "./pages/parametres/Parametres.tsx";
 import { TableauDeBord } from "./pages/TableauDeBord.tsx";
@@ -17,7 +19,7 @@ export function App() {
       <nav className="menu">
         <p className="menu-titre">Éditeur</p>
         {MENU.map((entree) => (
-          <NavLink key={entree.chemin} to={entree.chemin} end>
+          <NavLink key={entree.chemin} to={entree.chemin} end={entree.chemin === "/"}>
             {entree.libelle}
           </NavLink>
         ))}
@@ -28,7 +30,9 @@ export function App() {
           <Route path="/nouveau-projet" element={<AVenir titre="Nouveau projet" etape={7} />} />
           <Route path="/projets/:id" element={<AVenir titre="Projet" etape={9} />} />
           <Route path="/bibliotheque" element={<AVenir titre="Bibliothèque" etape={5} />} />
-          <Route path="/auteurs-artistes" element={<AVenir titre="Auteurs et artistes" etape={3} />} />
+          <Route path="/auteurs-artistes" element={<AuteursArtistes />} />
+          <Route path="/auteurs-artistes/artistes/nouveau" element={<PageArtiste key="nouveau" />} />
+          <Route path="/auteurs-artistes/artistes/:id" element={<PageArtiste />} />
           <Route path="/parametres" element={<Parametres />} />
           <Route path="*" element={<h1>Page introuvable</h1>} />
         </Routes>

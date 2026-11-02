@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { readFile, rename, rm, writeFile } from "node:fs/promises";
+import { access, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { basename, isAbsolute, relative, resolve } from "node:path";
 import { setTimeout as attendre } from "node:timers/promises";
 import { z } from "zod";
@@ -22,6 +22,15 @@ export function cheminSur(racine: string, cheminRelatif: string): string {
     throw new CheminInterditError(`Chemin interdit : ${cheminRelatif}`);
   }
   return absolu;
+}
+
+export async function existe(chemin: string): Promise<boolean> {
+  try {
+    await access(chemin);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function lireTexte(chemin: string): Promise<string> {
@@ -66,7 +75,7 @@ export async function lireJsonAvecDefauts<T>(chemin: string, schema: z.ZodType<T
   return resultat.data;
 }
 
-async function renommer(source: string, cible: string): Promise<void> {
+export async function renommer(source: string, cible: string): Promise<void> {
   for (let essai = 1; ; essai++) {
     try {
       await rename(source, cible);
