@@ -1,21 +1,44 @@
 import { resolve } from "node:path";
 import { creerApp } from "./app.ts";
+import { ConfigInvalideError, lireConfigMachine, RACINE_DEPOT } from "./config.ts";
+import { initialiserCreations } from "./creations/initialisation.ts";
+import { codeErreur } from "./erreurs.ts";
 
 const HOTE = "127.0.0.1";
 const PORT = 4317;
 
-const app = await creerApp({
-  dossierInterface: resolve(import.meta.dirname, "../../frontend/dist"),
-});
+function arreter(message: string): never {
+  console.error(message);
+  process.exit(1);
+}
 
-try {
+async function demarrer(): Promise<void> {
+  const config = await lireConfigMachine(RACINE_DEPOT);
+  const { crees } = await initialiserCreations(config.creations);
+  console.log(`Dossier creations : ${config.creations}`);
+  if (crees.length > 0) {
+    console.log(`  ${crees.length} ${crees.length === 1 ? "élément créé" : "éléments créés"}.`);
+  }
+
+  const app = await creerApp({
+    dossierInterface: resolve(RACINE_DEPOT, "frontend/dist"),
+  });
   await app.listen({ host: HOTE, port: PORT });
   console.log(`Éditeur prêt : http://${HOTE}:${PORT}`);
+}
+
+try {
+  await demarrer();
 } catch (erreur) {
-  if (erreur instanceof Error && "code" in erreur && erreur.code === "EADDRINUSE") {
-    console.error(`Le port ${PORT} est déjà utilisé : l'éditeur tourne peut-être déjà.`);
-  } else {
-    console.error(erreur);
+  if (erreur instanceof ConfigInvalideError) {
+    arreter(erreur.message);
   }
+  if (codeErreur(erreur) === "EADDRINUSE") {
+    arreter(`Le port ${PORT} est déjà utilisé : l'éditeur tourne peut-être déjà.`);
+  }
+  if (codeErreur(erreur) === "EACCES" || codeErreur(erreur) === "EPERM") {
+    arreter(`Accès refusé : ${erreur instanceof Error ? erreur.message : String(erreur)}`);
+  }
+  console.error(erreur);
   process.exit(1);
 }

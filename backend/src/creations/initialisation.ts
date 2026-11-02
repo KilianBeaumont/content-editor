@@ -1,0 +1,64 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { CATEGORIES, PARAMETRES_PAR_DEFAUT } from "@editeur/shared";
+import { codeErreur } from "../erreurs.ts";
+import { modeleHooks, modeleStyle } from "./modeles.ts";
+
+const DOSSIERS_BIBLIOTHEQUE = {
+  commun: ["identite", "composants", "sons"],
+  creation: ["identite", "composants", "generiques", "musiques", "modeles-miniatures"],
+  recits: ["identite", "composants", "generiques", "musiques", "ambiances-sonores", "modeles-miniatures"],
+};
+
+function dossiers(): string[] {
+  const liste = ["inbox", "artistes", "auteurs", "chaine-creation", "chaine-recits", "corbeille"];
+  for (const categorie of CATEGORIES) {
+    liste.push(`guides/${categorie}/inspiration/videos`, `guides/${categorie}/inspiration/analyses`);
+  }
+  for (const [chaine, sousDossiers] of Object.entries(DOSSIERS_BIBLIOTHEQUE)) {
+    liste.push(...sousDossiers.map((sousDossier) => `bibliotheque/${chaine}/${sousDossier}`));
+  }
+  return liste;
+}
+
+function fichiers(): Array<{ chemin: string; contenu: string }> {
+  const liste = [
+    { chemin: "parametres.json", contenu: `${JSON.stringify(PARAMETRES_PAR_DEFAUT, null, 2)}\n` },
+    { chemin: "bibliotheque/catalogue.json", contenu: `${JSON.stringify({ assets: [] }, null, 2)}\n` },
+  ];
+  for (const categorie of CATEGORIES) {
+    liste.push(
+      { chemin: `guides/${categorie}/style.md`, contenu: modeleStyle(categorie) },
+      { chemin: `guides/${categorie}/hooks.md`, contenu: modeleHooks(categorie) },
+    );
+  }
+  return liste;
+}
+
+export interface RapportInitialisation {
+  crees: string[];
+}
+
+export async function initialiserCreations(racine: string): Promise<RapportInitialisation> {
+  const crees: string[] = [];
+
+  for (const dossier of dossiers()) {
+    const premierCree = await mkdir(join(racine, dossier), { recursive: true });
+    if (premierCree !== undefined) {
+      crees.push(`${dossier}/`);
+    }
+  }
+
+  for (const { chemin, contenu } of fichiers()) {
+    try {
+      await writeFile(join(racine, chemin), contenu, { encoding: "utf8", flag: "wx" });
+      crees.push(chemin);
+    } catch (erreur) {
+      if (codeErreur(erreur) !== "EEXIST") {
+        throw erreur;
+      }
+    }
+  }
+
+  return { crees };
+}
