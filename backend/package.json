@@ -1,0 +1,14 @@
+{
+  "name": "@editeur/backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.ts",
+    "start": "node src/server.ts"
+  },
+  "dependencies": {
+    "@editeur/shared": "*",
+    "@fastify/static": "^10.1.8",
+    "fastify": "^5.12.8"
+  }
+}
