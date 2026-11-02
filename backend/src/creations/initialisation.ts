@@ -1,22 +1,16 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { CATEGORIES, PARAMETRES_PAR_DEFAUT } from "@editeur/shared";
+import { CATEGORIES, CHAINES_BIBLIOTHEQUE, PARAMETRES_PAR_DEFAUT, TYPES, TYPES_ASSET } from "@editeur/shared";
 import { codeErreur } from "../erreurs.ts";
 import { modeleHooks, modeleStyle } from "./modeles.ts";
-
-const DOSSIERS_BIBLIOTHEQUE = {
-  commun: ["identite", "composants", "sons"],
-  creation: ["identite", "composants", "generiques", "musiques", "modeles-miniatures"],
-  recits: ["identite", "composants", "generiques", "musiques", "ambiances-sonores", "modeles-miniatures"],
-};
 
 function dossiers(): string[] {
   const liste = ["inbox", "artistes", "auteurs", "chaine-creation", "chaine-recits", "corbeille"];
   for (const categorie of CATEGORIES) {
     liste.push(`guides/${categorie}/inspiration/videos`, `guides/${categorie}/inspiration/analyses`);
   }
-  for (const [chaine, sousDossiers] of Object.entries(DOSSIERS_BIBLIOTHEQUE)) {
-    liste.push(...sousDossiers.map((sousDossier) => `bibliotheque/${chaine}/${sousDossier}`));
+  for (const chaine of CHAINES_BIBLIOTHEQUE) {
+    liste.push(...TYPES_ASSET.map((type) => `bibliotheque/${chaine}/${TYPES[type].dossier}`));
   }
   return liste;
 }

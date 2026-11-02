@@ -1,10 +1,10 @@
-import { mkdir, readdir } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { Readable } from "node:stream";
 import {
+  EXTENSIONS_PREUVE,
   FICHE_ARTISTE_VIDE,
   schemaFicheArtiste,
-  slug,
   type AccordArtiste,
   type Artiste,
   type FicheArtiste,
@@ -12,31 +12,27 @@ import {
   type SaisieArtiste,
   type StatutAccord,
 } from "@editeur/shared";
-import { z } from "zod";
-import { mettreALaCorbeille } from "../corbeille.ts";
-import { codeErreur, ErreurHttp } from "../erreurs.ts";
+import { ErreurHttp } from "../erreurs.ts";
 import {
-  cheminSur,
-  ecrireJsonAtomique,
-  existe,
-  FichierInvalideError,
-  fusionnerAvecDefauts,
-  lireTexte,
-} from "../fichiers.ts";
+  creerFiche,
+  dossierFiche,
+  ecrireFiche,
+  ficheALaCorbeille,
+  lireFiche,
+  listerFiches,
+  trierParNom,
+  type DossierFiches,
+} from "../fiches.ts";
+import { cheminSur, existe } from "../fichiers.ts";
 import { enregistrerFlux, nomLibre, verifierExtension } from "../televersement.ts";
 
-const DOSSIER_ARTISTES = "artistes";
-const FICHE = "fiche.json";
+const ARTISTES: DossierFiches<FicheArtiste> = {
+  racine: "artistes",
+  libelle: "Artiste",
+  schema: schemaFicheArtiste,
+  vide: FICHE_ARTISTE_VIDE,
+};
 const DOSSIER_ACCORD = "accord";
-const MOTIF_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-export const EXTENSIONS_PREUVE = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".pdf", ".txt", ".eml"] as const;
-
-function dossierArtiste(creations: string, id: string): string {
-  if (!MOTIF_ID.test(id)) {
-    throw new ErreurHttp(404, `Artiste introuvable : ${id}`);
-  }
-  return cheminSur(creations, `${DOSSIER_ARTISTES}/${id}`);
-}
 
 export async function statutAccord(dossier: string, accord: AccordArtiste): Promise<StatutAccord> {
   const problemes: string[] = [];
@@ -59,91 +55,34 @@ export async function statutAccord(dossier: string, accord: AccordArtiste): Prom
   return { valide: problemes.length === 0, problemes };
 }
 
-async function lireFiche(dossier: string): Promise<FicheArtiste> {
-  let brut: unknown;
-  try {
-    brut = JSON.parse(await lireTexte(join(dossier, FICHE)));
-  } catch (erreur) {
-    if (codeErreur(erreur) === "ENOENT") {
-      throw new FichierInvalideError(`${FICHE} manquant.`);
-    }
-    if (erreur instanceof SyntaxError) {
-      throw new FichierInvalideError(`${FICHE} n'est pas un JSON valide : ${erreur.message}`);
-    }
-    throw erreur;
-  }
-  const resultat = schemaFicheArtiste.safeParse(fusionnerAvecDefauts(FICHE_ARTISTE_VIDE, brut));
-  if (!resultat.success) {
-    throw new FichierInvalideError(`${FICHE} invalide :\n${z.prettifyError(resultat.error)}`);
-  }
-  return resultat.data;
-}
-
-export async function lireArtiste(creations: string, id: string): Promise<Artiste> {
-  const dossier = dossierArtiste(creations, id);
-  if (!(await existe(dossier))) {
-    throw new ErreurHttp(404, `Artiste introuvable : ${id}`);
-  }
-  const fiche = await lireFiche(dossier);
+async function versArtiste(id: string, dossier: string, fiche: FicheArtiste): Promise<Artiste> {
   return { id, fiche, statut: await statutAccord(dossier, fiche.accord) };
 }
 
+export async function lireArtiste(creations: string, id: string): Promise<Artiste> {
+  const { dossier, fiche } = await lireFiche(creations, ARTISTES, id);
+  return versArtiste(id, dossier, fiche);
+}
+
 export async function listerArtistes(creations: string): Promise<ReponseListeArtistes> {
-  const reponse: ReponseListeArtistes = { artistes: [], illisibles: [] };
-  let entrees;
-  try {
-    entrees = await readdir(cheminSur(creations, DOSSIER_ARTISTES), { withFileTypes: true });
-  } catch (erreur) {
-    if (codeErreur(erreur) === "ENOENT") return reponse;
-    throw erreur;
-  }
-
-  for (const entree of entrees) {
-    if (!entree.isDirectory() || entree.name.startsWith(".")) continue;
-    if (!MOTIF_ID.test(entree.name)) {
-      reponse.illisibles.push({
-        id: entree.name,
-        erreur: "Nom de dossier non conforme : minuscules sans accents ni espaces, mots séparés par des tirets.",
-      });
-      continue;
-    }
-    try {
-      reponse.artistes.push(await lireArtiste(creations, entree.name));
-    } catch (erreur) {
-      reponse.illisibles.push({ id: entree.name, erreur: erreur instanceof Error ? erreur.message : String(erreur) });
-    }
-  }
-
-  reponse.artistes.sort((a, b) => a.fiche.nom.localeCompare(b.fiche.nom, "fr"));
-  return reponse;
+  const { fiches, illisibles } = await listerFiches(creations, ARTISTES);
+  const artistes = await Promise.all(fiches.map(({ id, dossier, fiche }) => versArtiste(id, dossier, fiche)));
+  return { artistes: trierParNom(artistes), illisibles };
 }
 
 export async function creerArtiste(creations: string, saisie: SaisieArtiste): Promise<Artiste> {
-  const id = slug(saisie.nom);
-  const dossier = dossierArtiste(creations, id);
-  await mkdir(cheminSur(creations, DOSSIER_ARTISTES), { recursive: true });
-  try {
-    await mkdir(dossier);
-  } catch (erreur) {
-    if (codeErreur(erreur) === "EEXIST") {
-      throw new ErreurHttp(409, `Une fiche existe déjà pour « ${id} ».`);
-    }
-    throw erreur;
-  }
-  await mkdir(join(dossier, DOSSIER_ACCORD));
   const fiche: FicheArtiste = { ...saisie, accord: { ...saisie.accord, preuve: null }, videos: [] };
-  await ecrireJsonAtomique(join(dossier, FICHE), fiche);
+  const id = await creerFiche(creations, ARTISTES, saisie.nom, fiche, [DOSSIER_ACCORD]);
   return lireArtiste(creations, id);
 }
 
 export async function modifierArtiste(creations: string, id: string, saisie: SaisieArtiste): Promise<Artiste> {
   const actuel = await lireArtiste(creations, id);
-  const fiche: FicheArtiste = {
+  await ecrireFiche(creations, ARTISTES, id, {
     ...saisie,
     accord: { ...saisie.accord, preuve: actuel.fiche.accord.preuve },
     videos: actuel.fiche.videos,
-  };
-  await ecrireJsonAtomique(join(dossierArtiste(creations, id), FICHE), fiche);
+  });
   return lireArtiste(creations, id);
 }
 
@@ -156,7 +95,7 @@ export async function supprimerArtiste(creations: string, id: string): Promise<s
       `${actuel.fiche.nom} a participé à ${nombre} ${nombre === 1 ? "vidéo" : "vidéos"} : sa fiche est conservée.`,
     );
   }
-  return mettreALaCorbeille(creations, `${DOSSIER_ARTISTES}/${id}`, DOSSIER_ARTISTES);
+  return ficheALaCorbeille(creations, ARTISTES, id);
 }
 
 export async function enregistrerPreuve(
@@ -167,12 +106,14 @@ export async function enregistrerPreuve(
 ): Promise<Artiste> {
   verifierExtension(nomFichier, EXTENSIONS_PREUVE);
   const actuel = await lireArtiste(creations, id);
-  const dossierAccord = join(dossierArtiste(creations, id), DOSSIER_ACCORD);
+  const dossierAccord = join(dossierFiche(creations, ARTISTES, id), DOSSIER_ACCORD);
   await mkdir(dossierAccord, { recursive: true });
   const nom = await nomLibre(dossierAccord, nomFichier, "preuve");
   await enregistrerFlux(flux, dossierAccord, nom);
 
-  const fiche: FicheArtiste = { ...actuel.fiche, accord: { ...actuel.fiche.accord, preuve: `${DOSSIER_ACCORD}/${nom}` } };
-  await ecrireJsonAtomique(join(dossierArtiste(creations, id), FICHE), fiche);
+  await ecrireFiche(creations, ARTISTES, id, {
+    ...actuel.fiche,
+    accord: { ...actuel.fiche.accord, preuve: `${DOSSIER_ACCORD}/${nom}` },
+  });
   return lireArtiste(creations, id);
 }

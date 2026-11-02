@@ -1,7 +1,11 @@
 import { NavLink, Route, Routes } from "react-router";
 import { AuteursArtistes } from "./pages/auteurs-artistes/AuteursArtistes.tsx";
 import { PageArtiste } from "./pages/auteurs-artistes/PageArtiste.tsx";
+import { PageAuteur } from "./pages/auteurs-artistes/PageAuteur.tsx";
 import { AVenir } from "./pages/AVenir.tsx";
+import { Bibliotheque } from "./pages/bibliotheque/Bibliotheque.tsx";
+import { NouvelAsset } from "./pages/bibliotheque/NouvelAsset.tsx";
+import { PageAsset } from "./pages/bibliotheque/PageAsset.tsx";
 import { Parametres } from "./pages/parametres/Parametres.tsx";
 import { TableauDeBord } from "./pages/TableauDeBord.tsx";
 
@@ -29,10 +33,14 @@ export function App() {
           <Route path="/" element={<TableauDeBord />} />
           <Route path="/nouveau-projet" element={<AVenir titre="Nouveau projet" etape={7} />} />
           <Route path="/projets/:id" element={<AVenir titre="Projet" etape={9} />} />
-          <Route path="/bibliotheque" element={<AVenir titre="Bibliothèque" etape={5} />} />
+          <Route path="/bibliotheque" element={<Bibliotheque />} />
+          <Route path="/bibliotheque/nouveau" element={<NouvelAsset />} />
+          <Route path="/bibliotheque/assets/:id" element={<PageAsset />} />
           <Route path="/auteurs-artistes" element={<AuteursArtistes />} />
           <Route path="/auteurs-artistes/artistes/nouveau" element={<PageArtiste key="nouveau" />} />
           <Route path="/auteurs-artistes/artistes/:id" element={<PageArtiste />} />
+          <Route path="/auteurs-artistes/auteurs/nouveau" element={<PageAuteur key="nouveau" />} />
+          <Route path="/auteurs-artistes/auteurs/:id" element={<PageAuteur />} />
           <Route path="/parametres" element={<Parametres />} />
           <Route path="*" element={<h1>Page introuvable</h1>} />
         </Routes>

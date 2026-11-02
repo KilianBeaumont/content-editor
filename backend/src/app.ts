@@ -9,6 +9,8 @@ import type { Contexte } from "./contexte.ts";
 import { codeErreur, ErreurHttp } from "./erreurs.ts";
 import { CheminInterditError, FichierInvalideError } from "./fichiers.ts";
 import { routesArtistes } from "./routes/artistes.ts";
+import { routesAuteurs } from "./routes/auteurs.ts";
+import { routesBibliotheque } from "./routes/bibliotheque.ts";
 import { routesFichiers } from "./routes/fichiers.ts";
 import { routesParametres } from "./routes/parametres.ts";
 import { routesSante } from "./routes/sante.ts";
@@ -25,6 +27,8 @@ const MESSAGES_FASTIFY: Record<string, string> = {
   FST_ERR_CTP_EMPTY_JSON_BODY: "Le corps JSON est vide.",
   FST_ERR_CTP_INVALID_JSON_BODY: "Le corps de la requête n'est pas un JSON valide.",
 };
+
+const CODES_ENVOI_INTERROMPU = new Set(["ECONNRESET", "FST_MP_PREMATURE_CLOSE"]);
 
 function erreur(message: string): ReponseErreur {
   return { erreur: message };
@@ -53,6 +57,10 @@ export async function creerApp(options: OptionsApp): Promise<FastifyInstance> {
     if (err instanceof FichierInvalideError) {
       return reponse.code(500).send(erreur(err.message));
     }
+    if (CODES_ENVOI_INTERROMPU.has(codeErreur(err) ?? "")) {
+      console.warn("Envoi interrompu : le navigateur a coupé la connexion (page fermée ou rechargée, ou envoi annulé).");
+      return reponse.code(400).send(erreur("Envoi interrompu."));
+    }
     const statut = codeHttp(err);
     if (statut !== undefined && statut < 500) {
       const message = MESSAGES_FASTIFY[codeErreur(err) ?? ""] ?? (err instanceof Error ? err.message : "Requête invalide");
@@ -69,14 +77,17 @@ export async function creerApp(options: OptionsApp): Promise<FastifyInstance> {
   await app.register(fastifyStatic, {
     root: servirInterface ? dossier : options.contexte.config.creations,
     serve: servirInterface,
+    wildcard: false,
   });
 
   await app.register(routesSante, { prefix: "/api" });
   await app.register(routesParametres(options.contexte), { prefix: "/api" });
   await app.register(routesArtistes(options.contexte), { prefix: "/api" });
+  await app.register(routesAuteurs(options.contexte), { prefix: "/api" });
+  await app.register(routesBibliotheque(options.contexte), { prefix: "/api" });
   await app.register(routesFichiers(options.contexte), { prefix: "/api" });
 
-  app.setNotFoundHandler((requete, reponse) => {
+  app.setNotFoundHandler(async (requete, reponse) => {
     if (servirInterface && requete.method === "GET" && !requete.url.startsWith("/api/")) {
       return reponse.sendFile("index.html");
     }

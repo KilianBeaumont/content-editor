@@ -1,6 +1,6 @@
 import { access, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { Artiste, ReponseListeArtistes, SaisieArtiste } from "@editeur/shared";
+import { TAILLE_MAX_PREUVE, type Artiste, type ReponseListeArtistes, type SaisieArtiste } from "@editeur/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { corpsAvecFichier, preparerEnvironnementTest, type EnvironnementTest } from "../test-outils.ts";
 
@@ -30,7 +30,7 @@ describe("routes des artistes", () => {
     return reponse.json<Artiste>();
   }
 
-  async function envoyerPreuve(id: string, nomFichier: string, contenu = "contenu de la preuve") {
+  async function envoyerPreuve(id: string, nomFichier: string, contenu: Buffer | string = "contenu de la preuve") {
     return env.app.inject({ method: "POST", url: `/api/artistes/${id}/preuve`, ...corpsAvecFichier(nomFichier, contenu) });
   }
 
@@ -95,6 +95,14 @@ describe("routes des artistes", () => {
     await creer();
     const reponse = await envoyerPreuve("elise-moreau", "programme.exe");
     expect(reponse.statusCode).toBe(400);
+    expect(await readdir(join(dossierArtistes(), "elise-moreau", "accord"))).toEqual([]);
+  });
+
+  it("refuse une preuve trop volumineuse au lieu de l'enregistrer tronquée", async () => {
+    await creer();
+    const reponse = await envoyerPreuve("elise-moreau", "accord.pdf", Buffer.alloc(TAILLE_MAX_PREUVE + 1024));
+    expect(reponse.statusCode).toBe(413);
+    expect(reponse.json()).toEqual({ erreur: "Fichier trop volumineux." });
     expect(await readdir(join(dossierArtistes(), "elise-moreau", "accord"))).toEqual([]);
   });
 

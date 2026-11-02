@@ -1,14 +1,13 @@
-import type { Artiste, SaisieArtiste } from "@editeur/shared";
+import { EXTENSIONS_PREUVE, TAILLE_MAX_PREUVE, type Artiste, type SaisieArtiste } from "@editeur/shared";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { envoyerFichier, envoyerJson, lireJson, messageErreur } from "../../api.ts";
+import { envoyerJson, lireJson, messageErreur, verifierFichier } from "../../api.ts";
 import { ApercuFichier } from "../../composants/ApercuFichier.tsx";
 import { ChampTexte } from "../../composants/Champs.tsx";
 import { depuisLiens, EditeurLiens, versLiens, type Lien } from "../../composants/EditeurLiens.tsx";
+import { BarreEnvoi, useEnvoi } from "../../composants/Envoi.tsx";
 import { Message } from "../../composants/Message.tsx";
 import { BadgeAccord } from "./AuteursArtistes.tsx";
-
-const EXTENSIONS_PREUVE = ".png,.jpg,.jpeg,.webp,.gif,.pdf,.txt,.eml";
 
 interface Formulaire {
   nom: string;
@@ -55,19 +54,19 @@ function versSaisie(formulaire: Formulaire): SaisieArtiste {
 
 function SectionPreuve({ artiste, surMiseAJour }: { artiste: Artiste; surMiseAJour: (artiste: Artiste) => void }) {
   const [erreur, setErreur] = useState<string | null>(null);
-  const [enCours, setEnCours] = useState(false);
+  const { progression, envoyer: envoyerPreuve, annuler } = useEnvoi();
+  const enCours = progression !== null;
   const preuve = artiste.fiche.accord.preuve;
 
   async function envoyer(fichier: File | undefined) {
     if (fichier === undefined) return;
-    setEnCours(true);
-    setErreur(null);
+    const probleme = verifierFichier(fichier, EXTENSIONS_PREUVE, TAILLE_MAX_PREUVE);
+    setErreur(probleme);
+    if (probleme !== null) return;
     try {
-      surMiseAJour(await envoyerFichier<Artiste>(`/api/artistes/${artiste.id}/preuve`, fichier));
+      surMiseAJour(await envoyerPreuve<Artiste>(`/api/artistes/${artiste.id}/preuve`, fichier));
     } catch (e) {
       setErreur(messageErreur(e));
-    } finally {
-      setEnCours(false);
     }
   }
 
@@ -93,7 +92,7 @@ function SectionPreuve({ artiste, surMiseAJour }: { artiste: Artiste; surMiseAJo
         {enCours ? "Envoi…" : preuve === null ? "Ajouter une preuve" : "Remplacer la preuve"}
         <input
           type="file"
-          accept={EXTENSIONS_PREUVE}
+          accept={EXTENSIONS_PREUVE.join(",")}
           hidden
           disabled={enCours}
           onChange={(evenement) => {
@@ -102,6 +101,7 @@ function SectionPreuve({ artiste, surMiseAJour }: { artiste: Artiste; surMiseAJo
           }}
         />
       </label>
+      {progression !== null && <BarreEnvoi progression={progression} surAnnulation={annuler} />}
       {erreur && <Message type="erreur">{erreur}</Message>}
     </section>
   );

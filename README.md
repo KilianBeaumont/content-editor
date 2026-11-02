@@ -1,21 +1,208 @@
 # Éditeur vidéo local
 
-Outil personnel qui organise, monte et découpe les vidéos et podcasts des deux chaînes. Le contexte complet est dans `CLAUDE.md`, l'étude des dépôts d'inspiration dans `docs/inspirations.md`.
+Outil personnel qui organise, monte et découpe les vidéos et podcasts des deux chaînes, puis range chaque version dans le bon dossier. Tout se pilote depuis une interface web locale. La publication reste manuelle.
 
-## Prérequis
+Ce fichier est le **guide d'utilisation** : quoi faire, dans quel ordre, pour chaque tâche. Il est complété à chaque étape du développement. Le contexte complet du projet est dans `CLAUDE.md`, l'étude des dépôts d'inspiration dans `docs/inspirations.md`.
 
-- Node.js 24 ou plus récent
-- ffmpeg et ffprobe
-- Claude Code (`claude`), connecté à l'abonnement
+## Sommaire
 
-## Commandes
+1. [Ce qui est disponible aujourd'hui](#ce-qui-est-disponible-aujourdhui)
+2. [Installer l'outil sur une machine](#installer-loutil-sur-une-machine)
+3. [Lancer l'outil](#lancer-loutil)
+4. [Où sont les fichiers](#où-sont-les-fichiers)
+5. [Guide par tâche](#guide-par-tâche)
+6. [Règles à connaître](#règles-à-connaître)
+7. [En cas de problème](#en-cas-de-problème)
+8. [Développement](#développement)
+
+## Ce qui est disponible aujourd'hui
+
+Phase 1 (le socle), en cours.
+
+| Étape | Contenu | État |
+| --- | --- | --- |
+| 0 | Squelette du dépôt | ✅ |
+| 1 | Configuration et arborescence de `creations/` | ✅ |
+| 2 | Écran Paramètres, vérification des programmes et de Claude | ✅ |
+| 3 | Fiches artistes, accords et preuves | ✅ |
+| 4 | Fiches auteurs et autrices | ✅ |
+| 5 | Bibliothèque d'assets | ✅ |
+| 6 | Inbox : rushes déposés ou glissés dans l'interface | à venir |
+| 7 | Création d'un projet : pistes audio FR et EN pour les récits, choix des assets de la bibliothèque | à venir |
+| 8 | Règles d'autorisation avant export | à venir |
+| 9 | Tableau de bord et écran Projet | à venir |
+| 10 | Modifier, renommer, supprimer un projet | à venir |
+| 11 | Lanceur à double-cliquer (Windows et Mac) | à venir |
+
+Les phases suivantes (transcription, plan de montage, aperçus, exports, formats courts, podcast, statistiques) viendront après.
+
+## Installer l'outil sur une machine
+
+À faire une seule fois par ordinateur (PC Windows et MacBook).
+
+1. Installer les programmes nécessaires :
+   - **Node.js 24** ou plus récent ;
+   - **ffmpeg** et **ffprobe** ;
+   - **Claude Code** (`claude`), puis s'y connecter avec l'abonnement Claude (`claude` dans un terminal, puis suivre la connexion). Ne jamais créer ni renseigner de clé API.
+   - whisper.cpp viendra en phase 2 : il n'est pas encore utilisé.
+2. Dans le dossier du dépôt : `npm install`.
+3. Lancer l'outil (voir ci-dessous) et ouvrir l'écran **Paramètres**.
+4. Section **Cette machine** :
+   - **Dossier creations** : l'emplacement de tes créations. Par défaut `../creations`, à côté du dépôt. S'il n'existe pas, il est créé avec toute l'arborescence quand tu enregistres.
+   - Chemins de **ffmpeg**, **ffprobe**, **claude** et **whisper** : laisse le nom seul si le programme est trouvé, sinon mets le chemin complet. Chaque champ affiche si le programme est trouvé, avec sa version.
+   - **Enregistrer**, puis **Revérifier les programmes** si tu as installé quelque chose entre-temps.
+5. Section **Claude** : **Tester la connexion**. Le résultat doit indiquer l'abonnement (pas de clé API) et affiche ton utilisation sur 5 heures et sur 7 jours.
+
+Ces réglages sont propres à chaque machine (fichier `config.local.json`, jamais partagé). Les **Réglages communs** (préréglages d'export, modèle de transcription, modèle Claude, rendus simultanés) sont enregistrés dans `creations/parametres.json` et suivent le dossier `creations/`.
+
+## Lancer l'outil
+
+| Usage | Commande | Adresse |
+| --- | --- | --- |
+| Normal | `npm run build` (une fois après chaque mise à jour), puis `npm start` | http://127.0.0.1:4317 |
+| Développement | `npm run dev` | http://localhost:5173 |
+
+Pour arrêter : `Ctrl+C` dans le terminal. Si l'outil affiche « Le port 4317 est déjà utilisé », il tourne déjà dans une autre fenêtre.
+
+Au démarrage, l'outil affiche le dossier `creations/` utilisé et crée ce qui manque dans l'arborescence, sans jamais écraser un fichier existant.
+
+Un lanceur à double-cliquer (`Lancer.cmd` sous Windows, `Lancer.command` sur Mac) arrivera à l'étape 11.
+
+## Où sont les fichiers
+
+Tout ton contenu vit dans `creations/`, en dehors du dépôt. Les fichiers JSON et Markdown restent lisibles et modifiables à la main.
+
+| Dossier ou fichier | Contenu |
+| --- | --- |
+| `inbox/` | Rushes déposés en vrac, avant de créer un projet |
+| `guides/<catégorie>/style.md`, `hooks.md` | Ton guide de style et tes accroches, par catégorie |
+| `guides/<catégorie>/inspiration/videos/` | Vidéos de référence (privées, jamais exportées) |
+| `bibliotheque/` | Assets réutilisables et leur inventaire `catalogue.json` |
+| `artistes/<nom>/` | Fiche d'un artiste (`fiche.json`) et preuves de son accord (`accord/`) |
+| `auteurs/<nom>/` | Fiche d'un auteur ou d'une autrice (`fiche.json`) |
+| `chaine-creation/`, `chaine-recits/` | Les projets de chaque chaîne |
+| `corbeille/` | Ce qui a été supprimé depuis l'interface |
+| `parametres.json` | Réglages communs aux machines |
+
+Les noms de dossier sont en minuscules, sans accents ni espaces, avec des tirets : « Élise Moreau » devient `elise-moreau`. L'outil s'en charge.
+
+## Guide par tâche
+
+### Ajouter un artiste et enregistrer son accord
+
+À faire avant d'utiliser ses visuels dans une vidéo.
+
+1. **Auteurs et artistes** → **+ Nouvel artiste**.
+2. Remplir le nom ou pseudo, le contact (reste privé) et ses liens (Instagram, site…). Seules les adresses `http` ou `https` sont acceptées.
+3. Dans **Accord** : la date, et s'il accepte la monétisation et la réutilisation de ses visuels dans d'autres vidéos.
+4. **Créer la fiche**.
+5. Dans **Preuve de l'accord** : **Ajouter une preuve** (capture du message, PDF, e-mail ou texte, jusqu'à 50 Mo). Elle s'affiche dans la page.
+6. Le badge passe à **✓ Accord valide** quand la date est remplie et que le fichier de preuve existe.
+
+Bon à savoir :
+- Envoyer une nouvelle preuve ne supprime pas l'ancienne : toutes restent dans `artistes/<nom>/accord/`.
+- Renommer l'artiste ne renomme pas son dossier, pour ne pas casser les liens avec les projets.
+- Si le fichier de preuve est supprimé ou déplacé à la main, la fiche le signale et l'accord redevient incomplet.
+
+### Ajouter un auteur ou une autrice de récits
+
+1. **Auteurs et artistes** → **+ Nouvel auteur**.
+2. Remplir le nom ou pseudo, le contact (reste privé) et ses liens (Reddit, site…).
+3. **Créer la fiche**.
+
+L'autorisation de lire un récit (date, traduction anglaise, monétisation, plateformes, preuve) ne se met pas sur la fiche de l'auteur : elle se renseigne dans le projet de chaque récit, car elle peut varier d'une histoire à l'autre. Ce sera possible à l'étape 7. La liste des récits de l'auteur se remplira alors automatiquement.
+
+### Ajouter un asset à la bibliothèque
+
+La bibliothèque contient ce qui sert dans plusieurs vidéos. Sept types :
+
+| Type | Exemples | Dossier |
+| --- | --- | --- |
+| Police | polices de l'identité graphique | `polices/` |
+| Image | logos, illustrations, fonds, modèles de miniatures | `images/` |
+| Vidéo | génériques, transitions, animations | `videos/` |
+| Musique | musiques de fond ou de générique | `musiques/` |
+| Ambiance sonore | pluie, vent, taverne, forêt, en boucle sous la narration | `ambiances/` |
+| Son ponctuel | whoosh, pop, impact | `sons/` |
+| Voix | phrases qui reviennent d'une vidéo à l'autre (intro, outro, « abonne-toi »), en FR ou en EN | `voix/` |
+
+Chaque type existe pour les trois emplacements : **Commun aux deux chaînes**, **Création** et **Récits**. Les composants animés paramétrables (cartouche avec un nom, bouton d'abonnement) arriveront en phase 3.
+
+1. **Bibliothèque** → **+ Ajouter un asset**.
+2. Choisir le **fichier** (jusqu'à 4 Go). Le type est deviné d'après le format ; le changer si besoin (par exemple « Son ponctuel » au lieu de « Musique »).
+3. Choisir la **chaîne**. Le fichier sera rangé dans `bibliotheque/<chaîne>/<type>/` avec un nom sans accents ni espaces.
+4. Écrire une **description** : ce que c'est et quand l'utiliser. C'est elle que Claude lira pour proposer l'asset au montage.
+5. Ajouter des **étiquettes** pour regrouper les assets : « identité », « générique », « halloween », le nom d'une série… Les étiquettes déjà utilisées sont proposées en un clic.
+6. Pour une **voix**, indiquer sa **langue** (obligatoire). Pour une image ou une vidéo qui contient du texte, l'indiquer aussi : aucun texte en français ne doit apparaître sur les visuels des récits.
+7. Indiquer **qui l'a créé** :
+   - toi ;
+   - un artiste : le choisir dans la liste. Son accord doit être valide et autoriser la réutilisation, sinon l'asset est marqué « À vérifier » ;
+   - une source externe (banque de sons, musique libre…) : noter la licence et la mention à mettre dans la description des vidéos.
+8. **Ajouter à la bibliothèque**. Une barre montre l'avancement de l'envoi, avec un bouton **Annuler**. Garde la page ouverte jusqu'au bout : le navigateur te prévient si tu essaies de la quitter.
+
+Tu peux aussi déposer des fichiers directement dans les dossiers de `bibliotheque/` avec l'Explorateur ou le Finder. Ils apparaissent dans **Fichiers hors catalogue**, en bas de l'écran Bibliothèque : **Ajouter au catalogue** pour les décrire.
+
+Bon à savoir :
+- Chaque carte affiche un aperçu : image, vidéo, police (« Aa »), ou l'extension pour les sons. La page de l'asset permet d'écouter, de regarder ou de tester la police.
+- Filtres par chaîne, par type et par étiquette (clic sur une étiquette sous les filtres), et recherche dans les noms et descriptions.
+- « ✗ À vérifier » signale un fichier introuvable ou un problème d'accord d'artiste. Le détail est sur la page de l'asset.
+- L'emplacement d'un asset (chaîne, type) ne se change pas depuis l'interface. Pour le changer : le mettre à la corbeille et l'ajouter de nouveau.
+- Les assets propres à une seule vidéo (illustrations d'un récit, visuels d'un artiste invité) ne vont pas dans la bibliothèque mais dans le dossier `assets/` du projet : ce sera possible à la création du projet (étape 7) et depuis l'écran Projet.
+- La liste **Utilisations** d'un asset de la bibliothèque se remplira quand tu le choisiras pour une vidéo (étape 7) puis au montage (phase 3).
+- `bibliotheque/catalogue.json` reste modifiable à la main. Une entrée mal écrite est signalée, ignorée par l'outil, et conservée telle quelle dans le fichier.
+
+### Supprimer une fiche et la récupérer
+
+- Sur la fiche : **Mettre la fiche à la corbeille**, puis confirmer.
+- La fiche est déplacée dans `creations/corbeille/artistes/` ou `creations/corbeille/auteurs/`, avec la date dans le nom. Rien n'est effacé.
+- Pour la récupérer : déplacer le dossier à la main dans `artistes/` ou `auteurs/`, et lui redonner son nom d'origine (sans la date).
+- Une fiche liée à au moins une vidéo ou un récit ne peut pas être supprimée : elle sert d'historique des collaborations.
+- Même principe pour un asset de la bibliothèque : **Mettre à la corbeille** sur sa page déplace le fichier dans `corbeille/bibliotheque/` et le retire du catalogue. Pour le récupérer, remettre le fichier dans son dossier (sans la date dans le nom), puis **Ajouter au catalogue**. Un asset qui a servi dans une vidéo est conservé.
+- La corbeille ne se vide jamais toute seule : c'est à toi de le faire à la main.
+
+### Modifier un guide de style
+
+Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>/style.md` et `hooks.md` dans un éditeur de texte. Ils sont créés au premier lancement à partir du modèle de `CLAUDE.md`.
+
+### Changer de dossier creations ou passer d'une machine à l'autre
+
+1. **Paramètres** → **Cette machine** → **Dossier creations** → **Enregistrer**.
+2. Le nouveau dossier est créé avec l'arborescence s'il n'existe pas. L'ancien n'est ni déplacé ni supprimé.
+3. Tous les chemins enregistrés dans les JSON sont relatifs à `creations/` : un dossier copié ou partagé entre le PC et le Mac reste valide.
+
+## Règles à connaître
+
+- **Rushes intouchables** : l'outil ne modifie ni ne supprime jamais un fichier brut.
+- **Rien n'est effacé** depuis l'interface : tout passe par la corbeille.
+- **Artistes** : un projet qui contient des visuels d'un artiste ne pourra pas être exporté sans fiche avec accord daté et preuve.
+- **Auteurs** : un récit d'un autre auteur ne pourra pas être exporté sans autorisation et preuve. Une version anglaise exige l'accord pour la traduction.
+- **Claude** passe toujours par ton abonnement, via Claude Code. Aucune clé API n'est utilisée. Les appels comptent dans tes limites d'usage habituelles.
+- **Publication manuelle** : l'outil prépare les fichiers, c'est toi qui publies.
+
+## En cas de problème
+
+| Message ou symptôme | Que faire |
+| --- | --- |
+| « Backend injoignable » sur le tableau de bord | Le serveur ne tourne pas : relancer `npm run dev` ou `npm start` |
+| « Le port 4317 est déjà utilisé » | L'outil tourne déjà dans une autre fenêtre : l'utiliser ou fermer l'autre |
+| Un programme est « Introuvable » dans Paramètres | Installer le programme ou renseigner son chemin complet, puis **Revérifier les programmes** |
+| Le test Claude signale une clé API | Retirer la variable `ANTHROPIC_API_KEY` de l'environnement et se reconnecter à Claude Code avec l'abonnement |
+| Le test Claude signale une limite atteinte | Attendre l'heure de réinitialisation affichée |
+| « Fiches illisibles » dans Auteurs et artistes | Un `fiche.json` modifié à la main est abîmé, ou un dossier est mal nommé : corriger d'après le message |
+| « catalogue.json n'est pas un JSON valide » dans Bibliothèque | Le fichier a été abîmé à la main : corriger la virgule ou l'accolade indiquée dans le message |
+| « Entrées ignorées » dans Bibliothèque | Une entrée de `catalogue.json` est incomplète ou mal écrite : la corriger d'après le message |
+| « Fichier trop volumineux » à l'envoi | La limite est de 4 Go pour la bibliothèque et de 50 Mo pour une preuve d'accord |
+| « Envoi interrompu » dans le terminal, ou « La connexion avec le serveur a été coupée » à l'écran | La page a été fermée ou rechargée pendant l'envoi, ou le serveur a redémarré : recommencer l'envoi en gardant la page ouverte. Aucun fichier partiel n'est conservé |
+| Après une mise à jour, l'interface ne répond plus | Relancer l'outil (et `npm install` si de nouvelles dépendances ont été ajoutées) |
+
+## Développement
 
 | Commande | Rôle |
 | --- | --- |
 | `npm install` | Installer les dépendances |
-| `npm run dev` | Mode développement : interface sur http://localhost:5173, rechargée à chaque modification |
-| `npm run build` puis `npm start` | Mode normal : tout sur http://127.0.0.1:4317 |
+| `npm run dev` | Mode développement, rechargé à chaque modification |
+| `npm run build` puis `npm start` | Mode normal |
 | `npm run check` | Vérifier les types et le style (aucun `any`) |
 | `npm test` | Lancer les tests |
 
-Un lanceur à double-cliquer (`Lancer.cmd` sous Windows, `Lancer.command` sur Mac) arrivera à la fin de la phase 1.
+Organisation du travail : une branche par étape (`phase-1/etape-N-nom`). À la fin de chaque étape, la vérifier dans l'interface, puis ouvrir et fusionner la pull request sur GitHub.

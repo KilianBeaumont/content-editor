@@ -403,3 +403,197 @@ input[type="date"] {
   border: 1px solid var(--bordure);
   border-radius: 6px;
 }
+
+select,
+textarea,
+input[type="file"] {
+  padding: 7px 9px;
+  font: inherit;
+  color: var(--texte);
+  background: var(--fond);
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+}
+
+select {
+  max-width: 420px;
+}
+
+textarea {
+  width: 100%;
+  max-width: 640px;
+  resize: vertical;
+}
+
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.apercu-fichier audio,
+.apercu-fichier video {
+  max-width: 100%;
+}
+
+.apercu-fichier video {
+  max-height: 420px;
+  border-radius: 6px;
+  background: #000;
+}
+
+.apercu-police {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.apercu-icone {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--texte-doux);
+  text-transform: uppercase;
+}
+
+.apercu-compact {
+  align-items: center;
+  justify-content: center;
+  height: 140px;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--fond);
+}
+
+.apercu-compact img,
+.apercu-compact video {
+  max-width: 100%;
+  max-height: 140px;
+  border: none;
+  border-radius: 0;
+  object-fit: contain;
+}
+
+.apercu-compact .apercu-police {
+  font-size: 3rem;
+}
+
+.filtres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.grille-assets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.carte-asset {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  color: var(--texte);
+  text-decoration: none;
+  background: var(--surface);
+  border: 1px solid var(--bordure);
+  border-radius: 10px;
+}
+
+.carte-asset:hover {
+  border-color: var(--accent);
+}
+
+.carte-titre {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.carte-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.carte-description {
+  font-size: 0.9rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.carte-asset .note {
+  font-size: 0.85rem;
+}
+
+.section-espacee {
+  margin-top: 24px;
+}
+
+.cellule-action {
+  text-align: right;
+}
+
+.barre-envoi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 640px;
+  margin: 10px 0 14px;
+}
+
+.barre-envoi-texte {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.barre-envoi progress {
+  width: 100%;
+  height: 10px;
+  accent-color: var(--accent);
+}
+
+.etiquettes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.etiquette {
+  padding: 1px 8px;
+  font-size: 0.8rem;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 999px;
+}
+
+.etiquette-bouton {
+  font: inherit;
+  font-size: 0.8rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+.etiquette-bouton:hover,
+.etiquette-active {
+  color: #fff;
+  background: var(--accent);
+}
+
+.etiquettes-suggestions {
+  margin: -8px 0 14px;
+}
+
+.etiquettes-filtre {
+  margin: -6px 0 18px;
+}
+
+input[type="file"] {
+  max-width: 640px;
+}
