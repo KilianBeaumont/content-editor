@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { slug } from "./slug.ts";
+import { schemaLiens, schemaNomFiche, schemaSaisieLiens, type FicheIllisible } from "./fiches.ts";
 
 export interface AccordArtiste {
   date: string | null;
@@ -38,28 +38,14 @@ export interface Artiste {
   statut: StatutAccord;
 }
 
-export interface ArtisteIllisible {
-  id: string;
-  erreur: string;
-}
-
 export interface ReponseListeArtistes {
   artistes: Artiste[];
-  illisibles: ArtisteIllisible[];
+  illisibles: FicheIllisible[];
 }
 
-const nom = z
-  .string()
-  .trim()
-  .min(1)
-  .max(100)
-  .refine((valeur) => slug(valeur) !== "", "Le nom doit contenir au moins une lettre ou un chiffre.");
-
-const liens = z.record(z.string().trim().min(1).max(40), z.url({ protocol: /^https?$/ }));
-
 export const schemaSaisieArtiste = z.object({
-  nom,
-  liens,
+  nom: schemaNomFiche,
+  liens: schemaSaisieLiens,
   contact: z.string().trim().max(500),
   accord: z.object({
     date: z.iso.date().nullable(),
@@ -69,8 +55,8 @@ export const schemaSaisieArtiste = z.object({
 }) satisfies z.ZodType<SaisieArtiste>;
 
 export const schemaFicheArtiste = z.object({
-  nom,
-  liens: z.record(z.string(), z.string()),
+  nom: schemaNomFiche,
+  liens: schemaLiens,
   contact: z.string(),
   accord: z.object({
     date: z.iso.date().nullable(),

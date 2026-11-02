@@ -9,12 +9,21 @@ export {
   schemaSaisieArtiste,
   type AccordArtiste,
   type Artiste,
-  type ArtisteIllisible,
   type FicheArtiste,
   type ReponseListeArtistes,
   type SaisieArtiste,
   type StatutAccord,
 } from "./artistes.ts";
+export {
+  FICHE_AUTEUR_VIDE,
+  schemaFicheAuteur,
+  schemaSaisieAuteur,
+  type Auteur,
+  type FicheAuteur,
+  type ReponseListeAuteurs,
+  type SaisieAuteur,
+} from "./auteurs.ts";
+export type { FicheIllisible } from "./fiches.ts";
 export { CATEGORIES, LIBELLES_CATEGORIES, type Categorie } from "./categories.ts";
 export {
   PARAMETRES_PAR_DEFAUT,

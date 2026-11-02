@@ -9,6 +9,7 @@ import type { Contexte } from "./contexte.ts";
 import { codeErreur, ErreurHttp } from "./erreurs.ts";
 import { CheminInterditError, FichierInvalideError } from "./fichiers.ts";
 import { routesArtistes } from "./routes/artistes.ts";
+import { routesAuteurs } from "./routes/auteurs.ts";
 import { routesFichiers } from "./routes/fichiers.ts";
 import { routesParametres } from "./routes/parametres.ts";
 import { routesSante } from "./routes/sante.ts";
@@ -69,14 +70,16 @@ export async function creerApp(options: OptionsApp): Promise<FastifyInstance> {
   await app.register(fastifyStatic, {
     root: servirInterface ? dossier : options.contexte.config.creations,
     serve: servirInterface,
+    wildcard: false,
   });
 
   await app.register(routesSante, { prefix: "/api" });
   await app.register(routesParametres(options.contexte), { prefix: "/api" });
   await app.register(routesArtistes(options.contexte), { prefix: "/api" });
+  await app.register(routesAuteurs(options.contexte), { prefix: "/api" });
   await app.register(routesFichiers(options.contexte), { prefix: "/api" });
 
-  app.setNotFoundHandler((requete, reponse) => {
+  app.setNotFoundHandler(async (requete, reponse) => {
     if (servirInterface && requete.method === "GET" && !requete.url.startsWith("/api/")) {
       return reponse.sendFile("index.html");
     }

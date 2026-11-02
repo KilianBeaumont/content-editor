@@ -478,6 +478,7 @@ Dépôts étudiés (clonés dans `../inspiration`). L'étude complète, avec ce 
 - Utiliser le MCP context7 pour consulter la documentation des bibliothèques.
 - Aucune clé API Anthropic, aucun SDK client Anthropic appelant l'API : Claude est toujours appelé via la commande `claude` de Claude Code, connectée à l'abonnement.
 - ffmpeg pour le traitement vidéo et audio.
+- `README.md` est le guide d'utilisation : à chaque étape, mettre à jour le tableau d'avancement, ajouter le déroulé des nouvelles tâches dans « Guide par tâche » et les messages d'erreur utiles dans « En cas de problème ».
 
 ## 13. Questions ouvertes
 
