@@ -31,7 +31,7 @@ export async function preparerEnvironnementTest(dossierInterface?: string): Prom
   const dossier = await mkdtemp(join(tmpdir(), "editeur-test-"));
   const contexte: Contexte = {
     racineDepot: join(dossier, "depot"),
-    config: { ...CONFIG_PAR_DEFAUT, creations: join(dossier, "creations") },
+    config: { creations: join(dossier, "creations"), binaires: { ...CONFIG_PAR_DEFAUT.binaires } },
   };
   await mkdir(contexte.racineDepot);
   await initialiserCreations(contexte.config.creations);

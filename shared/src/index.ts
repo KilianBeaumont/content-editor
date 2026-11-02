@@ -58,7 +58,20 @@ export {
   type StatutAsset,
   type TypeAsset,
 } from "./bibliotheque.ts";
-export { CATEGORIES,LIBELLES_CATEGORIES, type Categorie } from "./categories.ts";
+export { CATEGORIES, LIBELLES_CATEGORIES, type Categorie } from "./categories.ts";
+export {
+  EXTENSIONS_TEXTE,
+  GENRES_FICHIER,
+  genreFichier,
+  LIBELLES_GENRES,
+  type FichierInbox,
+  type GenreFichier,
+  type InfosAudio,
+  type InfosMedia,
+  type InfosVideo,
+  type ReponseEnvoiInbox,
+  type ReponseInbox,
+} from "./inbox.ts";
 export {
   PARAMETRES_PAR_DEFAUT,
   schemaConfigMachine,

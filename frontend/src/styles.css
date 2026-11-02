@@ -597,3 +597,47 @@ textarea:focus-visible {
 input[type="file"] {
   max-width: 640px;
 }
+
+.zone-depot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 16px;
+  color: var(--texte-doux);
+  border: 2px dashed var(--bordure);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.zone-depot p {
+  margin: 0;
+}
+
+.zone-depot-survol {
+  color: var(--texte);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.tableau-inbox tbody tr {
+  cursor: pointer;
+}
+
+.tableau-inbox tbody tr:hover,
+.ligne-selectionnee {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.cellule-nom {
+  overflow-wrap: anywhere;
+}
+
+.apercu-inbox {
+  margin-top: 18px;
+}
+
+.apercu-inbox h3 {
+  margin-top: 0;
+  overflow-wrap: anywhere;
+}

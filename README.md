@@ -27,7 +27,7 @@ Phase 1 (le socle), en cours.
 | 3 | Fiches artistes, accords et preuves | ✅ |
 | 4 | Fiches auteurs et autrices | ✅ |
 | 5 | Bibliothèque d'assets | ✅ |
-| 6 | Inbox : rushes déposés ou glissés dans l'interface | à venir |
+| 6 | Inbox : rushes déposés ou glissés dans l'interface | ✅ |
 | 7 | Création d'un projet : pistes audio FR et EN pour les récits, choix des assets de la bibliothèque | à venir |
 | 8 | Règles d'autorisation avant export | à venir |
 | 9 | Tableau de bord et écran Projet | à venir |
@@ -112,6 +112,25 @@ Bon à savoir :
 
 L'autorisation de lire un récit (date, traduction anglaise, monétisation, plateformes, preuve) ne se met pas sur la fiche de l'auteur : elle se renseigne dans le projet de chaque récit, car elle peut varier d'une histoire à l'autre. Ce sera possible à l'étape 7. La liste des récits de l'auteur se remplira alors automatiquement.
 
+### Déposer des rushes dans l'inbox
+
+L'inbox reçoit les fichiers bruts avant la création d'un projet : rushes vidéo, voix enregistrées, images, textes de récit.
+
+1. **Inbox** dans le menu.
+2. Glisser les fichiers dans la zone en pointillés, ou **Choisir des fichiers** (plusieurs à la fois). Pas de limite de taille.
+3. Les fichiers partent l'un après l'autre : une barre montre l'avancement du fichier en cours, le nombre de fichiers restants, et un bouton **Annuler** arrête tout. Garde la page ouverte jusqu'à la fin.
+4. Chaque fichier apparaît dans la liste avec sa durée, sa résolution, ses images par seconde et son audio (lus par ffprobe). Un clic sur une ligne affiche l'aperçu.
+
+Tu peux aussi copier les fichiers directement dans `creations/inbox/` avec l'Explorateur ou le Finder, y compris dans des sous-dossiers (une carte SD entière par exemple) : clique sur **Actualiser**.
+
+Bon à savoir :
+- Les noms d'origine sont gardés. Si un fichier du même nom existe déjà, le nouveau devient `nom (2).mp4`.
+- L'espace disque libre est affiché, et l'outil prévient si les fichiers en attente ne tiennent pas.
+- « Illisible » signale un fichier que ffprobe ne sait pas lire (fichier abîmé ou envoi incomplet) ; le détail s'affiche au survol et dans l'aperçu.
+- Certains formats (HEVC, ProRes…) ne se lisent pas dans le navigateur : l'aperçu l'indique, mais le fichier reste utilisable pour le montage.
+- **Corbeille** déplace un fichier déposé par erreur dans `corbeille/inbox/`. Rien n'est jamais effacé.
+- Les dossiers ne se glissent pas : ouvre-les et glisse les fichiers qu'ils contiennent, ou copie le dossier dans `creations/inbox/`.
+
 ### Ajouter un asset à la bibliothèque
 
 La bibliothèque contient ce qui sert dans plusieurs vidéos. Sept types :
@@ -191,6 +210,8 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | « Fiches illisibles » dans Auteurs et artistes | Un `fiche.json` modifié à la main est abîmé, ou un dossier est mal nommé : corriger d'après le message |
 | « catalogue.json n'est pas un JSON valide » dans Bibliothèque | Le fichier a été abîmé à la main : corriger la virgule ou l'accolade indiquée dans le message |
 | « Entrées ignorées » dans Bibliothèque | Une entrée de `catalogue.json` est incomplète ou mal écrite : la corriger d'après le message |
+| « ffprobe est introuvable » dans Inbox | Installer ffmpeg (qui contient ffprobe) ou renseigner le chemin de ffprobe dans **Paramètres** |
+| « Espace disque insuffisant » | Libérer de la place sur le disque qui contient `creations/`, ou déplacer `creations/` sur un autre disque (Paramètres) |
 | « Fichier trop volumineux » à l'envoi | La limite est de 4 Go pour la bibliothèque et de 50 Mo pour une preuve d'accord |
 | « Envoi interrompu » dans le terminal, ou « La connexion avec le serveur a été coupée » à l'écran | La page a été fermée ou rechargée pendant l'envoi, ou le serveur a redémarré : recommencer l'envoi en gardant la page ouverte. Aucun fichier partiel n'est conservé |
 | Après une mise à jour, l'interface ne répond plus | Relancer l'outil (et `npm install` si de nouvelles dépendances ont été ajoutées) |
