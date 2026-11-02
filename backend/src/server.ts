@@ -6,7 +6,7 @@ import { codeErreur } from "./erreurs.ts";
 import { FichierInvalideError } from "./fichiers.ts";
 
 const HOTE = "127.0.0.1";
-const PORT = 4317;
+const PORT = Number(process.env.EDITEUR_PORT) || 4317;
 
 function arreter(message: string): never {
   console.error(message);

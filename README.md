@@ -17,7 +17,7 @@ Ce fichier est le **guide d'utilisation** : quoi faire, dans quel ordre, pour ch
 
 ## Ce qui est disponible aujourd'hui
 
-Phase 1 (le socle), en cours.
+Phase 1 (le socle) terminée.
 
 | Étape | Contenu | État |
 | --- | --- | --- |
@@ -32,7 +32,7 @@ Phase 1 (le socle), en cours.
 | 8 | Règles d'autorisation avant export | ✅ |
 | 9 | Tableau de bord et écran Projet | ✅ |
 | 10 | Modifier, renommer, supprimer un projet | ✅ |
-| 11 | Lanceur à double-cliquer (Windows et Mac) | à venir |
+| 11 | Lanceur à double-cliquer (Windows et Mac) | ✅ |
 
 Les phases suivantes (transcription, plan de montage, aperçus, exports, formats courts, podcast, statistiques) viendront après.
 
@@ -45,8 +45,8 @@ Les phases suivantes (transcription, plan de montage, aperçus, exports, formats
    - **ffmpeg** et **ffprobe** ;
    - **Claude Code** (`claude`), puis s'y connecter avec l'abonnement Claude (`claude` dans un terminal, puis suivre la connexion). Ne jamais créer ni renseigner de clé API.
    - whisper.cpp viendra en phase 2 : il n'est pas encore utilisé.
-2. Dans le dossier du dépôt : `npm install`.
-3. Lancer l'outil (voir ci-dessous) et ouvrir l'écran **Paramètres**.
+2. Double-cliquer sur le lanceur (voir « Lancer l'outil ») : la première fois, il installe tout ce qu'il faut.
+3. Ouvrir l'écran **Paramètres**.
 4. Section **Cette machine** :
    - **Dossier creations** : l'emplacement de tes créations. Par défaut `../creations`, à côté du dépôt. S'il n'existe pas, il est créé avec toute l'arborescence quand tu enregistres.
    - Chemins de **ffmpeg**, **ffprobe**, **claude** et **whisper** : laisse le nom seul si le programme est trouvé, sinon mets le chemin complet. Chaque champ affiche si le programme est trouvé, avec sa version.
@@ -57,16 +57,31 @@ Ces réglages sont propres à chaque machine (fichier `config.local.json`, jamai
 
 ## Lancer l'outil
 
+**Au quotidien : double-cliquer sur le lanceur**, à la racine du dépôt :
+- Windows : `Lancer.cmd` ;
+- Mac : `Lancer.command`.
+
+Une fenêtre s'ouvre, l'outil démarre, puis le navigateur s'ouvre tout seul sur http://127.0.0.1:4317. **Garde cette fenêtre ouverte** pendant que tu travailles ; la fermer arrête l'outil.
+
+Le lanceur s'occupe de tout :
+- il vérifie que Node.js 24 est installé ;
+- si l'outil tourne déjà, il ouvre seulement le navigateur ;
+- après une mise à jour du dépôt, il installe les nouvelles dépendances et reconstruit l'interface (quelques secondes, seulement quand c'est nécessaire).
+
+Pour l'avoir sous la main :
+- Windows : clic droit sur `Lancer.cmd` → **Afficher d'autres options** → **Envoyer vers** → **Bureau (créer un raccourci)** ;
+- Mac : glisser `Lancer.command` dans le Dock (à droite du séparateur) en maintenant **Cmd + Option**. Si macOS refuse de l'ouvrir la première fois : clic droit → **Ouvrir** → **Ouvrir**.
+
+En ligne de commande, si besoin :
+
 | Usage | Commande | Adresse |
 | --- | --- | --- |
-| Normal | `npm run build` (une fois après chaque mise à jour), puis `npm start` | http://127.0.0.1:4317 |
+| Normal | `npm run build` (après chaque mise à jour), puis `npm start` | http://127.0.0.1:4317 |
 | Développement | `npm run dev` | http://localhost:5173 |
 
-Pour arrêter : `Ctrl+C` dans le terminal. Si l'outil affiche « Le port 4317 est déjà utilisé », il tourne déjà dans une autre fenêtre.
+Pour arrêter : fermer la fenêtre, ou `Ctrl+C`. Si l'outil affiche « Le port 4317 est déjà utilisé », il tourne déjà dans une autre fenêtre. Pour utiliser un autre port, définir la variable d'environnement `EDITEUR_PORT`.
 
 Au démarrage, l'outil affiche le dossier `creations/` utilisé et crée ce qui manque dans l'arborescence, sans jamais écraser un fichier existant.
-
-Un lanceur à double-cliquer (`Lancer.cmd` sous Windows, `Lancer.command` sur Mac) arrivera à l'étape 11.
 
 ## Où sont les fichiers
 
@@ -274,7 +289,9 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 
 | Message ou symptôme | Que faire |
 | --- | --- |
-| « Backend injoignable » sur le tableau de bord | Le serveur ne tourne pas : relancer `npm run dev` ou `npm start` |
+| « Backend injoignable » sur le tableau de bord | Le serveur ne tourne pas : relancer le lanceur (ou `npm run dev`) |
+| « Node.js est introuvable » ou « trop ancien » au lancement | Installer Node.js 24 ou plus récent depuis https://nodejs.org, puis relancer |
+| Le lanceur s'arrête sur « La commande npm … a échoué » | Lire le message au-dessus (souvent une connexion internet coupée pendant l'installation), puis relancer |
 | « Le port 4317 est déjà utilisé » | L'outil tourne déjà dans une autre fenêtre : l'utiliser ou fermer l'autre |
 | Un programme est « Introuvable » dans Paramètres | Installer le programme ou renseigner son chemin complet, puis **Revérifier les programmes** |
 | Le test Claude signale une clé API | Retirer la variable `ANTHROPIC_API_KEY` de l'environnement et se reconnecter à Claude Code avec l'abonnement |
