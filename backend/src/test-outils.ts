@@ -14,6 +14,19 @@ export interface EnvironnementTest {
   nettoyer: () => Promise<void>;
 }
 
+export function corpsAvecFichier(
+  nomFichier: string,
+  contenu: Buffer | string,
+  type = "application/octet-stream",
+): { payload: Buffer; headers: Record<string, string> } {
+  const frontiere = "----frontiere-test";
+  const debut = `--${frontiere}\r\nContent-Disposition: form-data; name="fichier"; filename="${nomFichier}"\r\nContent-Type: ${type}\r\n\r\n`;
+  return {
+    payload: Buffer.concat([Buffer.from(debut), Buffer.from(contenu), Buffer.from(`\r\n--${frontiere}--\r\n`)]),
+    headers: { "content-type": `multipart/form-data; boundary=${frontiere}` },
+  };
+}
+
 export async function preparerEnvironnementTest(dossierInterface?: string): Promise<EnvironnementTest> {
   const dossier = await mkdtemp(join(tmpdir(), "editeur-test-"));
   const contexte: Contexte = {

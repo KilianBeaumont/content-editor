@@ -293,3 +293,113 @@ input:focus-visible,
   padding-left: 20px;
   color: var(--texte-doux);
 }
+
+a {
+  color: var(--accent);
+}
+
+a.bouton {
+  display: inline-block;
+  text-decoration: none;
+}
+
+label.bouton {
+  display: inline-block;
+}
+
+.bouton-discret {
+  padding: 5px 10px;
+  font-size: 0.9rem;
+  background: transparent;
+}
+
+.bouton-danger {
+  color: var(--erreur);
+  border-color: color-mix(in srgb, var(--erreur) 40%, transparent);
+}
+
+.entete-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.tableau {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tableau th {
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--texte-doux);
+  font-weight: 600;
+}
+
+.tableau th,
+.tableau td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.ligne-lien {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.ligne-lien input:first-child {
+  width: 150px;
+}
+
+.ligne-lien input:nth-child(2) {
+  flex: 1;
+  max-width: 420px;
+}
+
+.case {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+input[type="date"] {
+  width: 180px;
+  padding: 7px 9px;
+  font: inherit;
+  color: var(--texte);
+  background: var(--fond);
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+}
+
+.liste-problemes {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  color: var(--alerte);
+}
+
+.apercu-fichier {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.apercu-fichier img {
+  max-width: 100%;
+  max-height: 420px;
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+}
+
+.apercu-fichier iframe {
+  width: 100%;
+  height: 480px;
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+}
