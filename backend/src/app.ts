@@ -12,6 +12,7 @@ import { routesArtistes } from "./routes/artistes.ts";
 import { routesAuteurs } from "./routes/auteurs.ts";
 import { routesBibliotheque } from "./routes/bibliotheque.ts";
 import { routesInbox } from "./routes/inbox.ts";
+import { routesProjets } from "./routes/projets.ts";
 import { routesFichiers } from "./routes/fichiers.ts";
 import { routesParametres } from "./routes/parametres.ts";
 import { routesSante } from "./routes/sante.ts";
@@ -87,6 +88,7 @@ export async function creerApp(options: OptionsApp): Promise<FastifyInstance> {
   await app.register(routesAuteurs(options.contexte), { prefix: "/api" });
   await app.register(routesBibliotheque(options.contexte), { prefix: "/api" });
   await app.register(routesInbox(options.contexte), { prefix: "/api" });
+  await app.register(routesProjets(options.contexte), { prefix: "/api" });
   await app.register(routesFichiers(options.contexte), { prefix: "/api" });
 
   app.setNotFoundHandler(async (requete, reponse) => {

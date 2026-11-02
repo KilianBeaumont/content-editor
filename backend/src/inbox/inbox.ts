@@ -138,8 +138,8 @@ export async function enregistrerDansInbox(
 }
 
 export async function mettreInboxALaCorbeille(creations: string, chemin: string): Promise<string> {
+  const absolu = cheminSur(cheminSur(creations, RACINE), chemin);
   const relatif = `${RACINE}/${chemin}`;
-  const absolu = cheminSur(creations, relatif);
   if (chemin === "" || !(await existe(absolu))) {
     throw new ErreurHttp(404, `Fichier introuvable : ${relatif}`);
   }

@@ -28,7 +28,7 @@ Phase 1 (le socle), en cours.
 | 4 | Fiches auteurs et autrices | ✅ |
 | 5 | Bibliothèque d'assets | ✅ |
 | 6 | Inbox : rushes déposés ou glissés dans l'interface | ✅ |
-| 7 | Création d'un projet : pistes audio FR et EN pour les récits, choix des assets de la bibliothèque | à venir |
+| 7 | Création d'un projet depuis l'inbox : sorties voulues, consignes de montage, pistes FR et EN, auteur, artistes, assets | ✅ |
 | 8 | Règles d'autorisation avant export | à venir |
 | 9 | Tableau de bord et écran Projet | à venir |
 | 10 | Modifier, renommer, supprimer un projet | à venir |
@@ -131,6 +131,31 @@ Bon à savoir :
 - **Corbeille** déplace un fichier déposé par erreur dans `corbeille/inbox/`. Rien n'est jamais effacé.
 - Les dossiers ne se glissent pas : ouvre-les et glisse les fichiers qu'ils contiennent, ou copie le dossier dans `creations/inbox/`.
 
+### Créer un projet
+
+1. Déposer les fichiers dans l'**Inbox** (ou directement dans le formulaire, étape 5 ci-dessous).
+2. **Nouveau projet** (ou **Créer un projet avec ces fichiers** depuis l'Inbox).
+3. **Projet** : chaîne, catégorie, date de publication prévue, titre. Pour un récit, cocher **Version anglaise** si tu veux la voix, la piste audio et le podcast en anglais, puis donner le titre anglais. Le nom du dossier s'affiche en dessous (`AAAA-MM-JJ_titre`).
+4. **Sorties voulues** : cochées par défaut selon la catégorie (par exemple YouTube + formats courts pour un vlog). Pour les formats courts, indiquer combien d'extraits tu veux. Les sorties en anglais demandent la version anglaise.
+5. **Consignes de montage** (facultatives) : intention, durée visée, ce qu'il faut garder absolument, ce qu'il faut éviter.
+6. **Fichiers** : cocher les fichiers de l'inbox à ranger dans le projet. Pour chacun :
+   - sa **place** est proposée d'après son type : rushes pour une vidéo, voix FR pour un audio de récit, assets pour une image, texte pour un document. Pour un récit, choisis **Voix FR** ou **Voix EN** pour les deux pistes de narration ;
+   - une **note** pour le montage (« bonne prise vers 3:20 », « début raté »).
+   Tu peux aussi glisser de nouveaux fichiers dans le formulaire : ils passent par l'inbox et sont cochés automatiquement.
+7. **Auteur et autorisation** (chaîne Récits) : choisir la fiche de l'auteur (ou en créer une dans un nouvel onglet puis **Actualiser**), le lien vers l'histoire d'origine, et ce qu'il a autorisé : lecture, traduction anglaise, monétisation, plateformes, avec la preuve. Pour ton histoire : **Mon histoire** et ta signature.
+8. **Artistes invités** : cocher les artistes dont tu utilises les visuels. Chacun a son dossier `assets/<artiste>/`, proposé comme place dans la liste des fichiers.
+9. **Assets de la bibliothèque** : cocher ceux que tu veux voir dans la vidéo.
+10. **Créer le projet**.
+
+Ce que fait l'outil :
+- il crée le dossier dans `chaine-creation/` ou `chaine-recits/`, avec ses sous-dossiers (`rushes/` ou `voix/fr`, `voix/en`, `texte/`, `autorisation/`, `assets/`, `travail/`, `versions/`, et un dossier par sortie dans `exports/`) ;
+- il **déplace** les fichiers cochés de l'inbox vers le projet, sans les modifier. Si l'inbox et le projet sont sur deux disques différents, il copie, vérifie la taille, puis seulement supprime l'original de l'inbox ;
+- si un déplacement échoue en cours de route, il remet tout dans l'inbox et n'enregistre rien ;
+- il écrit `metadata.json` (titre, sorties, consignes, notes, auteur, autorisation…) ;
+- il ajoute le projet à l'historique de l'auteur, des artistes et des assets choisis.
+
+Deux projets ne peuvent pas avoir le même nom (même date et même titre), même sur deux chaînes différentes. L'écran Projet (suivi, modification, plan de montage) arrive à l'étape 9.
+
 ### Ajouter un asset à la bibliothèque
 
 La bibliothèque contient ce qui sert dans plusieurs vidéos. Sept types :
@@ -212,6 +237,8 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | « Entrées ignorées » dans Bibliothèque | Une entrée de `catalogue.json` est incomplète ou mal écrite : la corriger d'après le message |
 | « ffprobe est introuvable » dans Inbox | Installer ffmpeg (qui contient ffprobe) ou renseigner le chemin de ffprobe dans **Paramètres** |
 | « Espace disque insuffisant » | Libérer de la place sur le disque qui contient `creations/`, ou déplacer `creations/` sur un autre disque (Paramètres) |
+| « Un projet existe déjà sous le nom … » | Changer la date ou le titre |
+| « Impossible de déplacer … Rien n'a été créé » | Un fichier était ouvert dans un autre programme ou le disque est plein : fermer le programme ou libérer de la place, puis recommencer. Les fichiers sont restés dans l'inbox |
 | « Fichier trop volumineux » à l'envoi | La limite est de 4 Go pour la bibliothèque et de 50 Mo pour une preuve d'accord |
 | « Envoi interrompu » dans le terminal, ou « La connexion avec le serveur a été coupée » à l'écran | La page a été fermée ou rechargée pendant l'envoi, ou le serveur a redémarré : recommencer l'envoi en gardant la page ouverte. Aucun fichier partiel n'est conservé |
 | Après une mise à jour, l'interface ne répond plus | Relancer l'outil (et `npm install` si de nouvelles dépendances ont été ajoutées) |

@@ -211,6 +211,14 @@ describe("routes de la bibliothèque", () => {
     expect((await env.app.inject({ method: "DELETE", url: "/api/bibliotheque/assets/bip" })).statusCode).toBe(409);
   });
 
+  it("refuse une entrée écrite à la main qui pointe hors de la bibliothèque", async () => {
+    const sortie = { id: "sortie", type: "image", chaine: "commun", chemin: "../artistes", source: "utilisateur" };
+    await writeFile(join(bibliotheque(), "catalogue.json"), JSON.stringify({ assets: [sortie] }), "utf8");
+    expect((await lister()).elements[0]?.statut.problemes).toEqual(["Chemin interdit : ../artistes"]);
+    expect((await env.app.inject({ method: "DELETE", url: "/api/bibliotheque/assets/sortie" })).statusCode).toBe(400);
+    await expect(access(join(env.contexte.config.creations, "artistes"))).resolves.toBeUndefined();
+  });
+
   it("répond 404 pour un asset inconnu et signale un catalogue abîmé", async () => {
     expect((await env.app.inject({ method: "GET", url: "/api/bibliotheque/assets/inconnu" })).statusCode).toBe(404);
     await writeFile(join(bibliotheque(), "catalogue.json"), "{ abîmé", "utf8");

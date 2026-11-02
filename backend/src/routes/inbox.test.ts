@@ -102,6 +102,7 @@ describe("routes de l'inbox", () => {
 
     expect((await env.app.inject({ method: "DELETE", url: "/api/inbox/fichiers/absent.mp4" })).statusCode).toBe(404);
     expect((await env.app.inject({ method: "DELETE", url: "/api/inbox/fichiers/..%2F..%2Fparametres.json" })).statusCode).toBe(400);
+    expect((await env.app.inject({ method: "DELETE", url: "/api/inbox/fichiers/..%2Fparametres.json" })).statusCode).toBe(400);
     await expect(access(join(env.contexte.config.creations, "parametres.json"))).resolves.toBeUndefined();
   });
 });

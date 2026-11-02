@@ -53,26 +53,32 @@ export function fusionnerAvecDefauts(defauts: unknown, valeur: unknown): unknown
   return resultat;
 }
 
-export async function lireJsonAvecDefauts<T>(chemin: string, schema: z.ZodType<T>, defauts: T): Promise<T> {
+export async function lireJsonComplete<T>(chemin: string, schema: z.ZodType<T>, complements: unknown): Promise<T> {
   const nom = basename(chemin);
   let contenu: unknown;
   try {
     contenu = JSON.parse(await lireTexte(chemin));
   } catch (erreur) {
-    if (codeErreur(erreur) === "ENOENT") {
-      return defauts;
-    }
     if (erreur instanceof SyntaxError) {
       throw new FichierInvalideError(`${nom} n'est pas un JSON valide : ${erreur.message}`);
     }
     throw erreur;
   }
 
-  const resultat = schema.safeParse(fusionnerAvecDefauts(defauts, contenu));
+  const resultat = schema.safeParse(fusionnerAvecDefauts(complements, contenu));
   if (!resultat.success) {
     throw new FichierInvalideError(`${nom} invalide :\n${z.prettifyError(resultat.error)}`);
   }
   return resultat.data;
+}
+
+export async function lireJsonAvecDefauts<T>(chemin: string, schema: z.ZodType<T>, defauts: T): Promise<T> {
+  try {
+    return await lireJsonComplete(chemin, schema, defauts);
+  } catch (erreur) {
+    if (codeErreur(erreur) === "ENOENT") return defauts;
+    throw erreur;
+  }
 }
 
 export async function renommer(source: string, cible: string): Promise<void> {
