@@ -1,8 +1,9 @@
 import { resolve } from "node:path";
 import { creerApp } from "./app.ts";
-import { ConfigInvalideError, lireConfigMachine, RACINE_DEPOT } from "./config.ts";
+import { lireConfigMachine, RACINE_DEPOT } from "./config.ts";
 import { initialiserCreations } from "./creations/initialisation.ts";
 import { codeErreur } from "./erreurs.ts";
+import { FichierInvalideError } from "./fichiers.ts";
 
 const HOTE = "127.0.0.1";
 const PORT = 4317;
@@ -21,6 +22,7 @@ async function demarrer(): Promise<void> {
   }
 
   const app = await creerApp({
+    contexte: { racineDepot: RACINE_DEPOT, config },
     dossierInterface: resolve(RACINE_DEPOT, "frontend/dist"),
   });
   await app.listen({ host: HOTE, port: PORT });
@@ -30,7 +32,7 @@ async function demarrer(): Promise<void> {
 try {
   await demarrer();
 } catch (erreur) {
-  if (erreur instanceof ConfigInvalideError) {
+  if (erreur instanceof FichierInvalideError) {
     arreter(erreur.message);
   }
   if (codeErreur(erreur) === "EADDRINUSE") {

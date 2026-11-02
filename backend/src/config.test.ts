@@ -2,7 +2,8 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { CONFIG_PAR_DEFAUT, ConfigInvalideError, lireConfigMachine } from "./config.ts";
+import { CONFIG_PAR_DEFAUT, lireConfigMachine } from "./config.ts";
+import { FichierInvalideError } from "./fichiers.ts";
 
 describe("lireConfigMachine", () => {
   let depot: string;
@@ -50,7 +51,7 @@ describe("lireConfigMachine", () => {
 
   it("signale un JSON mal formé", async () => {
     await ecrireConfig("{ creations: ");
-    await expect(lireConfigMachine(depot)).rejects.toThrow(ConfigInvalideError);
+    await expect(lireConfigMachine(depot)).rejects.toThrow(FichierInvalideError);
   });
 
   it("signale une valeur invalide en nommant le champ", async () => {

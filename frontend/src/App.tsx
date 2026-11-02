@@ -1,5 +1,6 @@
 import { NavLink, Route, Routes } from "react-router";
 import { AVenir } from "./pages/AVenir.tsx";
+import { Parametres } from "./pages/parametres/Parametres.tsx";
 import { TableauDeBord } from "./pages/TableauDeBord.tsx";
 
 const MENU = [
@@ -28,7 +29,7 @@ export function App() {
           <Route path="/projets/:id" element={<AVenir titre="Projet" etape={9} />} />
           <Route path="/bibliotheque" element={<AVenir titre="Bibliothèque" etape={5} />} />
           <Route path="/auteurs-artistes" element={<AVenir titre="Auteurs et artistes" etape={3} />} />
-          <Route path="/parametres" element={<AVenir titre="Paramètres" etape={2} />} />
+          <Route path="/parametres" element={<Parametres />} />
           <Route path="*" element={<h1>Page introuvable</h1>} />
         </Routes>
       </main>

@@ -7,6 +7,7 @@
   --accent: #6a4bc4;
   --ok: #2f7d4f;
   --erreur: #b3362f;
+  --alerte: #9a5b00;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--texte);
   background: var(--fond);
@@ -22,6 +23,7 @@
     --accent: #a48bf0;
     --ok: #5cc28a;
     --erreur: #ef7a72;
+    --alerte: #f0b35a;
   }
 }
 
@@ -91,5 +93,203 @@ h1 {
 }
 
 .a-venir {
+  color: var(--texte-doux);
+}
+
+h2 {
+  margin: 0 0 4px;
+  font-size: 1.2rem;
+}
+
+h3 {
+  margin: 20px 0 10px;
+  font-size: 1rem;
+}
+
+code {
+  font-size: 0.9em;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--texte) 8%, transparent);
+}
+
+.section {
+  margin-bottom: 24px;
+  padding: 20px 24px;
+  background: var(--surface);
+  border: 1px solid var(--bordure);
+  border-radius: 10px;
+}
+
+.section-intro {
+  margin: 0 0 16px;
+  color: var(--texte-doux);
+}
+
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.champ-large input {
+  width: 100%;
+  max-width: 640px;
+}
+
+.champ-libelle {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.champ-aide {
+  font-size: 0.85rem;
+  color: var(--texte-doux);
+}
+
+.champ-avec-unite {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.champ-nombre input {
+  width: 96px;
+}
+
+.champ-unite {
+  color: var(--texte-doux);
+  font-size: 0.85rem;
+}
+
+input[type="text"],
+input[type="number"] {
+  padding: 7px 9px;
+  font: inherit;
+  color: var(--texte);
+  background: var(--fond);
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+}
+
+input:focus-visible,
+.bouton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.ligne-champs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+}
+
+.grille-reglages {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  align-items: center;
+  column-gap: 16px;
+}
+
+.grille-titre {
+  font-weight: 600;
+  padding-bottom: 14px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.bouton {
+  padding: 8px 14px;
+  font: inherit;
+  color: var(--texte);
+  background: var(--fond);
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.bouton:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.bouton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.bouton-principal {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.bouton-principal:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.badge {
+  display: inline-block;
+  padding: 1px 8px;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--texte) 8%, transparent);
+}
+
+.badge-ok {
+  color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+}
+
+.badge-erreur {
+  color: var(--erreur);
+  background: color-mix(in srgb, var(--erreur) 12%, transparent);
+}
+
+.badge-alerte {
+  color: var(--alerte);
+  background: color-mix(in srgb, var(--alerte) 14%, transparent);
+}
+
+.note {
+  color: var(--texte-doux);
+}
+
+.message {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  border: 1px solid transparent;
+}
+
+.message-ok {
+  color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 10%, transparent);
+}
+
+.message-erreur {
+  color: var(--erreur);
+  background: color-mix(in srgb, var(--erreur) 10%, transparent);
+  border-color: color-mix(in srgb, var(--erreur) 30%, transparent);
+}
+
+.message-alerte {
+  color: var(--alerte);
+  background: color-mix(in srgb, var(--alerte) 12%, transparent);
+  border-color: color-mix(in srgb, var(--alerte) 35%, transparent);
+}
+
+.message-info {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.liste-limites {
+  margin: 10px 0 0;
+  padding-left: 20px;
   color: var(--texte-doux);
 }
