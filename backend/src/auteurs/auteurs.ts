@@ -56,3 +56,10 @@ export async function supprimerAuteur(creations: string, id: string): Promise<st
   }
   return ficheALaCorbeille(creations, AUTEURS, id);
 }
+
+export async function ajouterRecitAuteur(creations: string, id: string, projet: string): Promise<void> {
+  const { fiche } = await lireAuteur(creations, id);
+  if (!fiche.recits.includes(projet)) {
+    await ecrireFiche(creations, AUTEURS, id, { ...fiche, recits: [...fiche.recits, projet] });
+  }
+}

@@ -15,7 +15,7 @@ function genre(chemin: string): Genre {
   const dans = (liste: readonly string[]) => liste.includes(ext);
   if (dans(EXTENSIONS_IMAGE)) return "image";
   if (dans(EXTENSIONS_AUDIO)) return "audio";
-  if (dans(EXTENSIONS_VIDEO)) return "video";
+  if (dans(EXTENSIONS_VIDEO) || [".m4v", ".mts", ".m2ts", ".avi"].includes(ext)) return "video";
   if (dans(EXTENSIONS_POLICE)) return "police";
   if (ext === ".pdf") return "pdf";
   return "autre";
@@ -53,17 +53,42 @@ function ApercuPolice({ url, compact }: { url: string; compact: boolean }) {
 }
 
 export function ApercuFichier({ chemin, compact = false }: { chemin: string; compact?: boolean }) {
+  const [illisible, setIllisible] = useState(false);
   const url = urlFichier(chemin);
   const nom = chemin.split("/").at(-1) ?? chemin;
   const type = genre(chemin);
+
+  useEffect(() => setIllisible(false), [chemin]);
+
   return (
     <div className={compact ? "apercu-fichier apercu-compact" : "apercu-fichier"}>
-      {type === "image" && <img src={url} alt={nom} loading="lazy" />}
-      {type === "audio" && (compact ? <p className="apercu-icone">♪ {extension(chemin)}</p> : <audio src={url} controls preload="none" />)}
-      {type === "video" && <video src={`${url}#t=0.5`} controls={!compact} muted={compact} preload="metadata" />}
-      {type === "police" && <ApercuPolice url={url} compact={compact} />}
-      {type === "pdf" && !compact && <iframe src={url} title={nom} />}
-      {(type === "autre" || (type === "pdf" && compact)) && <p className="apercu-icone">{extension(chemin) || "dossier"}</p>}
+      {illisible ? (
+        <p className="note">
+          {compact ? extension(chemin) : "Le navigateur ne sait pas lire ce format. Le fichier reste utilisable pour le montage."}
+        </p>
+      ) : (
+        <>
+          {type === "image" && <img src={url} alt={nom} loading="lazy" onError={() => setIllisible(true)} />}
+          {type === "audio" &&
+            (compact ? (
+              <p className="apercu-icone">♪ {extension(chemin)}</p>
+            ) : (
+              <audio src={url} controls preload="none" onError={() => setIllisible(true)} />
+            ))}
+          {type === "video" && (
+            <video
+              src={`${url}#t=0.5`}
+              controls={!compact}
+              muted={compact}
+              preload="metadata"
+              onError={() => setIllisible(true)}
+            />
+          )}
+          {type === "police" && <ApercuPolice url={url} compact={compact} />}
+          {type === "pdf" && !compact && <iframe src={url} title={nom} />}
+          {(type === "autre" || (type === "pdf" && compact)) && <p className="apercu-icone">{extension(chemin) || "dossier"}</p>}
+        </>
+      )}
       {!compact && (
         <a href={url} target="_blank" rel="noreferrer">
           Ouvrir {nom}

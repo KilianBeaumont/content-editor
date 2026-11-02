@@ -134,8 +134,8 @@ creations/
     2026-11-06_le-dernier-dragon/
       texte/
       voix/
-        fr.wav
-        en.wav
+        fr/                           narration française (une ou plusieurs prises)
+        en/                           narration anglaise, si version anglaise
       assets/                         visuels propres à cette vidéo, dont ceux des artistes
         nom-artiste/
       autorisation/                   preuve d'accord de l'auteur
@@ -330,10 +330,25 @@ Exemple pour un récit :
   "artistes": ["nom-artiste"],
   "assetsBibliotheque": ["outro-recits-en", "generique-recits"],
   "langues": ["fr", "en"],
+  "sorties": ["youtube", "youtube-piste-en", "podcast-fr", "podcast-en", "formats-courts"],
+  "nombreFormatsCourts": 2,
+  "consignes": {
+    "intention": "Une montée lente vers la révélation du dragon",
+    "dureeViseeMinutes": 15,
+    "aGarder": "La dernière phrase du dragon",
+    "aEviter": "Musique trop présente pendant les dialogues"
+  },
+  "fichiers": [
+    { "chemin": "voix/fr/narration.wav", "origine": "inbox/narration.wav", "note": "deuxième prise, la meilleure" }
+  ],
   "versionValidee": "v3",
-  "datePublicationPrevue": "2026-11-06"
+  "datePublicationPrevue": "2026-11-06",
+  "sessionClaude": null,
+  "creeLe": "2026-11-02T20:00:00.000Z"
 }
 ```
+
+`sorties` liste ce que l'utilisateur veut obtenir (dossiers créés dans `exports/`). `consignes` et la `note` de chaque fichier orientent le montage : Claude les lit avec le guide de style de la catégorie. `auteur.id` renvoie à la fiche `auteurs/<id>/` (`null` pour une histoire de l'utilisateur, avec `estUtilisateur: true`).
 
 Règles métier :
 - Un récit d'un autre auteur ne peut pas être exporté si `autorisation.obtenue` est faux ou si la preuve est absente. Une version anglaise exige `traductionAnglaise: true`.

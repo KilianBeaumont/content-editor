@@ -597,3 +597,93 @@ textarea:focus-visible {
 input[type="file"] {
   max-width: 640px;
 }
+
+.zone-depot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 16px;
+  color: var(--texte-doux);
+  border: 2px dashed var(--bordure);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.zone-depot p {
+  margin: 0;
+}
+
+.zone-depot-survol {
+  color: var(--texte);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.tableau-inbox tbody tr {
+  cursor: pointer;
+}
+
+.tableau-inbox tbody tr:hover,
+.ligne-selectionnee {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.cellule-nom {
+  overflow-wrap: anywhere;
+}
+
+.apercu-inbox {
+  margin-top: 18px;
+}
+
+.apercu-inbox h3 {
+  margin-top: 0;
+  overflow-wrap: anywhere;
+}
+
+.choix-ligne {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin-bottom: 10px;
+}
+
+.ligne-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.case-desactivee {
+  opacity: 0.55;
+}
+
+.case strong {
+  font-weight: 600;
+}
+
+.liste-choix {
+  max-height: 320px;
+  margin-top: 10px;
+  overflow-y: auto;
+}
+
+.tableau-choix td {
+  vertical-align: middle;
+}
+
+.tableau-choix input[type="text"] {
+  width: 100%;
+  min-width: 160px;
+}
+
+.tableau-choix .cellule-nom {
+  cursor: pointer;
+}
+
+.alerte-texte {
+  margin: -6px 0 10px;
+  color: var(--alerte);
+}

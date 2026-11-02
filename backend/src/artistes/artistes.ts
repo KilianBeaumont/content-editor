@@ -117,3 +117,10 @@ export async function enregistrerPreuve(
   });
   return lireArtiste(creations, id);
 }
+
+export async function ajouterVideoArtiste(creations: string, id: string, projet: string): Promise<void> {
+  const { fiche } = await lireArtiste(creations, id);
+  if (!fiche.videos.includes(projet)) {
+    await ecrireFiche(creations, ARTISTES, id, { ...fiche, videos: [...fiche.videos, projet] });
+  }
+}

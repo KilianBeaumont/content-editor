@@ -6,12 +6,15 @@ import { AVenir } from "./pages/AVenir.tsx";
 import { Bibliotheque } from "./pages/bibliotheque/Bibliotheque.tsx";
 import { NouvelAsset } from "./pages/bibliotheque/NouvelAsset.tsx";
 import { PageAsset } from "./pages/bibliotheque/PageAsset.tsx";
+import { Inbox } from "./pages/inbox/Inbox.tsx";
 import { Parametres } from "./pages/parametres/Parametres.tsx";
+import { NouveauProjet } from "./pages/projets/NouveauProjet.tsx";
 import { TableauDeBord } from "./pages/TableauDeBord.tsx";
 
 const MENU = [
   { chemin: "/", libelle: "Tableau de bord" },
   { chemin: "/nouveau-projet", libelle: "Nouveau projet" },
+  { chemin: "/inbox", libelle: "Inbox" },
   { chemin: "/bibliotheque", libelle: "Bibliothèque" },
   { chemin: "/auteurs-artistes", libelle: "Auteurs et artistes" },
   { chemin: "/parametres", libelle: "Paramètres" },
@@ -31,8 +34,9 @@ export function App() {
       <main className="contenu">
         <Routes>
           <Route path="/" element={<TableauDeBord />} />
-          <Route path="/nouveau-projet" element={<AVenir titre="Nouveau projet" etape={7} />} />
+          <Route path="/nouveau-projet" element={<NouveauProjet />} />
           <Route path="/projets/:id" element={<AVenir titre="Projet" etape={9} />} />
+          <Route path="/inbox" element={<Inbox />} />
           <Route path="/bibliotheque" element={<Bibliotheque />} />
           <Route path="/bibliotheque/nouveau" element={<NouvelAsset />} />
           <Route path="/bibliotheque/assets/:id" element={<PageAsset />} />

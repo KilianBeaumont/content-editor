@@ -62,6 +62,14 @@ export function formaterTaille(octets: number): string {
   return `${(octets / 1024 / 1024 / 1024).toFixed(2).replace(".", ",")} Go`;
 }
 
+export function formaterDuree(secondes: number): string {
+  const total = Math.round(secondes);
+  const heures = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const reste = String(total % 60).padStart(2, "0");
+  return heures > 0 ? `${heures}:${String(minutes).padStart(2, "0")}:${reste}` : `${minutes}:${reste}`;
+}
+
 export function verifierFichier(fichier: File, extensions: readonly string[], tailleMax: number): string | null {
   const point = fichier.name.lastIndexOf(".");
   const extension = point > 0 ? fichier.name.slice(point).toLowerCase() : "";

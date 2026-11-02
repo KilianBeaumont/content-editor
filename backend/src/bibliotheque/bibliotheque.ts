@@ -49,6 +49,10 @@ interface CatalogueAnalyse {
   invalides: EntreeInvalide[];
 }
 
+function cheminDansBibliotheque(creations: string, chemin: string): string {
+  return cheminSur(cheminSur(creations, RACINE), chemin);
+}
+
 let file: Promise<unknown> = Promise.resolve();
 
 function enSerie<T>(operation: () => Promise<T>): Promise<T> {
@@ -105,7 +109,7 @@ async function statutAsset(
 ): Promise<StatutAsset> {
   const problemes: string[] = [];
   try {
-    if (!(await existe(cheminSur(creations, `${RACINE}/${asset.chemin}`)))) {
+    if (!(await existe(cheminDansBibliotheque(creations, asset.chemin)))) {
       problemes.push(`Fichier introuvable : ${RACINE}/${asset.chemin}`);
     }
   } catch (erreur) {
@@ -247,7 +251,7 @@ export function ajouterAsset(creations: string, nouvel: NouvelAsset): Promise<El
     if (morceaux.length !== 3 || chaineValide === undefined || type === undefined || !nom || nom.startsWith(".")) {
       throw new ErreurHttp(400, `Emplacement inconnu dans la bibliothèque : ${nouvel.chemin}`);
     }
-    if (!(await existe(cheminSur(creations, `${RACINE}/${nouvel.chemin}`)))) {
+    if (!(await existe(cheminDansBibliotheque(creations, nouvel.chemin)))) {
       throw new ErreurHttp(400, `Fichier introuvable : ${RACINE}/${nouvel.chemin}`);
     }
     verifierExtension(nom, TYPES[type].extensions);
@@ -294,10 +298,24 @@ export function supprimerAsset(creations: string, id: string): Promise<{ corbeil
       );
     }
     const relatif = `${RACINE}/${asset.chemin}`;
-    const corbeille = (await existe(cheminSur(creations, relatif)))
+    const corbeille = (await existe(cheminDansBibliotheque(creations, asset.chemin)))
       ? await mettreALaCorbeille(creations, relatif, RACINE)
       : null;
     await ecrireCatalogue(creations, { ...catalogue, entrees: catalogue.entrees.filter((_, index) => index !== position) });
     return { corbeille };
+  });
+}
+
+export function ajouterUtilisations(creations: string, ids: string[], projet: string): Promise<void> {
+  return enSerie(async () => {
+    const catalogue = await lireCatalogue(creations);
+    const { assets } = analyser(catalogue.entrees);
+    const positions = new Map(assets.map(({ asset, position }) => [position, asset]));
+    const entrees = catalogue.entrees.map((brut, position) => {
+      const asset = positions.get(position);
+      if (asset === undefined || !ids.includes(asset.id) || asset.utilisations.includes(projet)) return brut;
+      return { ...asset, utilisations: [...asset.utilisations, projet] };
+    });
+    await ecrireCatalogue(creations, { ...catalogue, entrees });
   });
 }
