@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CATEGORIES, type Categorie } from "./categories.ts";
+import type { FichierMedia } from "./inbox.ts";
 
 export const CHAINES = ["creation", "recits"] as const;
 export type Chaine = (typeof CHAINES)[number];
@@ -240,4 +241,47 @@ export interface VerificationExport {
   exportable: boolean;
   sortiesBloquees: Sortie[];
   problemes: ProblemeExport[];
+}
+
+export const ETAPES_PROJET = ["fichiers", "analyse", "plan", "apercu", "valide", "exporte"] as const;
+export type EtapeProjet = (typeof ETAPES_PROJET)[number];
+
+export const LIBELLES_ETAPES: Record<EtapeProjet, string> = {
+  fichiers: "Fichiers rangés",
+  analyse: "Analysé",
+  plan: "Plan proposé",
+  apercu: "Aperçu prêt",
+  valide: "Validé",
+  exporte: "Exporté",
+};
+
+export interface ResumeProjet {
+  id: string;
+  chemin: string;
+  chaine: Chaine;
+  categorie: Categorie;
+  titre: { fr: string; en: string | null };
+  datePublicationPrevue: string;
+  etape: EtapeProjet;
+  sorties: Sortie[];
+  nombreFichiers: number;
+}
+
+export interface ProjetIllisible {
+  chemin: string;
+  erreur: string;
+}
+
+export interface ReponseListeProjets {
+  projets: ResumeProjet[];
+  illisibles: ProjetIllisible[];
+}
+
+export interface DetailProjet extends Projet {
+  etape: EtapeProjet;
+}
+
+export interface ReponseFichiersProjet {
+  fichiers: FichierMedia[];
+  ffprobeDisponible: boolean;
 }

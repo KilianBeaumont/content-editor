@@ -2,13 +2,13 @@ import { NavLink, Route, Routes } from "react-router";
 import { AuteursArtistes } from "./pages/auteurs-artistes/AuteursArtistes.tsx";
 import { PageArtiste } from "./pages/auteurs-artistes/PageArtiste.tsx";
 import { PageAuteur } from "./pages/auteurs-artistes/PageAuteur.tsx";
-import { AVenir } from "./pages/AVenir.tsx";
 import { Bibliotheque } from "./pages/bibliotheque/Bibliotheque.tsx";
 import { NouvelAsset } from "./pages/bibliotheque/NouvelAsset.tsx";
 import { PageAsset } from "./pages/bibliotheque/PageAsset.tsx";
 import { Inbox } from "./pages/inbox/Inbox.tsx";
 import { Parametres } from "./pages/parametres/Parametres.tsx";
 import { NouveauProjet } from "./pages/projets/NouveauProjet.tsx";
+import { PageProjet } from "./pages/projets/PageProjet.tsx";
 import { TableauDeBord } from "./pages/TableauDeBord.tsx";
 
 const MENU = [
@@ -35,7 +35,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<TableauDeBord />} />
           <Route path="/nouveau-projet" element={<NouveauProjet />} />
-          <Route path="/projets/:id" element={<AVenir titre="Projet" etape={9} />} />
+          <Route path="/projets/:id" element={<PageProjet />} />
           <Route path="/inbox" element={<Inbox />} />
           <Route path="/bibliotheque" element={<Bibliotheque />} />
           <Route path="/bibliotheque/nouveau" element={<NouvelAsset />} />

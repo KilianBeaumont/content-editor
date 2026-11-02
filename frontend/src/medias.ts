@@ -1,7 +1,7 @@
-import type { FichierInbox } from "@editeur/shared";
+import type { FichierMedia } from "@editeur/shared";
 import { formaterDuree } from "./api.ts";
 
-export function resumeMedia(fichier: FichierInbox): string {
+export function resumeMedia(fichier: FichierMedia): string {
   const { infos } = fichier;
   if (infos === null) return "";
   const morceaux: string[] = [];
@@ -18,6 +18,6 @@ export function resumeMedia(fichier: FichierInbox): string {
   return morceaux.join(" · ");
 }
 
-export function dureeMedia(fichier: FichierInbox): string {
+export function dureeMedia(fichier: FichierMedia): string {
   return fichier.infos?.duree != null && fichier.genre !== "image" ? formaterDuree(fichier.infos.duree) : "";
 }

@@ -43,7 +43,7 @@ export interface InfosMedia {
   audio: InfosAudio | null;
 }
 
-export interface FichierInbox {
+export interface FichierMedia {
   chemin: string;
   taille: number;
   modifie: string;
@@ -53,11 +53,11 @@ export interface FichierInbox {
 }
 
 export interface ReponseInbox {
-  fichiers: FichierInbox[];
+  fichiers: FichierMedia[];
   espaceLibre: number | null;
   ffprobeDisponible: boolean;
 }
 
 export interface ReponseEnvoiInbox {
-  fichier: FichierInbox;
+  fichier: FichierMedia;
 }

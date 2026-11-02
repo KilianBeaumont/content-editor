@@ -1,4 +1,4 @@
-import type { FichierInbox, ReponseEnvoiInbox } from "@editeur/shared";
+import type { FichierMedia, ReponseEnvoiInbox } from "@editeur/shared";
 import { useRef, useState, type DragEvent } from "react";
 import { formaterTaille, messageErreur } from "../api.ts";
 import { BarreEnvoi, useEnvoi } from "./Envoi.tsx";
@@ -9,7 +9,7 @@ interface Resultat {
   erreur: string | null;
 }
 
-export function useEnvoisInbox(surRecu: (fichier: FichierInbox) => void, surFin: () => void) {
+export function useEnvoisInbox(surRecu: (fichier: FichierMedia) => void, surFin: () => void) {
   const [enAttente, setEnAttente] = useState<File[]>([]);
   const [resultats, setResultats] = useState<Resultat[]>([]);
   const file = useRef<File[]>([]);

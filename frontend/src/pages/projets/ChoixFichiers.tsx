@@ -1,4 +1,4 @@
-import { LIBELLES_GENRES, type Chaine, type FichierInbox, type GenreFichier, type ReponseInbox } from "@editeur/shared";
+import { LIBELLES_GENRES, type Chaine, type FichierMedia, type GenreFichier, type ReponseInbox } from "@editeur/shared";
 import type { Dispatch, SetStateAction } from "react";
 import { SuiviEnvois, useEnvoisInbox, ZoneDepot } from "../../composants/EnvoisInbox.tsx";
 import { Message } from "../../composants/Message.tsx";
@@ -44,7 +44,7 @@ export function ChoixFichiers(proprietes: ProprietesChoixFichiers) {
     surChoix((actuels) => new Map(actuels).set(recu.chemin, { destination: destinationParDefaut(recu.genre, chaine), note: "" }));
   }, recharger);
 
-  function basculer(fichier: FichierInbox) {
+  function basculer(fichier: FichierMedia) {
     const suivant = new Map(choix);
     if (suivant.has(fichier.chemin)) suivant.delete(fichier.chemin);
     else suivant.set(fichier.chemin, { destination: destinationParDefaut(fichier.genre, chaine), note: "" });

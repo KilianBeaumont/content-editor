@@ -1,4 +1,4 @@
-import { LIBELLES_GENRES, type FichierInbox, type ReponseInbox } from "@editeur/shared";
+import { LIBELLES_GENRES, type FichierMedia, type ReponseInbox } from "@editeur/shared";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { envoyerJson, formaterTaille, lireJson, messageErreur } from "../../api.ts";
@@ -32,7 +32,7 @@ export function Inbox() {
     charger,
   );
 
-  async function mettreALaCorbeille(fichier: FichierInbox) {
+  async function mettreALaCorbeille(fichier: FichierMedia) {
     if (!window.confirm(`Mettre ${fichier.chemin} à la corbeille ?`)) return;
     try {
       await envoyerJson("DELETE", urlSuppression(fichier.chemin));

@@ -27,7 +27,7 @@ import { cheminSur, ecrireJsonAtomique, existe, FichierInvalideError, lireJsonCo
 import { enregistrerFlux, nomLibre, verifierExtension } from "../televersement.ts";
 import { deplacerTous, ErreurDeplacement, type Deplacement, type Renommer } from "./deplacement.ts";
 
-const MOTIF_ID = /^\d{4}-\d{2}-\d{2}_[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const MOTIF_ID_PROJET = /^\d{4}-\d{2}-\d{2}_[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const METADATA = "metadata.json";
 const COMPLEMENTS_METADATA: Partial<MetadataProjet> = {
   description: { fr: "", en: "" },
@@ -256,7 +256,7 @@ export async function creerProjet(
 }
 
 async function trouverProjet(creations: string, id: string): Promise<{ chaine: Chaine; dossier: string }> {
-  if (MOTIF_ID.test(id)) {
+  if (MOTIF_ID_PROJET.test(id)) {
     for (const chaine of CHAINES) {
       const dossier = cheminSur(creations, `${DOSSIERS_CHAINES[chaine]}/${id}`);
       if (await existe(dossier)) return { chaine, dossier };

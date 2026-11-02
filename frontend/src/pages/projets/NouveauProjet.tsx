@@ -266,9 +266,11 @@ export function NouveauProjet() {
           {erreurPreuve && <Message type="erreur">Le projet est créé, mais la preuve n'a pas pu être enregistrée : {erreurPreuve}</Message>}
           <h3>Avant l'export</h3>
           {verification === null ? <p className="note">Vérification…</p> : <Verification verification={verification} />}
-          <p className="note">L'écran Projet (suivi, plan de montage, aperçus) arrive à l'étape 9.</p>
           <div className="actions">
-            <button type="button" className="bouton bouton-principal" onClick={recommencer}>
+            <Link className="bouton bouton-principal" to={`/projets/${projet.id}`}>
+              Ouvrir le projet
+            </Link>
+            <button type="button" className="bouton" onClick={recommencer}>
               Créer un autre projet
             </button>
             <Link className="bouton" to="/inbox">

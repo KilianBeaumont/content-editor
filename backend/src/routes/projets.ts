@@ -1,14 +1,18 @@
 import {
   schemaSaisieProjet,
   TAILLE_MAX_PREUVE,
+  type DetailProjet,
   type Projet,
   type ReponseCreationProjet,
+  type ReponseFichiersProjet,
+  type ReponseListeProjets,
   type VerificationExport,
 } from "@editeur/shared";
 import type { FastifyPluginAsync } from "fastify";
 import type { Contexte } from "../contexte.ts";
 import { ErreurHttp } from "../erreurs.ts";
 import { creerProjet, enregistrerPreuveAutorisation, lireProjet } from "../projets/projets.ts";
+import { fichiersProjet, lireDetailProjet, listerProjets } from "../projets/liste.ts";
 import { verifierExportable } from "../projets/verification.ts";
 
 interface ParametresId {
@@ -25,7 +29,13 @@ export function routesProjets(contexte: Contexte): FastifyPluginAsync {
       return creation;
     });
 
-    app.get<ParametresId>("/projets/:id", async (requete): Promise<Projet> => lireProjet(creations(), requete.params.id));
+    app.get("/projets", async (): Promise<ReponseListeProjets> => listerProjets(creations()));
+
+    app.get<ParametresId>("/projets/:id", async (requete): Promise<DetailProjet> => lireDetailProjet(creations(), requete.params.id));
+
+    app.get<ParametresId>("/projets/:id/fichiers", async (requete): Promise<ReponseFichiersProjet> =>
+      fichiersProjet(creations(), requete.params.id, contexte.config.binaires.ffprobe),
+    );
 
     app.get<ParametresId>("/projets/:id/verification", async (requete): Promise<VerificationExport> =>
       verifierExportable(creations(), await lireProjet(creations(), requete.params.id)),

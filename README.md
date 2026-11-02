@@ -30,7 +30,7 @@ Phase 1 (le socle), en cours.
 | 6 | Inbox : rushes déposés ou glissés dans l'interface | ✅ |
 | 7 | Création d'un projet depuis l'inbox : sorties voulues, consignes de montage, pistes FR et EN, auteur, artistes, assets | ✅ |
 | 8 | Règles d'autorisation avant export | ✅ |
-| 9 | Tableau de bord et écran Projet | à venir |
+| 9 | Tableau de bord et écran Projet | ✅ |
 | 10 | Modifier, renommer, supprimer un projet | à venir |
 | 11 | Lanceur à double-cliquer (Windows et Mac) | à venir |
 
@@ -154,13 +154,30 @@ Ce que fait l'outil :
 - il écrit `metadata.json` (titre, sorties, consignes, notes, auteur, autorisation…) ;
 - il ajoute le projet à l'historique de l'auteur, des artistes et des assets choisis.
 
-Après la création, la page indique ce qui bloquerait l'export (voir ci-dessous).
+Après la création, la page indique ce qui bloquerait l'export (voir ci-dessous) et propose **Ouvrir le projet**.
 
-Deux projets ne peuvent pas avoir le même nom (même date et même titre), même sur deux chaînes différentes. L'écran Projet (suivi, modification, plan de montage) arrive à l'étape 9.
+Deux projets ne peuvent pas avoir le même nom (même date et même titre), même sur deux chaînes différentes.
+
+### Suivre ses projets
+
+Le **Tableau de bord** montre :
+- les **prochaines publications**, avec le nombre de jours restants, et une alerte pour un projet dont la date est passée sans export ;
+- les **projets en cours** des deux chaînes, avec leur étape ;
+- les **tâches en cours** (transcriptions, rendus), à partir de la phase 2.
+
+Un clic sur un projet ouvre l'**écran Projet** :
+- les étapes : fichiers rangés, analysé, plan proposé, aperçu prêt, validé, exporté. L'étape se déduit de ce que contient le dossier ;
+- ce qui bloque l'export, s'il y a quelque chose ;
+- les sorties voulues et les consignes de montage ;
+- l'auteur, ce qu'il a autorisé et la preuve (récits) ;
+- les artistes et les assets de la bibliothèque choisis ;
+- les fichiers, rangés par dossier, avec leur durée, leur résolution et ta note. Un clic sur un fichier l'affiche.
+
+Pour l'instant l'écran Projet est en lecture seule : la modification arrive à l'étape 10, le plan de montage et les aperçus en phase 3.
 
 ### Savoir si un projet peut être exporté
 
-L'outil vérifie les droits avant tout export. Le résultat s'affiche après la création du projet (et sur l'écran Projet à partir de l'étape 9) :
+L'outil vérifie les droits avant tout export. Le résultat s'affiche après la création du projet et sur l'écran Projet :
 
 | Situation | Effet |
 | --- | --- |
@@ -260,6 +277,7 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | « Impossible de déplacer … Rien n'a été créé » | Un fichier était ouvert dans un autre programme ou le disque est plein : fermer le programme ou libérer de la place, puis recommencer. Les fichiers sont restés dans l'inbox |
 | « Fichier trop volumineux » à l'envoi | La limite est de 4 Go pour la bibliothèque et de 50 Mo pour une preuve d'accord |
 | « Envoi interrompu » dans le terminal, ou « La connexion avec le serveur a été coupée » à l'écran | La page a été fermée ou rechargée pendant l'envoi, ou le serveur a redémarré : recommencer l'envoi en gardant la page ouverte. Aucun fichier partiel n'est conservé |
+| Page blanche en mode normal après une mise à jour | Relancer `npm start` après chaque `npm run build` : le serveur ne connaît que les fichiers de l'interface présents à son démarrage |
 | Après une mise à jour, l'interface ne répond plus | Relancer l'outil (et `npm install` si de nouvelles dépendances ont été ajoutées) |
 
 ## Développement

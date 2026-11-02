@@ -687,3 +687,111 @@ input[type="file"] {
   margin: -6px 0 10px;
   color: var(--alerte);
 }
+
+.etapes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+  counter-reset: etape;
+}
+
+.etape {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  color: var(--texte-doux);
+  border: 1px solid var(--bordure);
+  border-radius: 999px;
+}
+
+.etape::before {
+  counter-increment: etape;
+  content: counter(etape) ". ";
+}
+
+.etape-faite {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 40%, transparent);
+}
+
+.etape-actuelle {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.badge-etape-fichiers {
+  color: var(--texte-doux);
+}
+
+.badge-etape-plan,
+.badge-etape-apercu,
+.badge-etape-analyse {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.badge-etape-valide,
+.badge-etape-exporte {
+  color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+}
+
+.liste-publications {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.liste-publications li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.publication-date {
+  min-width: 230px;
+  font-weight: 600;
+}
+
+.titre-en {
+  margin: -12px 0 0;
+}
+
+.bloc-texte p {
+  margin: 2px 0 12px;
+  white-space: pre-wrap;
+}
+
+.liste-sorties,
+.liste-autorisation {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+
+.groupe-fichiers h3 {
+  margin: 14px 0 4px;
+}
+
+.groupe-fichiers table {
+  table-layout: fixed;
+}
+
+.groupe-fichiers td:nth-child(1) {
+  width: 32%;
+}
+
+.groupe-fichiers td:nth-child(2) {
+  width: 36%;
+}
+
+.groupe-fichiers td:nth-child(4) {
+  width: 10%;
+  text-align: right;
+}
