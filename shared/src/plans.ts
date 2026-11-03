@@ -102,6 +102,53 @@ export function plagesImage(segments: Pick<SegmentPlan, "debut" | "fin" | "decal
 
 export interface SaisiePropositionPlan {
   consigne: string;
+  depuis: string | null;
+}
+
+export interface CommentaireRetour {
+  id: string;
+  temps: number | null;
+  texte: string;
+  traite: boolean;
+  traiteDans: string | null;
+  reponse: string | null;
+  creeLe: string;
+}
+
+export interface RetoursVersion {
+  version: string;
+  commentaires: CommentaireRetour[];
+}
+
+export interface SaisieCommentaire {
+  temps: number | null;
+  texte: string;
+}
+
+export interface ModificationCommentaire {
+  texte: string;
+  traite: boolean;
+}
+
+export function cheminRetours(version: string): string {
+  return `versions/${version}/retours.json`;
+}
+
+export interface Situation {
+  segment: string;
+  tempsSource: number;
+  source: string;
+}
+
+export function situer(segments: Pick<SegmentPlan, "id" | "source" | "debut" | "fin">[], temps: number): Situation | null {
+  let depart = 0;
+  for (const segment of segments) {
+    const duree = segment.fin - segment.debut;
+    if (temps < depart + duree) return { segment: segment.id, source: segment.source, tempsSource: segment.debut + Math.max(0, temps - depart) };
+    depart += duree;
+  }
+  const dernier = segments.at(-1);
+  return dernier === undefined ? null : { segment: dernier.id, source: dernier.source, tempsSource: dernier.fin };
 }
 
 export const MOTIF_VERSION = /^v[1-9]\d*$/;
@@ -200,4 +247,15 @@ export const schemaPlanMontage = schemaPropositionPlan.extend({
 
 export const schemaSaisiePropositionPlan = z.object({
   consigne: z.string().trim().max(4000),
-}) satisfies z.ZodType<SaisiePropositionPlan>;
+  depuis: z.string().regex(MOTIF_VERSION).nullable().default(null),
+}) satisfies z.ZodType<SaisiePropositionPlan, unknown>;
+
+export const schemaSaisieCommentaire = z.object({
+  temps: z.number().min(0).nullable(),
+  texte: z.string().trim().min(1, "Le commentaire est vide.").max(2000),
+}) satisfies z.ZodType<SaisieCommentaire>;
+
+export const schemaModificationCommentaire = z.object({
+  texte: z.string().trim().min(1, "Le commentaire est vide.").max(2000),
+  traite: z.boolean(),
+}) satisfies z.ZodType<ModificationCommentaire>;

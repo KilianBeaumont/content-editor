@@ -2,12 +2,15 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import {
   cheminPlan,
+  situer,
   LIBELLES_CHAINES,
   LIBELLES_GENRES,
   type AnalyseAudio,
+  type CommentaireRetour,
   type FichierMedia,
   type Intervalle,
   type PlanchesRush,
+  type PlanMontage,
   type Projet,
   type SegmentTranscrit,
   type Transcription,
@@ -136,6 +139,35 @@ function sectionPlanches(planches: Map<string, PlanchesRush>): string[] {
   ];
 }
 
+export interface RetoursAIntegrer {
+  version: string;
+  plan: PlanMontage;
+  commentaires: CommentaireRetour[];
+}
+
+function instant(secondes: number): string {
+  const minutes = Math.floor(secondes / 60);
+  return `${minutes}:${(secondes - minutes * 60).toFixed(1).padStart(4, "0")}`;
+}
+
+export function sectionRetours(retours: RetoursAIntegrer): string[] {
+  const { version, plan, commentaires } = retours;
+  return [
+    `## Retours de l'utilisateur sur l'aperçu ${version}`,
+    "",
+    `L'utilisateur a regardé l'aperçu de la version ${version} (plan : ${cheminPlan(version)}) et a laissé ces commentaires. L'instant est celui de la vidéo finale de ${version} ; la colonne « Où » le situe dans le plan ${version} et dans le rush. Réponds à chaque commentaire dans reponsesRetours, avec son numéro.`,
+    "",
+    "| N° | Instant dans l'aperçu | Où | Commentaire |",
+    "| --- | --- | --- | --- |",
+    ...commentaires.map((commentaire, index) => {
+      const situation = commentaire.temps === null ? null : situer(plan.segments, commentaire.temps);
+      const ou = situation === null ? "toute la vidéo" : `${situation.segment} · ${situation.source} à ${secondes(situation.tempsSource)} s`;
+      return `| ${index} | ${commentaire.temps === null ? "toute la vidéo" : instant(commentaire.temps)} | ${ou} | ${cellule(commentaire.texte)} |`;
+    }),
+    "",
+  ];
+}
+
 export interface Preparation {
   transcriptions: number;
   version: string;
@@ -148,6 +180,7 @@ export async function preparerProposition(
   ffprobe: string,
   version: string,
   consigne: string,
+  retours: RetoursAIntegrer | null = null,
 ): Promise<Preparation> {
   const dossier = cheminSur(creations, projet.chemin);
   const { metadata } = projet;
@@ -236,6 +269,7 @@ export async function preparerProposition(
           ),
         ]),
     "",
+    ...(retours === null ? [] : sectionRetours(retours)),
     ...(planPrecedent === null
       ? []
       : [

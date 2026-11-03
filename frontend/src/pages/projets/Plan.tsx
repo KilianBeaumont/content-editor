@@ -72,11 +72,10 @@ export function Plan({ projet, surChangement }: { projet: DetailProjet; surChang
       ) : courante.plan === null ? (
         <Message type="erreur">{courante.erreur}</Message>
       ) : (
-        <>
-          <EditeurPlan projet={projet} version={courante} initial={courante.plan} proxies={proxies} surEnregistrement={remplacer} />
-          <Apercu projet={projet} version={courante} plan={courante.plan} taches={taches} />
-        </>
+        <EditeurPlan projet={projet} version={courante} initial={courante.plan} proxies={proxies} surEnregistrement={remplacer} />
       )}
+
+      {plans !== null && <Apercu projet={projet} versions={plans.versions} taches={taches} surChangement={surChangement} />}
 
       {active !== null ? (
         <ul className="liste-taches">

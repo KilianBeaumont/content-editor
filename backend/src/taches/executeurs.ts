@@ -65,6 +65,6 @@ export function executeurs(contexte: Contexte): Record<TypeTache, Executeur> {
     "preparation-rush": async (tache, outils) => preparerRush(contexte, tache.projet ?? "", String(tache.parametres.fichier), outils),
     "rendu-apercu": async (tache, outils) => rendreApercu(contexte, tache.projet ?? "", String(tache.parametres.version), outils),
     "proposition-plan": async (tache, outils) =>
-      proposerPlan(contexte, tache.projet ?? "", String(tache.parametres.consigne ?? ""), outils),
+      proposerPlan(contexte, tache.projet ?? "", String(tache.parametres.consigne ?? ""), typeof tache.parametres.depuis === "string" ? tache.parametres.depuis : null, outils),
   };
 }

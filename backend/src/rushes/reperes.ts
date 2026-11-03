@@ -5,20 +5,13 @@ import { z } from "zod";
 import { ErreurHttp } from "../erreurs.ts";
 import { cheminSur, ecrireJsonAtomique, existe, lireJsonAvecDefauts } from "../fichiers.ts";
 import { lireProjet } from "../projets/projets.ts";
+import { enSerie } from "../serie.ts";
 
 export const FICHIER_REPERES = "travail/reperes.json";
 
 const schemaReperes = z.object({
   reperes: z.array(z.object({ id: z.string(), source: z.string(), temps: z.number(), note: z.string(), creeLe: z.string() })),
 }) satisfies z.ZodType<ReponseReperes>;
-
-const verrous = new Map<string, Promise<unknown>>();
-
-function enSerie<T>(cle: string, operation: () => Promise<T>): Promise<T> {
-  const suite = (verrous.get(cle) ?? Promise.resolve()).then(operation, operation);
-  verrous.set(cle, suite.catch(() => undefined));
-  return suite;
-}
 
 async function dossierProjet(creations: string, id: string): Promise<string> {
   return cheminSur(creations, (await lireProjet(creations, id)).chemin);

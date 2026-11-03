@@ -51,11 +51,11 @@ Phase 3 (plan de montage et aperçu), pour un vlog d'abord.
 | 3.1 | Préparation des rushes : proxy léger (HDR converti), planches d'images, silences et pics sonores, moments marqués à la main | ✅ |
 | 3.2 | Contrat `plan.json` et validation | ✅ |
 | 3.3 | Appel de Claude depuis le backend (`claude -p`, sessions, limites) et proposition d'un plan | ✅ |
-| 3.4 | Skill `proposer-plan` (première version en place, à affiner sur la vidéo de test) | en cours |
+| 3.4 | Skills `proposer-plan` et `integrer-retours` (à affiner sur de vraies vidéos) | ✅ |
 | 3.5 | Écran Plan : écouter, ajuster et valider le plan ; coupes décalées et plans de coupe | ✅ |
 | 3.6 | Rendu de l'aperçu basse résolution depuis les proxys (coupes décalées, plans de coupe, musique, volume normalisé) | ✅ |
-| 3.7 | Lecteur et commentaires horodatés | à venir |
-| 3.8 | Boucle de versions (`integrer-retours`) et validation | à venir |
+| 3.7 | Lecteur et commentaires horodatés, repères sur la barre de lecture, comparaison des versions | ✅ |
+| 3.8 | Boucle de versions (`integrer-retours`) et validation de la version | ✅ |
 | 3.9 | Textes à l'écran et composants animés (Remotion) | après la première boucle |
 
 Les phases suivantes (exports, formats courts, podcast, statistiques) viendront après.
@@ -307,7 +307,27 @@ Quand tout est bon : **Valider le plan** (impossible tant qu'il reste une erreur
 
 Ce que l'aperçu contient : les segments dans l'ordre, coupés à l'image près et sans « clic » sonore (fondu de 30 ms à chaque coupe), les coupes décalées, les plans de coupe, la musique (avec fondus d'entrée et de sortie, baissée sous la voix si demandé) et un volume normalisé autour de -14 LUFS. Format : 640x360 pour une vidéo 16:9, 360x640 pour un format court.
 
-L'outil vérifie le fichier rendu (durée conforme au plan, présence de l'image et du son) et signale tout écart sous le lecteur. Le fichier est rangé dans `versions/vN/apercu.mp4`, avec `rendu.json` (format, durée, contrôles). Une version rendue ne change plus : pour corriger, **Proposer la version suivante** (les commentaires horodatés arrivent à l'étape suivante).
+L'outil vérifie le fichier rendu (durée conforme au plan, présence de l'image et du son) et signale tout écart sous le lecteur. Le fichier est rangé dans `versions/vN/apercu.mp4`, avec `rendu.json` (format, durée, contrôles). Une version rendue ne change plus : pour corriger, commente-la (ci-dessous), puis produis la version suivante.
+
+### Commenter l'aperçu
+
+Sous l'aperçu, la visionneuse :
+- la **barre de repères** sous la vidéo montre le début de chaque segment (traits), tes commentaires (points orange, verts une fois traités) et la position de lecture ; un clic sur un point y amène la vidéo ;
+- mets en pause là où quelque chose ne va pas, écris ce qu'il faut changer (la vidéo se met en pause dès que tu écris), puis **Ajouter** (ou Entrée). Le commentaire est rattaché à l'instant affiché (et au segment) ; décoche la case pour un commentaire sur **toute la vidéo** (« musique trop forte ») ;
+- chaque commentaire peut être **modifié**, **marqué traité** ou **supprimé** ;
+- si plusieurs versions ont été rendues, les boutons **v1, v2…** passent de l'une à l'autre **au même instant**, pour comparer.
+
+Les commentaires sont enregistrés dans `versions/vN/retours.json`.
+
+### Produire la version suivante, puis valider
+
+1. Une fois tes commentaires écrits sur le dernier aperçu : **Produire la version suivante** (avec une précision pour Claude si tu veux).
+2. Claude reprend le plan de cette version et ne change que ce que tes commentaires demandent. Il voit chaque commentaire situé dans le plan et dans le rush (« 0:04 → s1, à 7,95 s du rush »).
+3. Le nouveau plan (v2, v3…) apparaît dans l'éditeur, avec **Ce que Claude a changé d'après tes commentaires**. Sous chaque commentaire de la version précédente, sa réponse s'affiche, et le commentaire passe en **✓ traité en v2**.
+4. Ajuste si besoin, **Valider le plan**, **Lancer l'aperçu**, regarde, commente… jusqu'à ce que ce soit bon.
+5. Quand un aperçu te convient : **C'est la bonne : valider la version vN**. Le projet passe à l'étape **Validé** ; c'est cette version qui sera rendue en pleine qualité à l'export (phase 4). **Annuler la validation** est toujours possible.
+
+Toutes les versions restent dans `versions/` avec leur plan, leur aperçu et tes commentaires, pour pouvoir revenir en arrière.
 
 ### Modifier un projet, ajouter des fichiers, le mettre à la corbeille
 
@@ -427,6 +447,9 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | « Limite d'usage Claude atteinte : réessaie à … » | Ton quota d'abonnement est épuisé pour le moment : attendre l'heure indiquée, puis **Relancer** la tâche |
 | « Claude utilise une clé API … au lieu de l'abonnement » | Retirer la variable `ANTHROPIC_API_KEY` de l'environnement, se reconnecter à Claude Code avec l'abonnement, puis **Relancer** |
 | « Aucune transcription : transcris d'abord les rushes » | Section **Analyse des rushes** de l'écran Projet, puis relancer la proposition |
+| « Aucun commentaire à intégrer sur l'aperçu vN » | Tous les commentaires sont déjà traités : en ajouter un, ou repasser un commentaire **À retraiter** |
+| « La version vN n'a pas encore d'aperçu à commenter » ou « … rends-la avant de la valider » | Lancer d'abord l'aperçu de cette version |
+| « Consignes de montage introuvables : .claude/skills/integrer-retours/SKILL.md » | Le dépôt est incomplet : le mettre à jour (`git pull`) |
 | « Prépare d'abord rushes/… : l'aperçu est rendu à partir des proxys » | Section **Analyse des rushes** : **Préparer** le fichier (ou **Refaire la préparation** s'il a été modifié), puis **Relancer** la tâche de rendu |
 | « Valide d'abord le plan » ou « L'aperçu de vN existe déjà » | Valider le plan avant de lancer l'aperçu ; une version déjà rendue ne se rend pas deux fois : proposer la version suivante |
 | « ffmpeg a échoué (assemblage de l'aperçu) : … » | Noter le message, vérifier que les fichiers de musique se lisent, puis **Relancer** ; si cela se répète, refaire la préparation des rushes |

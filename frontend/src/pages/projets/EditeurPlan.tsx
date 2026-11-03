@@ -201,6 +201,16 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
         <span className="champ-libelle">Stratégie</span>
         <p>{plan.resume}</p>
       </div>
+      {plan.reponsesRetours.length > 0 && (
+        <details className="points-claude" open>
+          <summary>Ce que Claude a changé d'après tes commentaires</summary>
+          <ul>
+            {plan.reponsesRetours.map((reponse) => (
+              <li key={reponse.commentaire}>{reponse.changement}</li>
+            ))}
+          </ul>
+        </details>
+      )}
       {plan.pointsAVerifier.length > 0 && (
         <details className="points-claude">
           <summary>Claude signale {plan.pointsAVerifier.length} point{plan.pointsAVerifier.length > 1 ? "s" : ""}</summary>
