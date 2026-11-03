@@ -23,6 +23,7 @@ import { dureeMedia, resumeMedia } from "../../medias.ts";
 import { BadgeAccord } from "../auteurs-artistes/AuteursArtistes.tsx";
 import { formaterDate } from "../TableauDeBord.tsx";
 import { AjoutFichiers } from "./AjoutFichiers.tsx";
+import { Plan } from "./Plan.tsx";
 import { Transcriptions } from "./Transcriptions.tsx";
 import type { EtatRetourProjet } from "./ModifierProjet.tsx";
 
@@ -218,7 +219,6 @@ export function PageProjet() {
 
       <section className="section">
         <Etapes etape={projet.etape} />
-        <p className="note">La proposition de plan de montage et les aperçus arrivent en phase 3.</p>
       </section>
 
       <section className="section">
@@ -345,6 +345,8 @@ export function PageProjet() {
       )}
 
       <Transcriptions projet={projet} surChangement={charger} />
+
+      <Plan projet={projet} surChangement={charger} />
 
       {ajout && (
         <AjoutFichiers

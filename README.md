@@ -49,9 +49,9 @@ Phase 3 (plan de montage et aperçu), pour un vlog d'abord.
 | Étape | Contenu | État |
 | --- | --- | --- |
 | 3.1 | Préparation pour Claude : transcriptions compactes, pics sonores, planches d'images, repères posés à la main | à venir |
-| 3.2 | Contrat `plan.json` et validation | à venir |
-| 3.3 | Appel de Claude depuis le backend (`claude -p`, sessions, limites) | à venir |
-| 3.4 | Skill `proposer-plan` | à venir |
+| 3.2 | Contrat `plan.json` et validation | ✅ |
+| 3.3 | Appel de Claude depuis le backend (`claude -p`, sessions, limites) et proposition d'un plan | ✅ |
+| 3.4 | Skill `proposer-plan` (première version en place, à affiner sur la vidéo de test) | en cours |
 | 3.5 | Écran Plan : relire, ajuster, valider | à venir |
 | 3.6 | Rendu de l'aperçu basse résolution | à venir |
 | 3.7 | Lecteur et commentaires horodatés | à venir |
@@ -206,7 +206,7 @@ Deux projets ne peuvent pas avoir le même nom (même date et même titre), mêm
 
 ### Suivre les tâches longues
 
-Les traitements longs (téléchargement du modèle, essai de whisper, et bientôt transcriptions et rendus) passent dans une **file de tâches**, une à la fois. Sur le **Tableau de bord**, la section **Tâches en cours** montre en direct pour chacune : l'étape, une barre de progression, le pourcentage et le temps restant estimé.
+Les traitements longs (téléchargement du modèle, essai de whisper, transcriptions, propositions de plan par Claude, et bientôt les rendus) passent dans une **file de tâches**, une à la fois. Sur le **Tableau de bord**, la section **Tâches en cours** montre en direct pour chacune : l'étape, une barre de progression, le pourcentage et le temps restant estimé.
 - **Annuler** arrête une tâche en cours ou retire une tâche en attente.
 - Une tâche **échouée** affiche la raison ; **Relancer** la recommence avec les mêmes réglages.
 - Si l'outil est fermé pendant une tâche, elle apparaît **Interrompue** au redémarrage : **Relancer**.
@@ -247,7 +247,31 @@ Pour une transcription plus juste :
 - **Corriger à la main** : survole une phrase → **Corriger** (Entrée pour enregistrer, Échap pour annuler, texte vide pour la supprimer) ou **Supprimer**. La phrase garde son horaire et porte le badge **corrigé** ; le fichier est marqué « corrigé » dans la liste.
 - **Retranscrire** un fichier corrigé efface les corrections : l'outil demande confirmation.
 
-Les transcriptions sont rangées dans `travail/transcriptions/` du projet (un fichier JSON par rush, avec l'horaire de chaque mot). Le projet passe à l'étape **Analysé**. Claude s'en servira pour proposer le plan de montage (phase 3).
+Les transcriptions sont rangées dans `travail/transcriptions/` du projet (un fichier JSON par rush, avec l'horaire de chaque mot). Le projet passe à l'étape **Analysé**. Claude s'en sert pour proposer le plan de montage.
+
+### Faire proposer un plan de montage par Claude
+
+Avant : transcrire les rushes, remplir les **consignes de montage** et les **notes** des fichiers (écran Projet → **Modifier**), et écrire ton guide `creations/guides/<catégorie>/style.md` (et `hooks.md`). Claude lit tout cela ; sans guide, il fait des choix par défaut et te le signale.
+
+Sur l'écran Projet, section **Plan de montage** :
+1. Facultatif : une **consigne pour Claude** (« commence par la chute du pinceau »).
+2. **Proposer un plan** : une tâche démarre et affiche ce que Claude fait (« Claude lit contexte.md », « Claude réfléchit », « Claude écrit sa réponse »). Compte une à deux minutes. Les appels passent par ton abonnement et comptent dans tes limites d'usage.
+3. Le plan s'affiche :
+   - la **stratégie** et l'**accroche** choisie ;
+   - ce que **Claude signale** : ses doutes, ce qu'il n'a pas pu savoir (il ne voit pas l'image, il lit seulement ce qui est dit) ;
+   - chaque **segment** dans l'ordre : le rush, le passage (début → fin, durée), son rôle, ce qui est dit et pourquoi il est gardé ;
+   - la musique, son volume et si elle baisse sous la voix ;
+   - les **problèmes** repérés par l'outil : en rouge ce qui empêchera l'aperçu (rush introuvable, passage au-delà de la fin du rush…), en orange les avertissements (durée loin de la durée visée, passage repris deux fois…).
+4. Pas convaincu : écris ce que tu veux de différent, puis **Autre proposition**. Claude garde le fil de vos échanges ; la proposition précédente est archivée dans `travail/propositions/`.
+
+Ce que l'outil range dans le projet :
+- `travail/plan/contexte.md` : tout ce que Claude a lu (consignes, fichiers, assets utilisables, guide de style) ;
+- `travail/transcriptions/<rush>.md` : les transcriptions en version compacte, une phrase par ligne avec son horaire ;
+- `versions/v1/plan.json` : le plan. Le projet passe à l'étape **Plan proposé**.
+
+Claude ne peut que lire les fichiers du projet : il n'écrit rien lui-même, ne lance aucune commande et ne touche jamais aux rushes. Le réglage du modèle Claude utilisé est dans **Paramètres** → Réglages communs.
+
+La modification du plan à la main, l'aperçu et les commentaires arrivent dans les étapes suivantes de la phase 3.
 
 ### Modifier un projet, ajouter des fichiers, le mettre à la corbeille
 
@@ -364,6 +388,12 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | L'essai de whisper indique « outil de détection de la parole introuvable » | Le programme `whisper-vad-speech-segments` doit être à côté de `whisper-cli` (il est dans le zip Windows et dans Homebrew) ; la transcription marche quand même, sans ce filtre |
 | « La transcription a changé entre-temps : recharge la page » | Le fichier a été retranscrit pendant que tu corrigeais : recharger la page puis refaire la correction |
 | L'essai de whisper indique « sur le processeur » | Sur le PC, vérifier que la version CUDA est installée et le pilote NVIDIA à jour ; la transcription marche quand même, plus lentement |
+| « Limite d'usage Claude atteinte : réessaie à … » | Ton quota d'abonnement est épuisé pour le moment : attendre l'heure indiquée, puis **Relancer** la tâche |
+| « Claude utilise une clé API … au lieu de l'abonnement » | Retirer la variable `ANTHROPIC_API_KEY` de l'environnement, se reconnecter à Claude Code avec l'abonnement, puis **Relancer** |
+| « Aucune transcription : transcris d'abord les rushes » | Section **Transcriptions** de l'écran Projet, puis relancer la proposition |
+| « Consignes de montage introuvables : .claude/skills/proposer-plan/SKILL.md » | Le dépôt est incomplet : le mettre à jour (`git pull`) |
+| « Claude n'a pas répondu en 20 minutes » ou « Claude a échoué : … » | Relancer ; si cela se répète, faire **Tester la connexion** dans Paramètres → Claude |
+| « Nouvelle session Claude (l'ancienne n'existe pas sur cette machine) » dans la tâche | Normal après un renommage du projet ou sur l'autre ordinateur : Claude repart de `contexte.md` et du plan existant |
 | « ffprobe est introuvable » dans Inbox | Installer ffmpeg (qui contient ffprobe) ou renseigner le chemin de ffprobe dans **Paramètres** |
 | « Espace disque insuffisant » | Libérer de la place sur le disque qui contient `creations/`, ou déplacer `creations/` sur un autre disque (Paramètres) |
 | « Un projet existe déjà sous le nom … » | Changer la date ou le titre |

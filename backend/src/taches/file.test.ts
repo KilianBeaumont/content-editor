@@ -20,7 +20,12 @@ describe("file de tâches", () => {
   });
 
   function file(executeur: Executeur) {
-    return new FileDeTaches(fichier, { "telechargement-modele": executeur, "essai-transcription": executeur, transcription: executeur });
+    return new FileDeTaches(fichier, {
+      "telechargement-modele": executeur,
+      "essai-transcription": executeur,
+      transcription: executeur,
+      "proposition-plan": executeur,
+    });
   }
 
   it("exécute les tâches une par une, dans l'ordre d'arrivée, et garde l'historique", async () => {

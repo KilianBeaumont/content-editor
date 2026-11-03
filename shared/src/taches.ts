@@ -1,4 +1,4 @@
-export const TYPES_TACHE = ["telechargement-modele", "essai-transcription", "transcription"] as const;
+export const TYPES_TACHE = ["telechargement-modele", "essai-transcription", "transcription", "proposition-plan"] as const;
 export type TypeTache = (typeof TYPES_TACHE)[number];
 
 export const ETATS_TACHE = ["attente", "en-cours", "terminee", "echouee", "annulee", "interrompue"] as const;

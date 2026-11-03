@@ -20,6 +20,7 @@ import { executeurs } from "./taches/executeurs.ts";
 import { FileDeTaches } from "./taches/file.ts";
 import { routesFichiers } from "./routes/fichiers.ts";
 import { routesParametres } from "./routes/parametres.ts";
+import { routesPlans } from "./routes/plans.ts";
 import { routesSante } from "./routes/sante.ts";
 
 export interface OptionsApp {
@@ -100,6 +101,7 @@ export async function creerApp(options: OptionsApp): Promise<FastifyInstance> {
   await app.register(routesTaches(taches), { prefix: "/api" });
   await app.register(routesTranscriptions(options.contexte, taches), { prefix: "/api" });
   await app.register(routesWhisper(options.contexte, taches), { prefix: "/api" });
+  await app.register(routesPlans(options.contexte, taches), { prefix: "/api" });
   await app.register(routesFichiers(options.contexte), { prefix: "/api" });
 
   app.setNotFoundHandler(async (requete, reponse) => {

@@ -298,6 +298,12 @@ function ecrireMetadata(creations: string, projet: Projet): Promise<void> {
   return ecrireJsonAtomique(join(cheminSur(creations, projet.chemin), METADATA), projet.metadata);
 }
 
+export async function enregistrerSessionClaude(creations: string, id: string, session: string): Promise<void> {
+  const projet = await lireProjet(creations, id);
+  if (projet.metadata.sessionClaude === session) return;
+  await ecrireMetadata(creations, { ...projet, metadata: { ...projet.metadata, sessionClaude: session } });
+}
+
 export async function modifierProjet(creations: string, id: string, modification: ModificationProjet): Promise<ReponseModificationProjet> {
   const actuel = await lireProjet(creations, id);
   const ancien = actuel.metadata;

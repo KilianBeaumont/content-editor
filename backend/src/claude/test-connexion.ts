@@ -1,57 +1,12 @@
 import { tmpdir } from "node:os";
 import type { LimitesClaude, ResultatTestClaude } from "@editeur/shared";
-import { z } from "zod";
 import { codeErreur } from "../erreurs.ts";
 import { executer, type ResultatProcessus } from "../processus.ts";
 import { environnementClaude } from "./environnement.ts";
+import { lireEvenements, MOTIF_LIMITE, schemaInit, schemaLimites, schemaResultat, trouver } from "./evenements.ts";
 
 const CONSIGNE_TEST = "Réponds uniquement par le mot OK.";
 const DELAI_MS = 120_000;
-const MOTIF_LIMITE = /limit|quota/i;
-
-const schemaInit = z.object({
-  type: z.literal("system"),
-  subtype: z.literal("init"),
-  apiKeySource: z.string().optional(),
-  model: z.string().optional(),
-});
-
-const schemaLimites = z.object({
-  type: z.literal("rate_limit_event"),
-  rate_limit_info: z.object({
-    status: z.string(),
-    unifiedWindows: z
-      .record(z.string(), z.object({ utilization: z.number(), resetsAt: z.number(), status: z.string() }))
-      .optional(),
-  }),
-});
-
-const schemaResultat = z.object({
-  type: z.literal("result"),
-  is_error: z.boolean(),
-  result: z.string().optional(),
-});
-
-function lireEvenements(sortie: string): unknown[] {
-  const evenements: unknown[] = [];
-  for (const ligne of sortie.split(/\r?\n/)) {
-    if (ligne.trim() === "") continue;
-    try {
-      evenements.push(JSON.parse(ligne));
-    } catch {
-      continue;
-    }
-  }
-  return evenements;
-}
-
-function trouver<T>(evenements: unknown[], schema: z.ZodType<T>): T | null {
-  for (const evenement of evenements) {
-    const resultat = schema.safeParse(evenement);
-    if (resultat.success) return resultat.data;
-  }
-  return null;
-}
 
 function premiereLigne(texte: string): string | null {
   return texte.split(/\r?\n/).find((ligne) => ligne.trim() !== "")?.trim() ?? null;

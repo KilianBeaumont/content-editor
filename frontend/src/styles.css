@@ -946,3 +946,34 @@ input[type="file"] {
 .segment-edition textarea {
   max-width: none;
 }
+
+.tableau-plan td {
+  vertical-align: top;
+}
+
+.tableau-plan .cellule-temps {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableau-plan .cellule-citation {
+  font-style: italic;
+  min-width: 14em;
+}
+
+.ligne-erreur {
+  background: color-mix(in srgb, var(--erreur) 8%, transparent);
+}
+
+.formulaire-plan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.formulaire-plan .champ {
+  flex: 1 1 320px;
+  margin: 0;
+}

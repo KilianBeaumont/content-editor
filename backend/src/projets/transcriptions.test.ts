@@ -151,6 +151,7 @@ describe("transcriptions d'un projet", () => {
       "telechargement-modele": async () => null,
       "essai-transcription": async () => null,
       transcription: () => new Promise(() => undefined),
+      "proposition-plan": async () => null,
     });
     const creations = env.contexte.config.creations;
 

@@ -46,6 +46,7 @@ export function executer(commande: string, args: string[], options: OptionsProce
 export interface OptionsLancement {
   signal?: AbortSignal;
   cwd?: string;
+  env?: NodeJS.ProcessEnv;
   surLigne?: (ligne: string, flux: "sortie" | "erreurs") => void;
 }
 
@@ -56,7 +57,7 @@ export interface ResultatLancement {
 
 export function lancer(commande: string, args: string[], options: OptionsLancement = {}): Promise<ResultatLancement> {
   return new Promise((resoudre, rejeter) => {
-    const enfant = spawn(commande, args, { cwd: options.cwd, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+    const enfant = spawn(commande, args, { cwd: options.cwd, env: options.env, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
     const dernieresErreurs: string[] = [];
     const lire = (flux: "sortie" | "erreurs") => {
       let reste = "";
