@@ -248,3 +248,20 @@ export {
   type SaisieGuide,
   type VideoInspiration,
 } from "./inspiration.ts";
+export {
+  CRITERES_EXTRAIT,
+  LIBELLES_CRITERES,
+  noteGlobale,
+  schemaPropositionExtraits,
+  schemaSaisieCreationExtrait,
+  type CandidatExtrait,
+  type CandidatPropose,
+  type CritereExtrait,
+  type EcartRecalage,
+  type PassageExtrait,
+  type PropositionExtraits,
+  type PropositionsExtraits,
+  type ReponseExtraits,
+  type ResumeEnfant,
+  type SaisieCreationExtrait,
+} from "./extraits.ts";

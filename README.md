@@ -76,7 +76,7 @@ Phase 5 (formats courts), en cours.
 | 5.2 | Catégorie « Format court » tournée directement (cycle complet en 9:16) | ✅ |
 | 5.3 | Cadrage par segment (recadré, fond flou), zoom progressif, panoramique et zoom brusque « loupe » | ✅ |
 | 5.4 | Sous-titres mot à mot avec tes polices (style dans Paramètres, activés par plan) | ✅ |
-| 5.5 | Extraits d'une vidéo longue | à venir |
+| 5.5 | Extraits d'une vidéo longue : proposés et notés par Claude, bornes recalées, chacun devient un projet format court lié | ✅ |
 | 5.6 | Export 1080x1920 et finitions | à venir |
 
 Les phases suivantes (podcast, statistiques) viendront après.
@@ -500,6 +500,19 @@ Ce que l'outil range dans `guides/<catégorie>/inspiration/analyses/<vidéo>/` :
 
 Ensuite, à chaque proposition de plan d'un projet de cette catégorie, Claude reçoit tes **références d'inspiration** (profil, résumé, techniques) et s'en inspire sans les copier ; ton guide de style et tes consignes passent avant. **Corbeille** met la vidéo et son analyse dans `corbeille/guides/`.
 
+### Tirer des formats courts d'une vidéo longue
+
+Pour une vidéo longue (vlog, récit) dont une version est validée, et dont la sortie **Formats courts** est cochée : onglet **6. Export**, section **Formats courts tirés de cette vidéo**.
+1. **Proposer N extraits** (N = le nombre de formats courts demandé à la création du projet), avec une consigne si tu veux (« un extrait drôle, un extrait conseil »). Claude lit la version validée, les transcriptions, les planches, ton guide **format court** et tes références d'inspiration.
+2. Chaque extrait proposé affiche sa **note** sur 10 et le détail des cinq critères (accroche, compréhensible seul, émotion, densité, chute), sa durée, son accroche, pourquoi il marche, et ses passages avec leur cadrage. L'outil a **recalé les bornes** au mot près (l'écart est affiché : « début -0,12 s »). ▶ joue un passage dans le lecteur.
+3. Ajuste le titre, puis **Créer le format court** : un nouveau projet **format court** est créé, lié à la vidéo longue (badge **Extrait de …**), avec :
+   - les rushes utilisés, **partagés sans copie** (lien vers le même fichier sur le disque), ainsi que leur proxy, leurs planches et leur transcription : rien à réanalyser ;
+   - l'auteur, l'autorisation (avec sa preuve), les artistes et les assets de la vidéo longue ;
+   - un premier plan reprenant l'extrait (passages, cadrage, sous-titres cochés).
+4. Le format court suit ensuite tout le cycle habituel : ajuste le plan, valide, aperçu, commentaires, export dans `exports/formats-courts/`.
+
+**Proposer d'autres extraits** remplace les propositions (les formats courts déjà créés restent). La liste **Formats courts créés** en bas de la section mène à chacun. Si le disque ne permet pas de partager un fichier (certains disques externes), l'outil le copie.
+
 ### Créer un format court tourné directement
 
 Pour une vidéo verticale pensée pour TikTok, Reels et Shorts dès le tournage : **Nouveau projet**, catégorie **format court** (sur les deux chaînes). Tout le cycle fonctionne comme pour un vlog, en 9:16 : analyse des rushes, plan, aperçu en 360x640, commentaires, export en 1080x1920 dans `exports/formats-courts/`. Pense à remplir le guide **format court** et à y déposer des vidéos d'inspiration. Tu peux filmer en vertical ou en horizontal : un rush horizontal se recadre en 9:16 segment par segment (voir « Cadrer et zoomer »). Pour les sous-titres, voir « Sous-titres incrustés ».
@@ -547,6 +560,8 @@ Pour une vidéo verticale pensée pour TikTok, Reels et Shorts dès le tournage 
 | « La sortie … ne s'exporte pas encore pour ce projet » | Seule la vidéo principale s'exporte pour l'instant (YouTube, ou format court pour une catégorie verticale) ; vérifier aussi que la sortie est cochée dans **Modifier** |
 | Analyse d'une vidéo d'inspiration : « Transcription impossible : … » à la fin du message | L'analyse continue sans la transcription (vidéo sans parole, ou modèle whisper absent : Paramètres → Transcription) |
 | « Consignes introuvables : .claude/skills/analyser-inspiration/SKILL.md » | Le dépôt est incomplet : le mettre à jour (`git pull`) |
+| « Valide d'abord une version de la vidéo longue » (extraits) | Les extraits sont tirés de la version validée : onglet **4. Aperçu**, valider une version |
+| « Cet extrait a déjà son projet » | Ouvre-le avec **Ouvrir le format court**, ou propose d'autres extraits |
 | « Choisis la police des sous-titres : Paramètres → Sous-titres » | Ajoute ta police à la Bibliothèque (type Police), puis choisis-la dans Paramètres → Sous-titres incrustés ; ou décoche **Sous-titres incrustés** dans le plan |
 | « La police des sous-titres doit être un fichier .ttf, .otf, .ttc » ou « Impossible de lire le nom de la police » | Utilise une police TTF ou OTF classique (les WOFF des sites web ne conviennent pas) |
 | « Ce ffmpeg ne sait pas encoder en HEVC 10 bits » | Installer une version complète de ffmpeg (avec libx265), ou exporter en SDR |

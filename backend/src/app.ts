@@ -21,6 +21,7 @@ import { FileDeTaches } from "./taches/file.ts";
 import { routesFichiers } from "./routes/fichiers.ts";
 import { routesParametres } from "./routes/parametres.ts";
 import { routesExports } from "./routes/exports.ts";
+import { routesExtraits } from "./routes/extraits.ts";
 import { routesGuides } from "./routes/guides.ts";
 import { routesPlans } from "./routes/plans.ts";
 import { routesRushes } from "./routes/rushes.ts";
@@ -107,6 +108,7 @@ export async function creerApp(options: OptionsApp): Promise<FastifyInstance> {
   await app.register(routesPlans(options.contexte, taches), { prefix: "/api" });
   await app.register(routesExports(options.contexte, taches), { prefix: "/api" });
   await app.register(routesGuides(options.contexte, taches), { prefix: "/api" });
+  await app.register(routesExtraits(options.contexte, taches), { prefix: "/api" });
   await app.register(routesRushes(options.contexte, taches), { prefix: "/api" });
   await app.register(routesFichiers(options.contexte), { prefix: "/api" });
 

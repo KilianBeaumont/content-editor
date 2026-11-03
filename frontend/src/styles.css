@@ -1500,3 +1500,65 @@ input[type="file"] {
 .champ-case {
   align-self: end;
 }
+
+.grille-extraits {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.carte-extrait {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--bordure);
+  border-radius: 10px;
+}
+
+.carte-extrait h4 {
+  margin: 0;
+}
+
+.carte-extrait p {
+  margin: 0;
+}
+
+.notes-extrait {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0;
+}
+
+.notes-extrait li {
+  display: grid;
+  grid-template-columns: 10em 1fr 2em;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.notes-extrait meter {
+  width: 100%;
+}
+
+.passages-extrait {
+  margin: 4px 0;
+  padding-left: 18px;
+  font-size: 0.9rem;
+}
+
+.passages-extrait .bouton {
+  padding: 0 6px;
+}
+
+.video-extraits {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  border-radius: 6px;
+  background: #000;
+  margin-top: 8px;
+}

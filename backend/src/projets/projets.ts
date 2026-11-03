@@ -49,6 +49,7 @@ const COMPLEMENTS_METADATA: Partial<MetadataProjet> = {
   sessionClaude: null,
   futurRoman: false,
   vocabulaire: "",
+  parent: null,
 };
 
 function cheminDansInbox(creations: string, chemin: string): string {
@@ -269,6 +270,7 @@ export async function creerProjet(
     creeLe: maintenant.toISOString(),
     futurRoman: saisie.futurRoman,
     vocabulaire: saisie.vocabulaire,
+    parent: null,
   };
   await ecrireJsonAtomique(join(dossier, METADATA), metadata);
 
@@ -296,6 +298,13 @@ export async function lireProjet(creations: string, id: string): Promise<Projet>
 
 function ecrireMetadata(creations: string, projet: Projet): Promise<void> {
   return ecrireJsonAtomique(join(cheminSur(creations, projet.chemin), METADATA), projet.metadata);
+}
+
+export async function modifierMetadata(creations: string, id: string, transformation: (metadata: MetadataProjet) => MetadataProjet): Promise<Projet> {
+  const projet = await lireProjet(creations, id);
+  const misAJour = { ...projet, metadata: transformation(projet.metadata) };
+  await ecrireMetadata(creations, misAJour);
+  return misAJour;
 }
 
 export async function definirVersionValidee(creations: string, id: string, version: string | null): Promise<Projet> {

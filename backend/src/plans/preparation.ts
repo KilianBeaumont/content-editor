@@ -110,7 +110,7 @@ function descriptionMedia(fichier: FichierMedia): { image: string; son: string }
   };
 }
 
-async function lireGuide(creations: string, chemin: string): Promise<string> {
+export async function lireGuide(creations: string, chemin: string): Promise<string> {
   try {
     return (await lireTexte(cheminSur(creations, chemin))).trim();
   } catch (erreur) {
@@ -119,7 +119,7 @@ async function lireGuide(creations: string, chemin: string): Promise<string> {
   }
 }
 
-function sectionPlanches(planches: Map<string, PlanchesRush>): string[] {
+export function sectionPlanches(planches: Map<string, PlanchesRush>): string[] {
   return [
     "## Images des rushes",
     "",
@@ -169,6 +169,29 @@ export function sectionRetours(retours: RetoursAIntegrer): string[] {
   ];
 }
 
+export interface TranscriptionsCompactes {
+  transcrites: Map<string, string>;
+  planches: Map<string, PlanchesRush>;
+}
+
+export async function ecrireTranscriptionsCompactes(creations: string, projet: Projet): Promise<TranscriptionsCompactes> {
+  const dossier = cheminSur(creations, projet.chemin);
+  const transcrites = new Map<string, string>();
+  const planches = new Map<string, PlanchesRush>();
+  for (const fichier of (await listerTranscriptions(creations, projet.id)).fichiers) {
+    const preparationRush = fichier.preparation === "absente" ? null : await lirePreparation(dossier, fichier.chemin);
+    if (preparationRush?.planches) planches.set(fichier.chemin, preparationRush.planches);
+    if (fichier.etat === "absente") continue;
+    const compacte = cheminTranscriptionCompacte(fichier.chemin);
+    const cible = join(dossier, compacte);
+    const audio = await lireAnalyseAudio(dossier, preparationRush);
+    await mkdir(dirname(cible), { recursive: true });
+    await writeFile(cible, transcriptionCompacte(await lireTranscription(creations, projet.id, fichier.chemin), audio), "utf8");
+    transcrites.set(fichier.chemin, fichier.etat === "perimee" ? `${compacte} (rush modifié depuis)` : compacte);
+  }
+  return { transcrites, planches };
+}
+
 export interface Preparation {
   transcriptions: number;
   version: string;
@@ -185,20 +208,7 @@ export async function preparerProposition(
 ): Promise<Preparation> {
   const dossier = cheminSur(creations, projet.chemin);
   const { metadata } = projet;
-
-  const transcrites = new Map<string, string>();
-  const planches = new Map<string, PlanchesRush>();
-  for (const fichier of (await listerTranscriptions(creations, projet.id)).fichiers) {
-    const preparationRush = fichier.preparation === "absente" ? null : await lirePreparation(dossier, fichier.chemin);
-    if (preparationRush?.planches) planches.set(fichier.chemin, preparationRush.planches);
-    if (fichier.etat === "absente") continue;
-    const compacte = cheminTranscriptionCompacte(fichier.chemin);
-    const cible = join(dossier, compacte);
-    const audio = await lireAnalyseAudio(dossier, preparationRush);
-    await mkdir(dirname(cible), { recursive: true });
-    await writeFile(cible, transcriptionCompacte(await lireTranscription(creations, projet.id, fichier.chemin), audio), "utf8");
-    transcrites.set(fichier.chemin, fichier.etat === "perimee" ? `${compacte} (rush modifié depuis)` : compacte);
-  }
+  const { transcrites, planches } = await ecrireTranscriptionsCompactes(creations, projet);
   const reperes = await lireReperes(dossier);
 
   const { fichiers } = await decrireDossier(dossier, ffprobe, (chemin) => chemin !== "metadata.json" && !DOSSIERS_IGNORES.some((d) => chemin.startsWith(d)));

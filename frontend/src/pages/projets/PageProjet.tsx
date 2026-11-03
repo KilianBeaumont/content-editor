@@ -1,4 +1,5 @@
 import {
+  estCategorieVerticale,
   LIBELLES_CATEGORIES,
   LIBELLES_CHAINES,
   type DetailProjet,
@@ -17,6 +18,7 @@ import { formaterDate } from "../TableauDeBord.tsx";
 import { AjoutFichiers } from "./AjoutFichiers.tsx";
 import { Apercu } from "./Apercu.tsx";
 import { Export } from "./Export.tsx";
+import { ExtraitsCourts } from "./ExtraitsCourts.tsx";
 import { InfosProjet, ListeFichiers } from "./InfosProjet.tsx";
 import type { EtatRetourProjet } from "./ModifierProjet.tsx";
 import { estOnglet, NavigationEtapes, ongletSuggere, OngletsProjet, type Onglet } from "./OngletsProjet.tsx";
@@ -123,6 +125,11 @@ export function PageProjet() {
         <span className="badge">{LIBELLES_CATEGORIES[metadata.categorie]}</span>
         {metadata.langues.includes("en") && <span className="badge">FR + EN</span>}
         {metadata.futurRoman && <span className="badge badge-alerte">Futur roman : extraits seulement</span>}
+        {metadata.parent !== null && (
+          <Link className="badge" to={`/projets/${metadata.parent}?etape=export`}>
+            Extrait de {metadata.parent}
+          </Link>
+        )}
         {exportBloque && (
           <button type="button" className="badge badge-erreur badge-bouton" onClick={() => choisir("validation")}>
             Export bloqué : voir pourquoi
@@ -211,7 +218,14 @@ export function PageProjet() {
         </section>
       )}
 
-      {actif === "export" && <Export projet={projet} taches={taches} surChangement={charger} allerA={choisir} />}
+      {actif === "export" && (
+        <>
+          <Export projet={projet} taches={taches} surChangement={charger} allerA={choisir} />
+          {!estCategorieVerticale(metadata.categorie) && metadata.sorties.includes("formats-courts") && (
+            <ExtraitsCourts projet={projet} taches={taches} proxies={donneesPlans.proxies} />
+          )}
+        </>
+      )}
 
       <NavigationEtapes actif={actif} choisir={choisir} />
     </>

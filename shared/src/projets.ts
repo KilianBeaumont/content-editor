@@ -151,6 +151,7 @@ export interface MetadataProjet {
   creeLe: string;
   futurRoman: boolean;
   vocabulaire: string;
+  parent: string | null;
 }
 
 export interface Projet {
@@ -229,6 +230,7 @@ export const schemaMetadataProjet = z.object({
   creeLe: z.string(),
   futurRoman: z.boolean(),
   vocabulaire: z.string(),
+  parent: z.string().nullable(),
 }) satisfies z.ZodType<MetadataProjet>;
 
 export const PLATEFORMES_PAR_SORTIE: Record<Sortie, readonly PlateformeAutorisation[]> = {
