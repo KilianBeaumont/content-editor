@@ -13,6 +13,8 @@ import type { Contexte } from "../contexte.ts";
 import { ErreurHttp } from "../erreurs.ts";
 import { changerStatutPlan, listerPlans, modifierPlan } from "../plans/plans.ts";
 import { lireProjet } from "../projets/projets.ts";
+import { verifierRenduPossible } from "../rendu/apercu.ts";
+import { cheminSur } from "../fichiers.ts";
 import type { FileDeTaches } from "../taches/file.ts";
 
 interface ParametresId {
@@ -40,6 +42,22 @@ export function routesPlans(contexte: Contexte, file: FileDeTaches): FastifyPlug
     app.post<ParametresVersion>("/projets/:id/plans/:version/statut", async (requete): Promise<VersionPlan> =>
       changerStatutPlan(config.creations, requete.params.id, requete.params.version, schemaStatut.parse(requete.body).statut, config.binaires.ffprobe),
     );
+
+    app.post<ParametresVersion>("/projets/:id/plans/:version/apercu", async (requete, reponse): Promise<Tache> => {
+      const { id, version } = requete.params;
+      const projet = await lireProjet(config.creations, id);
+      try {
+        await verifierRenduPossible(cheminSur(config.creations, projet.chemin), version);
+      } catch (erreur) {
+        throw new ErreurHttp(409, erreur instanceof Error ? erreur.message : String(erreur));
+      }
+      const enCours = file
+        .liste()
+        .some((tache) => tache.type === "rendu-apercu" && tache.projet === id && tache.parametres.version === version && tacheActive(tache));
+      if (enCours) throw new ErreurHttp(409, "Cet aperçu est déjà en cours de rendu.");
+      reponse.code(202);
+      return file.ajouter("rendu-apercu", `Rendu de l'aperçu ${version}`, id, { version });
+    });
 
     app.post<ParametresId>("/projets/:id/plans/proposer", async (requete, reponse): Promise<Tache> => {
       const { id } = requete.params;

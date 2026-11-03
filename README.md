@@ -53,7 +53,7 @@ Phase 3 (plan de montage et aperçu), pour un vlog d'abord.
 | 3.3 | Appel de Claude depuis le backend (`claude -p`, sessions, limites) et proposition d'un plan | ✅ |
 | 3.4 | Skill `proposer-plan` (première version en place, à affiner sur la vidéo de test) | en cours |
 | 3.5 | Écran Plan : écouter, ajuster et valider le plan ; coupes décalées et plans de coupe | ✅ |
-| 3.6 | Rendu de l'aperçu basse résolution | à venir |
+| 3.6 | Rendu de l'aperçu basse résolution depuis les proxys (coupes décalées, plans de coupe, musique, volume normalisé) | ✅ |
 | 3.7 | Lecteur et commentaires horodatés | à venir |
 | 3.8 | Boucle de versions (`integrer-retours`) et validation | à venir |
 | 3.9 | Textes à l'écran et composants animés (Remotion) | après la première boucle |
@@ -297,7 +297,17 @@ La section **Plan de montage** est un éditeur. Tant que le plan est **Proposé*
 
 Puis **Enregistrer les modifications** (ou **Annuler les modifications**). L'outil revérifie le plan à chaque enregistrement et affiche ce qui ne va pas. Le plan passe en « Modifié à la main » : si tu redemandes une proposition, Claude part de ta version.
 
-Quand tout est bon : **Valider le plan** (impossible tant qu'il reste une erreur en rouge). Le plan validé ne se modifie plus ; **Repasser en brouillon** le rend modifiable tant que l'aperçu n'a pas été rendu. L'aperçu se lance depuis le plan validé (étape suivante de la phase 3).
+Quand tout est bon : **Valider le plan** (impossible tant qu'il reste une erreur en rouge). Le plan validé ne se modifie plus ; **Repasser en brouillon** le rend modifiable tant que l'aperçu n'a pas été rendu. L'aperçu se lance depuis le plan validé (voir ci-dessous).
+
+### Rendre et regarder l'aperçu
+
+1. Une fois le plan validé, le bloc **Aperçu** apparaît sous le plan : **Lancer l'aperçu**.
+2. La tâche découpe chaque segment, puis assemble la vidéo, avec la progression en direct. Compte quelques secondes pour une minute de vidéo : l'aperçu est fait à partir des proxys (tous les rushes vidéo du plan doivent donc être préparés).
+3. L'aperçu s'affiche dans un lecteur, avec sa durée et le temps de rendu.
+
+Ce que l'aperçu contient : les segments dans l'ordre, coupés à l'image près et sans « clic » sonore (fondu de 30 ms à chaque coupe), les coupes décalées, les plans de coupe, la musique (avec fondus d'entrée et de sortie, baissée sous la voix si demandé) et un volume normalisé autour de -14 LUFS. Format : 640x360 pour une vidéo 16:9, 360x640 pour un format court.
+
+L'outil vérifie le fichier rendu (durée conforme au plan, présence de l'image et du son) et signale tout écart sous le lecteur. Le fichier est rangé dans `versions/vN/apercu.mp4`, avec `rendu.json` (format, durée, contrôles). Une version rendue ne change plus : pour corriger, **Proposer la version suivante** (les commentaires horodatés arrivent à l'étape suivante).
 
 ### Modifier un projet, ajouter des fichiers, le mettre à la corbeille
 
@@ -417,6 +427,10 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | « Limite d'usage Claude atteinte : réessaie à … » | Ton quota d'abonnement est épuisé pour le moment : attendre l'heure indiquée, puis **Relancer** la tâche |
 | « Claude utilise une clé API … au lieu de l'abonnement » | Retirer la variable `ANTHROPIC_API_KEY` de l'environnement, se reconnecter à Claude Code avec l'abonnement, puis **Relancer** |
 | « Aucune transcription : transcris d'abord les rushes » | Section **Analyse des rushes** de l'écran Projet, puis relancer la proposition |
+| « Prépare d'abord rushes/… : l'aperçu est rendu à partir des proxys » | Section **Analyse des rushes** : **Préparer** le fichier (ou **Refaire la préparation** s'il a été modifié), puis **Relancer** la tâche de rendu |
+| « Valide d'abord le plan » ou « L'aperçu de vN existe déjà » | Valider le plan avant de lancer l'aperçu ; une version déjà rendue ne se rend pas deux fois : proposer la version suivante |
+| « ffmpeg a échoué (assemblage de l'aperçu) : … » | Noter le message, vérifier que les fichiers de musique se lisent, puis **Relancer** ; si cela se répète, refaire la préparation des rushes |
+| L'aperçu signale « Durée rendue … au lieu de … prévues » | Un rush s'arrête avant la fin d'un segment ou d'un plan de coupe : vérifier les bornes dans le plan de la version suivante |
 | « Corrige d'abord le plan : … » en validant | Une erreur en rouge reste dans le plan : la corriger, **Enregistrer les modifications**, puis **Valider le plan** |
 | « Ce plan est validé : repasse-le en brouillon pour le modifier » | **Repasser en brouillon**, modifier, puis valider de nouveau |
 | « Un aperçu existe déjà pour cette version » ou « Seule la dernière version du plan peut changer » | Une version rendue est conservée telle quelle : demander la version suivante |

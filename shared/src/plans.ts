@@ -63,12 +63,25 @@ export interface ProblemePlan {
   segment: string | null;
 }
 
+export interface RenduApercu {
+  version: string;
+  fichier: string;
+  creeLe: string;
+  largeur: number;
+  hauteur: number;
+  dureePlan: number;
+  duree: number | null;
+  dureeRenduSecondes: number;
+  controles: string[];
+}
+
 export interface VersionPlan {
   version: string;
   plan: PlanMontage | null;
   erreur: string | null;
   problemes: ProblemePlan[];
   apercu: boolean;
+  rendu: RenduApercu | null;
 }
 
 export interface ReponsePlans {
@@ -95,6 +108,14 @@ export const MOTIF_VERSION = /^v[1-9]\d*$/;
 
 export function cheminPlan(version: string): string {
   return `versions/${version}/plan.json`;
+}
+
+export function cheminApercu(version: string): string {
+  return `versions/${version}/apercu.mp4`;
+}
+
+export function cheminRendu(version: string): string {
+  return `versions/${version}/rendu.json`;
 }
 
 export function numeroVersion(version: string): number {

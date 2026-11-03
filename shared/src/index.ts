@@ -160,7 +160,9 @@ export {
   type Transcription,
 } from "./transcriptions.ts";
 export {
+  cheminApercu,
   cheminPlan,
+  cheminRendu,
   dureePlan,
   MOTIF_VERSION,
   numeroVersion,
@@ -177,6 +179,7 @@ export {
   type PlanMontage,
   type ProblemePlan,
   type PropositionPlan,
+  type RenduApercu,
   type ReponsePlans,
   type ReponseRetour,
   type SaisiePropositionPlan,

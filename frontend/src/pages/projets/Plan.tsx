@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { envoyerJson, lireJson, messageErreur } from "../../api.ts";
 import { Message } from "../../composants/Message.tsx";
 import { LigneTache, useTaches } from "../../composants/Taches.tsx";
+import { Apercu } from "./Apercu.tsx";
 import { EditeurPlan } from "./EditeurPlan.tsx";
 
 export function Plan({ projet, surChangement }: { projet: DetailProjet; surChangement: () => void }) {
@@ -14,7 +15,11 @@ export function Plan({ projet, surChangement }: { projet: DetailProjet; surChang
   const tachesProjet = taches.filter((tache) => tache.type === "proposition-plan" && tache.projet === projet.id);
   const active = tachesProjet.find(tacheActive) ?? null;
   const derniere = tachesProjet[0] ?? null;
-  const precedente = useRef(active?.id ?? null);
+  const actives = taches
+    .filter((tache) => (tache.type === "proposition-plan" || tache.type === "rendu-apercu") && tache.projet === projet.id && tacheActive(tache))
+    .map((tache) => tache.id)
+    .join(",");
+  const precedentes = useRef(actives);
 
   const charger = useCallback(() => {
     lireJson<ReponsePlans>(`/api/projets/${projet.id}/plans`)
@@ -29,13 +34,12 @@ export function Plan({ projet, surChangement }: { projet: DetailProjet; surChang
 
   useEffect(charger, [charger]);
   useEffect(() => {
-    const id = active?.id ?? null;
-    if (precedente.current !== null && id === null) {
+    if (precedentes.current.split(",").some((id) => id !== "" && !actives.split(",").includes(id))) {
       charger();
       surChangement();
     }
-    precedente.current = id;
-  }, [active?.id, charger, surChangement]);
+    precedentes.current = actives;
+  }, [actives, charger, surChangement]);
 
   async function proposer() {
     setErreur(null);
@@ -68,7 +72,10 @@ export function Plan({ projet, surChangement }: { projet: DetailProjet; surChang
       ) : courante.plan === null ? (
         <Message type="erreur">{courante.erreur}</Message>
       ) : (
-        <EditeurPlan projet={projet} version={courante} initial={courante.plan} proxies={proxies} surEnregistrement={remplacer} />
+        <>
+          <EditeurPlan projet={projet} version={courante} initial={courante.plan} proxies={proxies} surEnregistrement={remplacer} />
+          <Apercu projet={projet} version={courante} plan={courante.plan} taches={taches} />
+        </>
       )}
 
       {active !== null ? (

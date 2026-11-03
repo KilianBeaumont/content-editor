@@ -1107,3 +1107,18 @@ input[type="file"] {
 .actions-plan {
   margin-top: 16px;
 }
+
+.bloc-apercu {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--bordure);
+}
+
+.video-apercu {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  max-height: 70vh;
+  border-radius: 6px;
+  background: #000;
+}

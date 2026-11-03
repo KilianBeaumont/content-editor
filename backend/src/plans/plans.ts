@@ -2,16 +2,19 @@ import { copyFile, mkdir, readdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import {
   cheminPlan,
+  cheminRendu,
   MOTIF_VERSION,
   numeroVersion,
   schemaPlanMontage,
   type PlanMontage,
   type Projet,
   type PropositionPlan,
+  type RenduApercu,
   type ReponsePlans,
   type StatutPlan,
   type VersionPlan,
 } from "@editeur/shared";
+import { z } from "zod";
 import { codeErreur, ErreurHttp } from "../erreurs.ts";
 import { listerBibliotheque } from "../bibliotheque/bibliotheque.ts";
 import { cheminSur, ecrireJsonAtomique, existe, FichierInvalideError, lireJsonComplete } from "../fichiers.ts";
@@ -61,6 +64,27 @@ export async function lirePlan(dossierProjet: string, version: string): Promise<
   return lireJsonComplete(chemin, schemaPlanMontage, {});
 }
 
+const schemaRendu = z.object({
+  version: z.string(),
+  fichier: z.string(),
+  creeLe: z.string(),
+  largeur: z.number(),
+  hauteur: z.number(),
+  dureePlan: z.number(),
+  duree: z.number().nullable(),
+  dureeRenduSecondes: z.number(),
+  controles: z.array(z.string()),
+}) satisfies z.ZodType<RenduApercu>;
+
+export async function lireRendu(dossierProjet: string, version: string): Promise<RenduApercu | null> {
+  try {
+    return await lireJsonComplete(join(dossierProjet, cheminRendu(version)), schemaRendu, {});
+  } catch (erreur) {
+    if (codeErreur(erreur) === "ENOENT" || erreur instanceof FichierInvalideError) return null;
+    throw erreur;
+  }
+}
+
 export async function listerPlans(creations: string, id: string, ffprobe: string): Promise<ReponsePlans> {
   const projet = await lireProjet(creations, id);
   const dossier = cheminSur(creations, projet.chemin);
@@ -72,10 +96,11 @@ export async function listerPlans(creations: string, id: string, ffprobe: string
     try {
       const plan = await lirePlan(dossier, version);
       if (plan === null) continue;
-      versions.push({ version, plan, erreur: null, problemes: validerPlan(plan, sources), apercu });
+      const rendu = apercu ? await lireRendu(dossier, version) : null;
+      versions.push({ version, plan, erreur: null, problemes: validerPlan(plan, sources), apercu, rendu });
     } catch (erreur) {
       if (!(erreur instanceof FichierInvalideError)) throw erreur;
-      versions.push({ version, plan: null, erreur: erreur.message, problemes: [], apercu });
+      versions.push({ version, plan: null, erreur: erreur.message, problemes: [], apercu, rendu: null });
     }
   }
   return { versions };
@@ -122,7 +147,7 @@ async function versionModifiable(dossierProjet: string, version: string): Promis
 }
 
 async function versionAvecProblemes(creations: string, projet: Projet, plan: PlanMontage, apercu: boolean, ffprobe: string): Promise<VersionPlan> {
-  return { version: plan.version, plan, erreur: null, problemes: validerPlan(plan, await sourcesPlan(creations, projet, ffprobe)), apercu };
+  return { version: plan.version, plan, erreur: null, problemes: validerPlan(plan, await sourcesPlan(creations, projet, ffprobe)), apercu, rendu: null };
 }
 
 export async function modifierPlan(

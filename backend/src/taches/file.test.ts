@@ -26,6 +26,7 @@ describe("file de tâches", () => {
       transcription: executeur,
       "preparation-rush": executeur,
       "proposition-plan": executeur,
+      "rendu-apercu": executeur,
     });
   }
 

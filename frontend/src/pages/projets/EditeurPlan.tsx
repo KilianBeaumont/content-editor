@@ -453,7 +453,7 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
           plan.statut === "valide" &&
           !version.apercu && (
             <>
-              <span className="note">Plan validé : l'aperçu se lancera d'ici (étape suivante).</span>
+              <span className="note">Plan validé.</span>
               <button type="button" className="bouton" disabled={enCours} onClick={() => void statut("propose")}>
                 Repasser en brouillon
               </button>
