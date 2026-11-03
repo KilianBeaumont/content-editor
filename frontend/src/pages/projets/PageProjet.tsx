@@ -23,6 +23,7 @@ import { dureeMedia, resumeMedia } from "../../medias.ts";
 import { BadgeAccord } from "../auteurs-artistes/AuteursArtistes.tsx";
 import { formaterDate } from "../TableauDeBord.tsx";
 import { AjoutFichiers } from "./AjoutFichiers.tsx";
+import { Transcriptions } from "./Transcriptions.tsx";
 import type { EtatRetourProjet } from "./ModifierProjet.tsx";
 
 function Etapes({ etape }: { etape: DetailProjet["etape"] }) {
@@ -342,6 +343,8 @@ export function PageProjet() {
           )}
         </section>
       )}
+
+      <Transcriptions projet={projet} surChangement={charger} />
 
       {ajout && (
         <AjoutFichiers

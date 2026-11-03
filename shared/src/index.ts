@@ -143,4 +143,15 @@ export {
   type Tache,
   type TypeTache,
 } from "./taches.ts";
-export type { EtatModeleWhisper, MotTranscrit, SegmentTranscrit } from "./transcriptions.ts";
+export {
+  cheminTranscription,
+  langueDuFichier,
+  type EtatModeleWhisper,
+  type EtatTranscription,
+  type FichierTranscriptible,
+  type MotTranscrit,
+  type ReponseLancementTranscriptions,
+  type ReponseTranscriptions,
+  type SegmentTranscrit,
+  type Transcription,
+} from "./transcriptions.ts";

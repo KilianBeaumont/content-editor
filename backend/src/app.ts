@@ -14,6 +14,7 @@ import { routesBibliotheque } from "./routes/bibliotheque.ts";
 import { routesInbox } from "./routes/inbox.ts";
 import { routesProjets } from "./routes/projets.ts";
 import { routesTaches } from "./routes/taches.ts";
+import { routesTranscriptions } from "./routes/transcriptions.ts";
 import { routesWhisper } from "./routes/whisper.ts";
 import { executeurs } from "./taches/executeurs.ts";
 import { FileDeTaches } from "./taches/file.ts";
@@ -97,6 +98,7 @@ export async function creerApp(options: OptionsApp): Promise<FastifyInstance> {
   await app.register(routesInbox(options.contexte), { prefix: "/api" });
   await app.register(routesProjets(options.contexte), { prefix: "/api" });
   await app.register(routesTaches(taches), { prefix: "/api" });
+  await app.register(routesTranscriptions(options.contexte, taches), { prefix: "/api" });
   await app.register(routesWhisper(options.contexte, taches), { prefix: "/api" });
   await app.register(routesFichiers(options.contexte), { prefix: "/api" });
 

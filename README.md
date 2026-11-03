@@ -40,7 +40,7 @@ Phase 2 (analyse), en cours. Pour obtenir une première vidéo au plus vite, on 
 | --- | --- | --- |
 | 2.1 | File de tâches avec progression en direct | ✅ |
 | 2.2 | whisper.cpp : modèle, téléchargement, essai | ✅ |
-| 2.3 | Transcription des rushes d'un projet | à venir |
+| 2.3 | Transcription des rushes d'un projet | ✅ |
 | Phase 3 | Plan de montage par Claude, aperçu, commentaires | à venir |
 | 2.4 à 2.6 | Écran Guides et analyse des vidéos d'inspiration | à venir |
 
@@ -214,6 +214,19 @@ Un clic sur un projet ouvre l'**écran Projet** :
 
 Le plan de montage et les aperçus arrivent en phase 3.
 
+### Transcrire les rushes et les voix
+
+Sur l'écran Projet, section **Transcriptions** :
+1. La liste montre les fichiers à transcrire : les vidéos et sons de `rushes/` et de `voix/`, avec leur langue (`voix/en/` en anglais, tout le reste en français).
+2. **Transcrire les N fichiers restants** : une tâche par fichier, suivie en direct (extraction de l'audio, puis transcription). Sur le PC avec la carte graphique, comptez quelques secondes pour une minute de son.
+3. Une fois transcrit, **Lire** ouvre le lecteur avec le texte à côté :
+   - un clic sur une phrase y amène la vidéo ;
+   - la phrase en cours de lecture est surlignée ;
+   - les mots **soulignés en pointillé** sont ceux dont whisper n'est pas sûr (noms propres, mots inventés).
+4. Si un rush est remplacé, sa transcription est marquée **Fichier modifié depuis** : **Retranscrire**.
+
+Les transcriptions sont rangées dans `travail/transcriptions/` du projet (un fichier JSON par rush, avec l'horaire de chaque mot). Le projet passe à l'étape **Analysé**. Claude s'en servira pour proposer le plan de montage (phase 3).
+
 ### Modifier un projet, ajouter des fichiers, le mettre à la corbeille
 
 Depuis l'écran Projet :
@@ -324,6 +337,7 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | « catalogue.json n'est pas un JSON valide » dans Bibliothèque | Le fichier a été abîmé à la main : corriger la virgule ou l'accolade indiquée dans le message |
 | « Entrées ignorées » dans Bibliothèque | Une entrée de `catalogue.json` est incomplète ou mal écrite : la corriger d'après le message |
 | « whisper.cpp introuvable » ou « Modèle … absent » | Paramètres : vérifier le chemin de whisper-cli et le dossier des modèles, puis **Télécharger le modèle** |
+| Une transcription échoue avec « Ce fichier n'a pas de piste audio » | Le rush est muet (timelapse, capture d'écran) : il n'y a rien à transcrire |
 | L'essai de whisper indique « sur le processeur » | Sur le PC, vérifier que la version CUDA est installée et le pilote NVIDIA à jour ; la transcription marche quand même, plus lentement |
 | « ffprobe est introuvable » dans Inbox | Installer ffmpeg (qui contient ffprobe) ou renseigner le chemin de ffprobe dans **Paramètres** |
 | « Espace disque insuffisant » | Libérer de la place sur le disque qui contient `creations/`, ou déplacer `creations/` sur un autre disque (Paramètres) |

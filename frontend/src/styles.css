@@ -849,3 +849,59 @@ input[type="file"] {
   color: var(--erreur);
   background: color-mix(in srgb, var(--erreur) 12%, transparent);
 }
+
+.lecture-transcription {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.lecture-media video,
+.lecture-media audio {
+  width: 100%;
+  border-radius: 6px;
+}
+
+.lecture-media video {
+  max-height: 360px;
+  background: #000;
+}
+
+.lecture-texte {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.segment {
+  margin: 0 0 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.segment:hover {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.segment-actuel {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.segment-temps {
+  font-size: 0.8rem;
+  color: var(--texte-doux);
+  font-variant-numeric: tabular-nums;
+}
+
+.mot-incertain {
+  text-decoration: underline dotted var(--alerte);
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .lecture-transcription {
+    grid-template-columns: 1fr;
+  }
+}

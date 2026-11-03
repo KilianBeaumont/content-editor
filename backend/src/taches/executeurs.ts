@@ -7,6 +7,7 @@ import { codeErreur } from "../erreurs.ts";
 import { existe } from "../fichiers.ts";
 import { cheminModele, telechargerModele, transcrire } from "../media/whisper.ts";
 import { lireParametres } from "../parametres.ts";
+import { transcrireFichier } from "../projets/transcriptions.ts";
 import { lancer } from "../processus.ts";
 import type { Executeur, OutilsTache } from "./file.ts";
 
@@ -45,5 +46,7 @@ export function executeurs(contexte: Contexte): Record<TypeTache, Executeur> {
     "telechargement-modele": async (tache, outils) =>
       telechargerModele(contexte.config.modeles, String(tache.parametres.modele), outils),
     "essai-transcription": async (_tache, outils) => essaiTranscription(contexte, outils),
+    transcription: async (tache, outils) =>
+      transcrireFichier(contexte, tache.projet ?? "", String(tache.parametres.fichier), outils),
   };
 }
