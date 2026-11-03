@@ -85,6 +85,7 @@ describe.skipIf(!ffmpegPresent)("export final", { timeout: 60_000 }, () => {
     expect(reponse.json()).toEqual({ erreur: "Valide d'abord une version (onglet Aperçu) : c'est elle qui est exportée." });
     const autre = await env.app.inject({ method: "POST", url: `/api/projets/${id}/exports`, payload: { sortie: "podcast-fr" } });
     expect(autre.json<{ erreur: string }>().erreur).toMatch(/ne s'exporte pas encore/);
+    expect((await env.app.inject({ method: "POST", url: `/api/projets/${id}/exports/youtube/afficher` })).statusCode).toBe(404);
   });
 
   it("rend la version validée depuis les rushes d'origine, la vérifie, la range et la marque publiée", async () => {
@@ -96,7 +97,8 @@ describe.skipIf(!ffmpegPresent)("export final", { timeout: 60_000 }, () => {
     expect(tache?.erreur).toBeNull();
     expect(tache?.resultat).toMatch(/^Export YouTube \(v1\) : 0:04, 640x360 à 50 i\/s, -1[3-5]\.\d LUFS, en \d+ s \(contrôles OK\)\.$/);
 
-    const { exports, sortiesVideo, qualites } = (await env.app.inject({ method: "GET", url: `/api/projets/${id}/exports` })).json<ReponseExports>();
+    const { exports, sortiesVideo, qualites, emplacements } = (await env.app.inject({ method: "GET", url: `/api/projets/${id}/exports` })).json<ReponseExports>();
+    expect(emplacements.youtube).toBe(join(dossier, "exports", "youtube", `${id}.mp4`));
     expect(sortiesVideo).toEqual(["youtube"]);
     expect(qualites).toEqual([
       { sortie: "youtube", standard: { largeur: 640, hauteur: 360 }, uhd: { largeur: 1280, hauteur: 720 }, rushes: { largeur: 1280, hauteur: 720 }, hdr: false },

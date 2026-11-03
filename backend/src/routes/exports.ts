@@ -7,7 +7,8 @@ import { cheminSur } from "../fichiers.ts";
 import { lirePlan } from "../plans/plans.ts";
 import { lireProjet } from "../projets/projets.ts";
 import { descriptionProjet } from "../rendu/description.ts";
-import { listerExports, listerTousLesExports, marquerPublie, verifierExportPossible } from "../rendu/export.ts";
+import { emplacementExport, listerExports, listerTousLesExports, marquerPublie, verifierExportPossible } from "../rendu/export.ts";
+import { afficherDansExplorateur } from "../systeme.ts";
 import type { FileDeTaches } from "../taches/file.ts";
 
 interface ParametresId {
@@ -49,6 +50,13 @@ export function routesExports(contexte: Contexte, file: FileDeTaches): FastifyPl
       const version = projet.metadata.versionValidee;
       const plan = version === null ? null : await lirePlan(cheminSur(creations(), projet.chemin), version);
       return { texte: await descriptionProjet(creations(), projet, plan) };
+    });
+
+    app.post<ParametresSortie>("/projets/:id/exports/:sortie/afficher", async (requete): Promise<{ chemin: string }> => {
+      const sortie = z.enum(SORTIES).parse(requete.params.sortie);
+      const chemin = await emplacementExport(creations(), requete.params.id, sortie);
+      afficherDansExplorateur(chemin);
+      return { chemin };
     });
 
     app.post<ParametresSortie>("/projets/:id/exports/:sortie/publication", async (requete): Promise<ReponseExports> => {

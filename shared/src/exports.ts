@@ -41,6 +41,7 @@ export interface OptionsQualite {
 
 export interface ReponseExports {
   exports: ExportSortie[];
+  emplacements: Partial<Record<Sortie, string>>;
   sortiesVideo: Sortie[];
   qualites: OptionsQualite[];
 }

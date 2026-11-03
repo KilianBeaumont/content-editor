@@ -130,7 +130,18 @@ export async function listerExports(creations: string, id: string, ffprobe: stri
     const uhd = qualite4kPossible(standard, rushes) ? dimensionsQualite(standard, "4k") : null;
     return { sortie, standard, uhd, rushes, hdr: sortie === "youtube" && analyse !== null && analyse.hdr };
   });
-  return { exports: await fichesExports(dossier, projet), sortiesVideo: sortiesVideo(projet), qualites };
+  const exports = await fichesExports(dossier, projet);
+  const emplacements = Object.fromEntries(exports.map((fiche) => [fiche.sortie, join(dossier, fiche.fichier)]));
+  return { exports, emplacements, sortiesVideo: sortiesVideo(projet), qualites };
+}
+
+export async function emplacementExport(creations: string, id: string, sortie: Sortie): Promise<string> {
+  const projet = await lireProjet(creations, id);
+  const dossier = cheminSur(creations, projet.chemin);
+  const fiche = await lireFiche(dossier, sortie);
+  const chemin = fiche === null ? null : join(dossier, fiche.fichier);
+  if (chemin === null || !(await existe(chemin))) throw new ErreurHttp(404, `Aucun export ${DEFINITIONS_SORTIES[sortie].libelle} pour ce projet.`);
+  return chemin;
 }
 
 export async function marquerPublie(creations: string, id: string, sortie: Sortie, publie: boolean, ffprobe: string): Promise<ReponseExports> {

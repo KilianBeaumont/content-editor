@@ -1370,3 +1370,7 @@ input[type="file"] {
   gap: 4px;
   margin: 4px 0 12px;
 }
+
+.emplacement-export code {
+  overflow-wrap: anywhere;
+}

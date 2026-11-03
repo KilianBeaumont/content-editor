@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { envoyerJson, formaterTaille, lireJson, messageErreur, urlFichier } from "../../api.ts";
 import { Message } from "../../composants/Message.tsx";
+import { afficherExport, NOM_EXPLORATEUR } from "../../explorateur.ts";
 import { formaterDate } from "../TableauDeBord.tsx";
 
 type FiltrePublication = "tous" | "a-publier" | "publies";
@@ -24,6 +25,15 @@ export function Exports() {
       .catch((e: unknown) => setErreur(messageErreur(e)));
   }, []);
   useEffect(charger, [charger]);
+
+  async function afficher(element: ElementExport) {
+    setErreur(null);
+    try {
+      await afficherExport(element.projet.id, element.fiche.sortie);
+    } catch (e) {
+      setErreur(messageErreur(e));
+    }
+  }
 
   async function publier(element: ElementExport, publie: boolean) {
     setErreur(null);
@@ -112,9 +122,9 @@ export function Exports() {
                         Ouvrir
                       </a>
                       {" · "}
-                      <a href={url} download={fiche.fichier.split("/").at(-1)}>
-                        Télécharger
-                      </a>
+                      <button type="button" className="bouton-lien" onClick={() => void afficher(element)}>
+                        Afficher dans {NOM_EXPLORATEUR}
+                      </button>
                       <br />
                       <span className="note">
                         {fiche.version} · {fiche.largeur}x{fiche.hauteur} · {minutes(fiche.duree)} · {formaterTaille(fiche.taille)}

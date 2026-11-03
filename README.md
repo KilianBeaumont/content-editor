@@ -357,7 +357,7 @@ Onglet **6. Export** (ou **Export →** depuis l'onglet Validation), une fois un
    - **SDR** : couleurs converties en H.264, identiques partout.
 2. **Exporter la version vN** : la tâche rend la version validée en pleine qualité, avec la progression en direct (découpe de chaque segment, mélange du son, mesure du volume, assemblage, vérification). Compte environ une minute pour une minute de vidéo 4K sur le PC.
 3. Le fichier s'affiche dans un lecteur, avec ses caractéristiques et le résultat des contrôles (**✓ Fichier vérifié**, sinon la liste des points à regarder).
-4. **Télécharger**, ou récupère-le directement dans `exports/youtube/<projet>.mp4` (`exports/formats-courts/` pour une catégorie verticale).
+4. Le fichier est **déjà rangé** dans le dossier du projet : `creations/chaine-creation/<projet>/exports/youtube/<projet>.mp4` (`exports/formats-courts/` pour une catégorie verticale ; `chaine-recits/` pour un récit). Son chemin complet s'affiche sous le lecteur, et **Afficher dans l'Explorateur** (le Finder sur Mac) ouvre ce dossier avec le fichier sélectionné, prêt à glisser dans YouTube.
 5. **Description à copier** : ta description (écran **Modifier**) suivie des crédits de l'auteur, des artistes invités et des musiques externes, avec leurs liens. **Copier**, puis colle-la dans YouTube. Elle est aussi enregistrée dans `description.txt` à côté du fichier.
 6. Une fois mis en ligne à la main : coche **Publié sur YouTube**.
 
@@ -373,7 +373,7 @@ Refaire l'export (après avoir validé une autre version, par exemple) remplace 
 
 ### Retrouver tous les exports
 
-L'écran **Exports** (menu) liste les fichiers prêts de tous les projets, par plateforme. Filtres par chaîne et par état (**À publier**, **Déjà publiés**, **Tous**). Pour chaque fichier : **Ouvrir**, **Télécharger**, la version et les caractéristiques, un avertissement si une autre version a été validée depuis, et la case **Publié**. Le titre du projet ouvre son onglet Export.
+L'écran **Exports** (menu) liste les fichiers prêts de tous les projets, par plateforme. Filtres par chaîne et par état (**À publier**, **Déjà publiés**, **Tous**). Pour chaque fichier : **Ouvrir** (dans le navigateur), **Afficher dans l'Explorateur**, la version et les caractéristiques, un avertissement si une autre version a été validée depuis, et la case **Publié**. Le titre du projet ouvre son onglet Export.
 
 ### Modifier un projet, ajouter des fichiers, le mettre à la corbeille
 

@@ -13,6 +13,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { envoyerJson, formaterTaille, lireJson, messageErreur, urlFichier } from "../../api.ts";
 import { Message } from "../../composants/Message.tsx";
+import { afficherExport, NOM_EXPLORATEUR } from "../../explorateur.ts";
 import { LigneTache } from "../../composants/Taches.tsx";
 import { temps } from "./EditeurPlan.tsx";
 
@@ -31,10 +32,12 @@ function dateHeure(date: string): string {
 interface ProprietesFiche {
   projet: DetailProjet;
   fiche: ExportSortie;
+  emplacement: string | null;
   publier: (publie: boolean) => Promise<void>;
+  afficher: () => Promise<void>;
 }
 
-function FicheExport({ projet, fiche, publier }: ProprietesFiche) {
+function FicheExport({ projet, fiche, emplacement, publier, afficher }: ProprietesFiche) {
   const url = urlFichier(`${projet.chemin}/${fiche.fichier}`);
   const verticale = fiche.hauteur > fiche.largeur;
   return (
@@ -68,10 +71,12 @@ function FicheExport({ projet, fiche, publier }: ProprietesFiche) {
           </Message>
         )}
         <p className="ligne-actions">
-          <a className="bouton" href={url} download={fiche.fichier.split("/").at(-1)}>
-            Télécharger
-          </a>
-          <code className="note">{`${projet.chemin}/${fiche.fichier}`}</code>
+          <button type="button" className="bouton" onClick={() => void afficher()}>
+            Afficher dans {NOM_EXPLORATEUR}
+          </button>
+        </p>
+        <p className="note emplacement-export">
+          Le fichier est déjà rangé dans le dossier du projet : <code>{emplacement ?? `${projet.chemin}/${fiche.fichier}`}</code>
         </p>
         <label className="case-publication">
           <input type="checkbox" checked={fiche.publieLe !== null} onChange={(evenement) => void publier(evenement.target.checked)} /> Publié sur{" "}
@@ -134,6 +139,15 @@ export function Export({ projet, taches, surChangement, allerA }: ProprietesExpo
     try {
       setExports(await envoyerJson<ReponseExports>("POST", `/api/projets/${projet.id}/exports/${sortie}/publication`, { publie }));
       surChangement();
+    } catch (e) {
+      setErreur(messageErreur(e));
+    }
+  }
+
+  async function afficher(sortie: Sortie) {
+    setErreur(null);
+    try {
+      await afficherExport(projet.id, sortie);
     } catch (e) {
       setErreur(messageErreur(e));
     }
@@ -233,7 +247,13 @@ export function Export({ projet, taches, surChangement, allerA }: ProprietesExpo
               </Message>
             )}
             {fiche !== null ? (
-              <FicheExport projet={projet} fiche={fiche} publier={(publie) => publier(sortie, publie)} />
+              <FicheExport
+                projet={projet}
+                fiche={fiche}
+                emplacement={exports?.emplacements[sortie] ?? null}
+                publier={(publie) => publier(sortie, publie)}
+                afficher={() => afficher(sortie)}
+              />
             ) : (
               active === null && <p className="note">Pas encore exporté.</p>
             )}
