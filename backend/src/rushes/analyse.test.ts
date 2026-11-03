@@ -55,6 +55,6 @@ describe("planches", () => {
   it("écrit l'horaire avec une police explicite, chemin Windows échappé", () => {
     expect(echapperFiltre("C:\\Windows\\Fonts\\arial.ttf")).toBe("C\\:/Windows/Fonts/arial.ttf");
     expect(filtrePlanches(2, "C:/Windows/Fonts/arial.ttf")).toContain("drawtext=fontfile='C\\:/Windows/Fonts/arial.ttf'");
-    expect(filtrePlanches(2, null)).toBe("fps=1/2:round=down,scale=320:-2,tile=4x3:padding=4:color=black");
+    expect(filtrePlanches(2, null)).toBe("select='isnan(prev_selected_t)+gte(t-prev_selected_t,1.98)',scale=320:-2,tile=4x3:padding=4:color=black");
   });
 });

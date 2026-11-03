@@ -42,7 +42,7 @@ Phase 2 (analyse), en cours. Pour obtenir une première vidéo au plus vite, on 
 | 2.2 | whisper.cpp : modèle, téléchargement, essai | ✅ |
 | 2.3 | Transcription des rushes d'un projet | ✅ |
 | 2.3 bis | Fiabilité de la transcription : détection de la parole, vocabulaire, correction à la main | ✅ |
-| 2.4 à 2.6 | Écran Guides et analyse des vidéos d'inspiration | après la phase 3 |
+| 2.4 à 2.6 | Écran Guides et analyse des vidéos d'inspiration | ✅ (avec la phase 5.1) |
 
 Phase 3 (plan de montage et aperçu), pour un vlog d'abord.
 
@@ -68,7 +68,18 @@ Phase 4 (export final).
 | 4.4 | Rangement dans `exports/` et description prête à copier avec les crédits | ✅ |
 | 4.5 | Onglet Export du projet et écran Exports (fichiers prêts par plateforme, « publié ») | ✅ |
 
-Les phases suivantes (formats courts, podcast, statistiques) viendront après.
+Phase 5 (formats courts), en cours.
+
+| Étape | Contenu | État |
+| --- | --- | --- |
+| 5.1 | Écran Guides : style, accroches, vidéos d'inspiration analysées (coupes, rythme, débit, techniques) et transmises aux propositions de plan | ✅ |
+| 5.2 | Catégorie « Format court » tournée directement (cycle complet en 9:16) | ✅ (sans recadrage pour l'instant) |
+| 5.3 | Cadrage 9:16 et zooms (progressif, « loupe »), fond flou | à venir |
+| 5.4 | Sous-titres mot à mot avec tes polices | à venir |
+| 5.5 | Extraits d'une vidéo longue | à venir |
+| 5.6 | Export 1080x1920 et finitions | à venir |
+
+Les phases suivantes (podcast, statistiques) viendront après.
 
 ## Installer l'outil sur une machine
 
@@ -451,9 +462,26 @@ Bon à savoir :
 - Même principe pour un asset de la bibliothèque : **Mettre à la corbeille** sur sa page déplace le fichier dans `corbeille/bibliotheque/` et le retire du catalogue. Pour le récupérer, remettre le fichier dans son dossier (sans la date dans le nom), puis **Ajouter au catalogue**. Un asset qui a servi dans une vidéo est conservé.
 - La corbeille ne se vide jamais toute seule : c'est à toi de le faire à la main.
 
-### Modifier un guide de style
+### Écrire ses guides et analyser des vidéos d'inspiration
 
-Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>/style.md` et `hooks.md` dans un éditeur de texte. Ils sont créés au premier lancement à partir du modèle de `CLAUDE.md`.
+Menu **Guides** : une carte par catégorie (vlog, format court, récit…), avec le nombre de vidéos d'inspiration et d'analyses. Dans une catégorie :
+1. **Style et accroches** : modifie `style.md` et `hooks.md` directement, puis **Enregistrer**. Claude les lit avant chaque proposition de plan de cette catégorie. Ils restent aussi modifiables à la main dans `creations/guides/<catégorie>/`.
+2. **Vidéos d'inspiration** : glisse des vidéos que tu trouves réussies (formats courts téléchargés, extraits de vlogs ; MP4, MOV, WebM). Elles sont rangées dans `guides/<catégorie>/inspiration/videos/`, restent privées et ne finissent jamais dans un export.
+3. **Analyser les vidéos restantes** (ou **Analyser** sur une ligne). Pour chaque vidéo, sur cette machine :
+   - les **coupes** sont détectées (changements de plan, avec leur horaire) ;
+   - des **images** sont extraites : une juste après chaque coupe, et une à intervalle régulier ;
+   - le **son** est mesuré (silences, pics) et la parole **transcrite** (langue détectée automatiquement) ;
+   - un **profil chiffré** est calculé : durée, coupes par minute, durée des plans, instant de la première coupe, mots par minute, instant du premier mot, part de parole, plus long silence.
+   Puis Claude regarde les images et lit le profil et la transcription. Il rédige l'analyse : accroche, structure, rythme, visuels et montage (zooms, « loupe », recadrages…), textes à l'écran, son, rétention (boucle, question, appel à l'action), avec une liste de **techniques** concrètes et horodatées. Compte une à deux minutes par vidéo.
+4. **Voir** sur une ligne : la vidéo, son profil, ce qu'on en retient, les techniques, l'analyse complète et les images analysées.
+
+Ce que l'outil range dans `guides/<catégorie>/inspiration/analyses/<vidéo>/` : `profil.json`, `coupes.json`, `audio.json`, `transcription.json` et `.md`, les images (`coupes/`, `planches/`), `analyse.json` et `analyse.md`.
+
+Ensuite, à chaque proposition de plan d'un projet de cette catégorie, Claude reçoit tes **références d'inspiration** (profil, résumé, techniques) et s'en inspire sans les copier ; ton guide de style et tes consignes passent avant. **Corbeille** met la vidéo et son analyse dans `corbeille/guides/`.
+
+### Créer un format court tourné directement
+
+Pour une vidéo verticale pensée pour TikTok, Reels et Shorts dès le tournage : **Nouveau projet**, catégorie **format court** (sur les deux chaînes). Tout le cycle fonctionne comme pour un vlog, en 9:16 : analyse des rushes, plan, aperçu en 360x640, commentaires, export en 1080x1920 dans `exports/formats-courts/`. Pense à remplir le guide **format court** et à y déposer des vidéos d'inspiration. Le recadrage d'un rush horizontal, les zooms et les sous-titres arrivent dans les prochaines étapes (pour l'instant, filme directement en vertical).
 
 ### Changer de dossier creations ou passer d'une machine à l'autre
 
@@ -496,6 +524,8 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | « Valide d'abord une version (onglet Aperçu) : c'est elle qui est exportée » | Onglet **4. Aperçu** : **C'est la bonne : valider la version vN** |
 | « Export bloqué : … » | Onglet **5. Validation** : corriger ce qui bloque (autorisation, accord d'artiste, asset), puis relancer l'export |
 | « La sortie … ne s'exporte pas encore pour ce projet » | Seule la vidéo principale s'exporte pour l'instant (YouTube, ou format court pour une catégorie verticale) ; vérifier aussi que la sortie est cochée dans **Modifier** |
+| Analyse d'une vidéo d'inspiration : « Transcription impossible : … » à la fin du message | L'analyse continue sans la transcription (vidéo sans parole, ou modèle whisper absent : Paramètres → Transcription) |
+| « Consignes introuvables : .claude/skills/analyser-inspiration/SKILL.md » | Le dépôt est incomplet : le mettre à jour (`git pull`) |
 | « Ce ffmpeg ne sait pas encoder en HEVC 10 bits » | Installer une version complète de ffmpeg (avec libx265), ou exporter en SDR |
 | « Le HDR n'est possible que pour YouTube, avec des rushes filmés en HDR » | Exporter en SDR : les rushes de la version validée ne sont pas en HDR |
 | « Les rushes de la version validée ne sont pas en 4K » | Exporter en qualité **Standard**, ou filmer en 4K |

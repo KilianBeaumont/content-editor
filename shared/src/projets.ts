@@ -16,8 +16,8 @@ export const DOSSIERS_CHAINES: Record<Chaine, string> = {
 };
 
 export const CATEGORIES_PAR_CHAINE: Record<Chaine, readonly Categorie[]> = {
-  creation: ["vlog", "micro-histoire", "timelapse"],
-  recits: ["recit", "micro-histoire", "extrait-recit", "podcast"],
+  creation: ["vlog", "court", "micro-histoire", "timelapse"],
+  recits: ["recit", "court", "micro-histoire", "extrait-recit", "podcast"],
 };
 
 export const SORTIES = ["youtube", "formats-courts", "instagram", "youtube-piste-en", "podcast-fr", "podcast-en"] as const;
@@ -47,6 +47,7 @@ export const DEFINITIONS_SORTIES: Record<Sortie, DefinitionSortie> = {
 export const SORTIES_PAR_DEFAUT: Record<Categorie, readonly Sortie[]> = {
   vlog: ["youtube", "formats-courts"],
   recit: ["youtube", "youtube-piste-en", "podcast-fr", "podcast-en", "formats-courts"],
+  court: ["formats-courts"],
   "micro-histoire": ["formats-courts"],
   "extrait-recit": ["formats-courts"],
   timelapse: ["formats-courts"],

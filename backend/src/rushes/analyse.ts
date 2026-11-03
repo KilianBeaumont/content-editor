@@ -118,7 +118,7 @@ export function echapperFiltre(valeur: string): string {
 }
 
 export function filtrePlanches(intervalle: number, police: string | null): string {
-  const etapes = [`fps=1/${intervalle}:round=down`, `scale=${LARGEUR_VIGNETTE}:-2`];
+  const etapes = [`select='isnan(prev_selected_t)+gte(t-prev_selected_t,${intervalle - 0.02})'`, `scale=${LARGEUR_VIGNETTE}:-2`];
   if (police !== null) {
     etapes.push(
       `drawtext=fontfile='${echapperFiltre(police)}':text='%{eif\\:floor(t/60)\\:d}\\:%{eif\\:mod(t\\,60)\\:d\\:2}':x=6:y=6:fontsize=22:fontcolor=white:box=1:boxcolor=black@0.6:boxborderw=4`,

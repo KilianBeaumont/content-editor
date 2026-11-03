@@ -1,4 +1,4 @@
-import { plagesImage, type Categorie, type SegmentPlan } from "@editeur/shared";
+import { estCategorieVerticale, plagesImage, type Categorie, type SegmentPlan } from "@editeur/shared";
 import { z } from "zod";
 import type { Encodeur } from "../media/capacites.ts";
 
@@ -6,7 +6,6 @@ export const IMAGES_PAR_SECONDE_APERCU = 30;
 export const LOUDNESS_APERCU = -14;
 export const CRETE_MAX = -1;
 const FONDU_AUDIO = 0.03;
-const CATEGORIES_VERTICALES = new Set<Categorie>(["micro-histoire", "extrait-recit", "timelapse"]);
 const TRANSFERTS_HDR = new Set(["arib-std-b67", "smpte2084"]);
 
 export interface FormatRendu {
@@ -15,7 +14,7 @@ export interface FormatRendu {
 }
 
 export function estVertical(categorie: Categorie): boolean {
-  return CATEGORIES_VERTICALES.has(categorie);
+  return estCategorieVerticale(categorie);
 }
 
 export function formatApercu(categorie: Categorie): FormatRendu {

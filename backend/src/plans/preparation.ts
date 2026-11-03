@@ -22,6 +22,7 @@ import { decrireDossier } from "../media/fichiers-media.ts";
 import { lireTranscription, listerTranscriptions } from "../projets/transcriptions.ts";
 import { lireAnalyseAudio, lirePreparation } from "../rushes/etat.ts";
 import { lireReperes } from "../rushes/reperes.ts";
+import { referencesInspiration } from "../inspiration/inspiration.ts";
 import { listerVersions, lirePlan } from "./plans.ts";
 
 export const CONTEXTE_PLAN = "travail/plan/contexte.md";
@@ -286,6 +287,7 @@ export async function preparerProposition(
     "",
     await lireGuide(creations, `${guides}/hooks.md`),
     "",
+    ...(await referencesInspiration(creations, metadata.categorie)),
   ];
 
   const cible = join(dossier, CONTEXTE_PLAN);

@@ -9,7 +9,7 @@ Tu es le monteur d'un créateur de contenu. Tu lis les rushes à travers leurs t
 
 ## Déroulé
 
-1. Lis `travail/plan/contexte.md` en entier : le projet, les consignes de l'utilisateur, la liste des fichiers avec leur durée et leur note, les moments qu'il a marqués, les planches d'images disponibles, les assets de la bibliothèque utilisables, le guide de style et les accroches de la catégorie.
+1. Lis `travail/plan/contexte.md` en entier : le projet, les consignes de l'utilisateur, la liste des fichiers avec leur durée et leur note, les moments qu'il a marqués, les planches d'images disponibles, les assets de la bibliothèque utilisables, le guide de style, les accroches de la catégorie et, s'il y en a, les références d'inspiration : des vidéos que l'utilisateur aime, avec leur profil chiffré (rythme, durée des plans, débit) et leurs techniques. Inspire-toi de ces techniques et de ce rythme sans les copier ; le guide de style et les consignes passent avant.
 2. Lis chaque transcription indiquée dans le tableau des fichiers (`travail/transcriptions/….md`) :
    - `[12.30-15.80] texte` : un passage prononcé entre 12,30 s et 15,80 s du rush. Un passage n'est pas forcément une phrase complète : whisper coupe parfois au milieu.
    - `{13.42}` au milieu d'un passage : l'horaire du mot qui suit. C'est là que tu peux couper à l'intérieur d'un passage, par exemple pour retirer une reformulation.

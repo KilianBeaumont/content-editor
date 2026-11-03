@@ -523,3 +523,10 @@ Dépôts étudiés (clonés dans `../inspiration`). L'étude complète, avec ce 
 - **Résolution YouTube** : 1080p par défaut, 4K possible via le préréglage d'export dans Paramètres.
 - **Cadence** : celle des rushes (60 i/s si filmé en 60), plafonnée à 60 ; les aperçus restent à 30 i/s.
 - **Écran Projet** : six onglets dans l'ordre de production (Fichiers, Analyse, Plan, Aperçu, Validation, Export).
+
+### Décisions prises (2026-11-03, phase 5)
+
+- **Formats courts** : nouvelle catégorie `court` (« format court ») sur les deux chaînes, tournée directement en 9:16, en plus des extraits tirés d'une vidéo longue. Toutes les catégories verticales (`court`, `micro-histoire`, `extrait-recit`, `timelapse`) suivent le même cycle que le vlog, en 9:16.
+- **Inspiration avant les formats courts** : l'écran Guides et l'analyse des vidéos d'inspiration (profil chiffré + analyse de Claude, skill `analyser-inspiration`) passent avant le recadrage et les sous-titres ; les analyses sont transmises aux propositions de plan.
+- **Sous-titres** : uniquement avec les polices de l'utilisateur, déposées dans la bibliothèque (étiquette dédiée), jamais une police système.
+- **Montage des formats courts** : le plan devra savoir produire les techniques repérées dans les références (cadrage 9:16 par segment, zoom progressif, zoom brusque « loupe », fond flou, boucle).

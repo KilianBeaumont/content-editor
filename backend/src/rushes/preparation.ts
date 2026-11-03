@@ -123,7 +123,7 @@ export async function preparerRush(contexte: Contexte, id: string, chemin: strin
     await mkdir(cible, { recursive: true });
     await executerFfmpeg(
       ffmpeg,
-      ["-i", join(dossier, proxy), "-an", "-vf", filtrePlanches(intervalle, police), "-q:v", "4", join(cible, "planche-%02d.jpg")],
+      ["-i", join(dossier, proxy), "-an", "-vf", filtrePlanches(intervalle, police), "-fps_mode", "vfr", "-q:v", "4", join(cible, "planche-%02d.jpg")],
       { duree, action: "Création des planches", surProgression: (fraction) => outils.progression(PART_AUDIO + fraction * (1 - PART_AUDIO)) },
       outils,
     );

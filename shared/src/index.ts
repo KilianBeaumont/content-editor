@@ -58,7 +58,7 @@ export {
   type StatutAsset,
   type TypeAsset,
 } from "./bibliotheque.ts";
-export { CATEGORIES, LIBELLES_CATEGORIES, type Categorie } from "./categories.ts";
+export { CATEGORIES, CATEGORIES_VERTICALES, estCategorieVerticale, LIBELLES_CATEGORIES, type Categorie } from "./categories.ts";
 export {
   EXTENSIONS_TEXTE,
   GENRES_FICHIER,
@@ -227,3 +227,16 @@ export {
   type ReponseDescription,
   type ReponseExports,
   type ReponseExportsGlobaux, type SaisieExport, type SaisiePublication } from "./exports.ts";
+export {
+  EXTENSIONS_INSPIRATION,
+  schemaAnalyseInspiration,
+  schemaSaisieGuide,
+  type AnalyseInspiration,
+  type EtatAnalyse,
+  type GuideCategorie,
+  type ProfilInspiration,
+  type ReponseGuides,
+  type ResumeGuide,
+  type SaisieGuide,
+  type VideoInspiration,
+} from "./inspiration.ts";

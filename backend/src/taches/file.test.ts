@@ -28,6 +28,7 @@ describe("file de tâches", () => {
       "proposition-plan": executeur,
       "rendu-apercu": executeur,
       "export-final": executeur,
+      "analyse-inspiration": executeur,
     });
   }
 
