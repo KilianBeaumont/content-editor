@@ -1,68 +1,44 @@
-import { tacheActive, type DetailProjet, type ReponsePlans, type ReponseTranscriptions, type VersionPlan } from "@editeur/shared";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { envoyerJson, lireJson, messageErreur } from "../../api.ts";
+import { tacheActive, type DetailProjet, type Tache } from "@editeur/shared";
+import { useState } from "react";
+import { envoyerJson, messageErreur } from "../../api.ts";
 import { Message } from "../../composants/Message.tsx";
-import { LigneTache, useTaches } from "../../composants/Taches.tsx";
-import { Apercu } from "./Apercu.tsx";
+import { LigneTache } from "../../composants/Taches.tsx";
 import { EditeurPlan } from "./EditeurPlan.tsx";
+import type { DonneesPlans } from "./usePlans.ts";
 
-export function Plan({ projet, surChangement }: { projet: DetailProjet; surChangement: () => void }) {
-  const [plans, setPlans] = useState<ReponsePlans | null>(null);
-  const [proxies, setProxies] = useState<Map<string, string>>(new Map());
+interface ProprietesPlan {
+  projet: DetailProjet;
+  donnees: DonneesPlans;
+  taches: Tache[];
+  allerA: (onglet: "analyse" | "apercu") => void;
+}
+
+export function Plan({ projet, donnees, taches, allerA }: ProprietesPlan) {
+  const { plans, proxies, remplacer } = donnees;
   const [consigne, setConsigne] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
-  const { taches } = useTaches();
   const tachesProjet = taches.filter((tache) => tache.type === "proposition-plan" && tache.projet === projet.id);
   const active = tachesProjet.find(tacheActive) ?? null;
   const derniere = tachesProjet[0] ?? null;
-  const actives = taches
-    .filter((tache) => (tache.type === "proposition-plan" || tache.type === "rendu-apercu") && tache.projet === projet.id && tacheActive(tache))
-    .map((tache) => tache.id)
-    .join(",");
-  const precedentes = useRef(actives);
-
-  const charger = useCallback(() => {
-    lireJson<ReponsePlans>(`/api/projets/${projet.id}/plans`)
-      .then(setPlans)
-      .catch((e: unknown) => setErreur(messageErreur(e)));
-    lireJson<ReponseTranscriptions>(`/api/projets/${projet.id}/transcriptions`)
-      .then(({ fichiers }) =>
-        setProxies(new Map(fichiers.flatMap((fichier) => (fichier.preparation === "a-jour" && fichier.proxy !== null ? [[fichier.chemin, fichier.proxy]] : [])))),
-      )
-      .catch(() => setProxies(new Map()));
-  }, [projet.id]);
-
-  useEffect(charger, [charger]);
-  useEffect(() => {
-    if (precedentes.current.split(",").some((id) => id !== "" && !actives.split(",").includes(id))) {
-      charger();
-      surChangement();
-    }
-    precedentes.current = actives;
-  }, [actives, charger, surChangement]);
 
   async function proposer() {
     setErreur(null);
     try {
-      await envoyerJson("POST", `/api/projets/${projet.id}/plans/proposer`, { consigne });
+      await envoyerJson("POST", `/api/projets/${projet.id}/plans/proposer`, { consigne, depuis: null });
       setConsigne("");
     } catch (e) {
       setErreur(messageErreur(e));
     }
   }
 
-  function remplacer(version: VersionPlan) {
-    setPlans((actuel) => actuel && { versions: actuel.versions.map((element) => (element.version === version.version ? version : element)) });
-    surChangement();
-  }
-
   const courante = plans?.versions[0] ?? null;
   const sansTranscription = projet.etape === "fichiers";
+  const message = erreur ?? donnees.erreur;
 
   return (
     <section className="section">
       <h2>Plan de montage</h2>
-      {erreur && <Message type="erreur">{erreur}</Message>}
+      {message && <Message type="erreur">{message}</Message>}
       {courante === null ? (
         <p className="section-intro">
           Claude lit les transcriptions, les planches d'images, tes moments marqués, tes consignes et le guide de style{" "}
@@ -72,10 +48,18 @@ export function Plan({ projet, surChangement }: { projet: DetailProjet; surChang
       ) : courante.plan === null ? (
         <Message type="erreur">{courante.erreur}</Message>
       ) : (
-        <EditeurPlan projet={projet} version={courante} initial={courante.plan} proxies={proxies} surEnregistrement={remplacer} />
+        <>
+          <EditeurPlan projet={projet} version={courante} initial={courante.plan} proxies={proxies} surEnregistrement={remplacer} />
+          {courante.plan.statut === "valide" && (
+            <div className="appel-suite">
+              <span>{courante.apercu ? `L'aperçu ${courante.version} est rendu : regarde-le et commente-le.` : "Plan validé : lance son aperçu."}</span>
+              <button type="button" className="bouton bouton-principal" onClick={() => allerA("apercu")}>
+                Aller à l'aperçu →
+              </button>
+            </div>
+          )}
+        </>
       )}
-
-      {plans !== null && <Apercu projet={projet} versions={plans.versions} taches={taches} surChangement={surChangement} />}
 
       {active !== null ? (
         <ul className="liste-taches">
@@ -89,7 +73,12 @@ export function Plan({ projet, surChangement }: { projet: DetailProjet; surChang
             </ul>
           )}
           {sansTranscription ? (
-            <p className="note">Analyse d'abord les rushes (section Analyse des rushes) : Claude s'en sert pour proposer le plan.</p>
+            <div className="appel-suite">
+              <span>Analyse d'abord les rushes : Claude s'en sert pour proposer le plan.</span>
+              <button type="button" className="bouton" onClick={() => allerA("analyse")}>
+                ← Analyse
+              </button>
+            </div>
           ) : (
             <div className="formulaire-plan">
               <label className="champ">
@@ -102,8 +91,8 @@ export function Plan({ projet, surChangement }: { projet: DetailProjet; surChang
                   onChange={(evenement) => setConsigne(evenement.target.value)}
                 />
               </label>
-              <button type="button" className="bouton" onClick={() => void proposer()}>
-                {courante === null ? "Proposer un plan" : courante.apercu ? "Proposer la version suivante" : "Demander une autre proposition à Claude"}
+              <button type="button" className={courante === null ? "bouton bouton-principal" : "bouton"} onClick={() => void proposer()}>
+                {courante === null ? "Proposer un plan" : courante.apercu ? "Nouvelle proposition sans commentaires" : "Demander une autre proposition à Claude"}
               </button>
             </div>
           )}

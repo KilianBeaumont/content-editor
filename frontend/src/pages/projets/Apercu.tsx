@@ -372,18 +372,47 @@ interface ProprietesApercu {
   versions: VersionPlan[];
   taches: Tache[];
   surChangement: () => void;
+  allerA: (onglet: "plan" | "validation") => void;
 }
 
-export function Apercu({ projet, versions, taches, surChangement }: ProprietesApercu) {
+export function Apercu({ projet, versions, taches, surChangement, allerA }: ProprietesApercu) {
   const courante = versions[0];
   const rendues = versions.filter(estRendue);
   const aLancer = courante !== undefined && courante.plan?.statut === "valide" && !courante.apercu;
+  const enAttente = courante !== undefined && courante.plan !== null && courante.plan.statut !== "valide" && !courante.apercu;
   return (
-    <>
+    <section className="section">
+      <h2>Aperçu et commentaires</h2>
+      {courante === undefined && (
+        <div className="appel-suite">
+          <span>Pas encore de plan : demande d'abord une proposition à Claude.</span>
+          <button type="button" className="bouton" onClick={() => allerA("plan")}>
+            ← Plan
+          </button>
+        </div>
+      )}
+      {enAttente && (
+        <div className="appel-suite">
+          <span>
+            Le plan {courante.version} n'est pas encore validé{rendues.length > 0 ? " : l'aperçu de la version précédente reste visible ci-dessous" : ""}.
+          </span>
+          <button type="button" className="bouton" onClick={() => allerA("plan")}>
+            ← Valider le plan
+          </button>
+        </div>
+      )}
       {aLancer && <Lancement projet={projet} version={courante} taches={taches} />}
       {rendues.length > 0 && courante !== undefined && (
         <Visionneuse projet={projet} rendues={rendues} derniereVersion={courante.version} taches={taches} surChangement={surChangement} />
       )}
-    </>
+      {projet.metadata.versionValidee !== null && (
+        <div className="appel-suite">
+          <span>Version {projet.metadata.versionValidee} validée.</span>
+          <button type="button" className="bouton bouton-principal" onClick={() => allerA("validation")}>
+            Validation →
+          </button>
+        </div>
+      )}
+    </section>
   );
 }

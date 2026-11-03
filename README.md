@@ -219,19 +219,26 @@ Le **Tableau de bord** montre :
 - les **projets en cours** des deux chaînes, avec leur étape ;
 - les **tâches en cours** (transcriptions, rendus), à partir de la phase 2.
 
-Un clic sur un projet ouvre l'**écran Projet** :
-- les étapes : fichiers rangés, analysé, plan proposé, aperçu prêt, validé, exporté. L'étape se déduit de ce que contient le dossier ;
-- ce qui bloque l'export, s'il y a quelque chose ;
-- les sorties voulues et les consignes de montage ;
-- l'auteur, ce qu'il a autorisé et la preuve (récits) ;
-- les artistes et les assets de la bibliothèque choisis ;
-- les fichiers, rangés par dossier, avec leur durée, leur résolution et ta note. Un clic sur un fichier l'affiche.
+Un clic sur un projet ouvre l'**écran Projet**. Il est organisé comme un assistant, en six onglets dans l'ordre de production :
 
-Le plan de montage et les aperçus arrivent en phase 3.
+| Onglet | Ce que tu y fais |
+| --- | --- |
+| 1. Fichiers | Revoir les sorties voulues, les consignes, l'auteur et son autorisation, les artistes et les assets ; voir les fichiers rangés (un clic les affiche), **Ajouter des fichiers**, mettre le projet à la corbeille |
+| 2. Analyse | Transcrire et préparer les rushes, les lire, marquer les moments importants |
+| 3. Plan | Faire proposer le plan par Claude, l'ajuster, le valider |
+| 4. Aperçu | Rendre l'aperçu, le regarder, le commenter, produire la version suivante, valider la version |
+| 5. Validation | Voir la version validée et ce qui bloquerait l'export |
+| 6. Export | Rendre en pleine qualité et ranger par plateforme (phase 4) |
+
+- Chaque onglet affiche son état : **✓** quand l'étape est faite (déduite de ce que contient le dossier), « à faire » pour la prochaine action.
+- À l'ouverture, l'écran se place sur la prochaine étape à faire. Tous les onglets restent cliquables, et l'onglet ouvert est gardé dans l'adresse (`?etape=plan`) : un rechargement de la page y revient.
+- Les boutons **← étape précédente** et **étape suivante →** en bas de page, et les encadrés « Aller à l'aperçu → », guident d'une étape à l'autre.
+- Si un problème de droits bloquerait l'export, un badge **Export bloqué : voir pourquoi** apparaît sous le titre.
+- **Modifier** (en haut à droite) reste accessible depuis tous les onglets.
 
 ### Analyser les rushes et les voix
 
-Sur l'écran Projet, section **Analyse des rushes** :
+Sur l'écran Projet, onglet **2. Analyse** :
 1. La liste montre les vidéos et sons de `rushes/` et de `voix/`, avec leur langue (`voix/en/` en anglais, tout le reste en français) et deux états : la **transcription** et la **préparation** (« Images et son »).
 2. **Analyser les N fichiers restants** lance, pour chaque fichier, deux tâches suivies en direct :
    - la **transcription** par whisper.cpp (quelques secondes par minute de son sur le PC avec la carte graphique) ;
@@ -265,7 +272,7 @@ Ce que l'outil range dans `travail/` : les transcriptions (`transcriptions/`, av
 
 Avant : analyser les rushes, marquer les moments importants si tu as le temps, remplir les **consignes de montage** et les **notes** des fichiers (écran Projet → **Modifier**), et écrire ton guide `creations/guides/<catégorie>/style.md` (et `hooks.md`). Claude lit tout cela ; sans guide, il fait des choix par défaut et te le signale.
 
-Sur l'écran Projet, section **Plan de montage** :
+Sur l'écran Projet, onglet **3. Plan** :
 1. Facultatif : une **consigne pour Claude** (« commence par la chute du pinceau »).
 2. **Proposer un plan** : une tâche démarre et affiche ce que Claude fait (« Claude lit contexte.md », « Claude réfléchit », « Claude écrit sa réponse »). Compte une à deux minutes. Les appels passent par ton abonnement et comptent dans tes limites d'usage.
 3. Le plan s'affiche :
@@ -301,7 +308,7 @@ Quand tout est bon : **Valider le plan** (impossible tant qu'il reste une erreur
 
 ### Rendre et regarder l'aperçu
 
-1. Une fois le plan validé, le bloc **Aperçu** apparaît sous le plan : **Lancer l'aperçu**.
+1. Une fois le plan validé, onglet **4. Aperçu** : **Lancer l'aperçu**.
 2. La tâche découpe chaque segment, puis assemble la vidéo, avec la progression en direct. Compte quelques secondes pour une minute de vidéo : l'aperçu est fait à partir des proxys (tous les rushes vidéo du plan doivent donc être préparés).
 3. L'aperçu s'affiche dans un lecteur, avec sa durée et le temps de rendu.
 

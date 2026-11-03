@@ -688,39 +688,133 @@ input[type="file"] {
   color: var(--alerte);
 }
 
-.etapes {
-  display: flex;
-  flex-wrap: wrap;
+.onglets-projet {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin: 18px 0 8px;
+  padding: 8px 0;
+  background: var(--fond);
+}
+
+.onglets-projet ol {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
-  margin: 0 0 10px;
+  margin: 0;
   padding: 0;
   list-style: none;
-  counter-reset: etape;
 }
 
-.etape {
-  padding: 6px 12px;
-  font-size: 0.9rem;
+.onglet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 8px 10px;
+  text-align: left;
+  font: inherit;
   color: var(--texte-doux);
+  background: var(--surface);
   border: 1px solid var(--bordure);
-  border-radius: 999px;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
-.etape::before {
-  counter-increment: etape;
-  content: counter(etape) ". ";
-}
-
-.etape-faite {
-  color: var(--ok);
-  border-color: color-mix(in srgb, var(--ok) 40%, transparent);
-}
-
-.etape-actuelle {
-  color: #fff;
-  background: var(--accent);
+.onglet:hover {
   border-color: var(--accent);
+}
+
+.onglet-numero {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  font-size: 0.8rem;
   font-weight: 600;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+}
+
+.onglet-texte {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.onglet-texte strong {
+  color: var(--texte);
+}
+
+.onglet-etat {
+  overflow: hidden;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.onglet-fait .onglet-numero {
+  color: #fff;
+  background: var(--ok);
+  border-color: var(--ok);
+}
+
+.onglet-suggere {
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.onglet-suggere .onglet-etat {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.onglet-actif {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+@media (max-width: 900px) {
+  .onglets-projet ol {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .onglets-projet ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .onglet-etat {
+    display: none;
+  }
+}
+
+.navigation-etapes {
+  display: flex;
+  justify-content: space-between;
+  margin: 24px 0 8px;
+}
+
+.appel-suite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.badge-bouton {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
 }
 
 .badge-etape-fichiers {

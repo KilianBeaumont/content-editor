@@ -70,5 +70,5 @@ export async function listerProjets(creations: string): Promise<ReponseListeProj
 
 export async function fichiersProjet(creations: string, id: string, ffprobe: string): Promise<ReponseFichiersProjet> {
   const projet = await lireProjet(creations, id);
-  return decrireDossier(cheminSur(creations, projet.chemin), ffprobe, (chemin) => chemin !== "metadata.json");
+  return decrireDossier(cheminSur(creations, projet.chemin), ffprobe, (chemin) => chemin !== "metadata.json" && !chemin.startsWith("travail/") && !chemin.startsWith("versions/"));
 }
