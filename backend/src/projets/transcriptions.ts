@@ -22,6 +22,7 @@ import { listerFichiers } from "../media/fichiers-media.ts";
 import { cheminModele, FICHIER_VAD, filtrerHorsParole, passagesParole, transcrire } from "../media/whisper.ts";
 import { lireParametres } from "../parametres.ts";
 import type { FileDeTaches, OutilsTache } from "../taches/file.ts";
+import { etatPreparation, lirePreparation } from "../rushes/etat.ts";
 import { lireProjet } from "./projets.ts";
 
 const DOSSIERS_TRANSCRIPTIBLES = ["rushes/", "voix/"];
@@ -72,7 +73,11 @@ export async function listerTranscriptions(creations: string, id: string): Promi
   const dossier = cheminSur(creations, projet.chemin);
   const fichiers: FichierTranscriptible[] = [];
   for (const chemin of (await listerFichiers(dossier)).filter(transcriptible)) {
-    const [transcription, infos] = await Promise.all([lireSiPresente(dossier, chemin), stat(join(dossier, chemin))]);
+    const [transcription, infos, preparation] = await Promise.all([
+      lireSiPresente(dossier, chemin),
+      stat(join(dossier, chemin)),
+      lirePreparation(dossier, chemin),
+    ]);
     const aJour =
       transcription !== null && transcription.tailleSource === infos.size && transcription.modifieSource === infos.mtime.toISOString();
     fichiers.push({
@@ -82,6 +87,9 @@ export async function listerTranscriptions(creations: string, id: string): Promi
       duree: transcription?.duree ?? null,
       nombreMots: transcription === null ? null : nombreMots(transcription),
       corrigee: transcription?.corrigee ?? false,
+      preparation: await etatPreparation(dossier, chemin, preparation),
+      proxy: preparation?.proxy ?? null,
+      planches: preparation?.planches?.fichiers ?? [],
     });
   }
   return { fichiers };

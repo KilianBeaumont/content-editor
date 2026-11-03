@@ -46,6 +46,9 @@ export interface FichierTranscriptible {
   duree: number | null;
   nombreMots: number | null;
   corrigee: boolean;
+  preparation: EtatTranscription;
+  proxy: string | null;
+  planches: string[];
 }
 
 export interface ReponseTranscriptions {

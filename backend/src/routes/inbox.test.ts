@@ -86,7 +86,7 @@ describe("routes de l'inbox", () => {
 
     const [fichier] = (await lister()).fichiers;
     expect(fichier?.erreurAnalyse).toBeNull();
-    expect(fichier?.infos?.video).toEqual({ largeur: 320, hauteur: 240, codec: "h264", imagesParSeconde: 25 });
+    expect(fichier?.infos?.video).toEqual({ largeur: 320, hauteur: 240, codec: "h264", imagesParSeconde: 25, transfert: null });
     expect(fichier?.infos?.audio).toMatchObject({ codec: "aac", canaux: 1 });
     expect(fichier?.infos?.duree).toBeCloseTo(2, 0);
   });

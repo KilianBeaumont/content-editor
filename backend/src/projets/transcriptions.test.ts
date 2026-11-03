@@ -77,8 +77,8 @@ describe("transcriptions d'un projet", () => {
 
   it("propose les rushes et les voix, avec leur langue, mais pas les images", async () => {
     expect(await lister()).toEqual([
-      { chemin: "voix/en/narration-en.wav", langue: "en", etat: "absente", duree: null, nombreMots: null, corrigee: false },
-      { chemin: "voix/fr/narration.wav", langue: "fr", etat: "absente", duree: null, nombreMots: null, corrigee: false },
+      { chemin: "voix/en/narration-en.wav", langue: "en", etat: "absente", duree: null, nombreMots: null, corrigee: false, preparation: "absente", proxy: null, planches: [] },
+      { chemin: "voix/fr/narration.wav", langue: "fr", etat: "absente", duree: null, nombreMots: null, corrigee: false, preparation: "absente", proxy: null, planches: [] },
     ]);
   });
 
@@ -151,6 +151,7 @@ describe("transcriptions d'un projet", () => {
       "telechargement-modele": async () => null,
       "essai-transcription": async () => null,
       transcription: () => new Promise(() => undefined),
+      "preparation-rush": async () => null,
       "proposition-plan": async () => null,
     });
     const creations = env.contexte.config.creations;

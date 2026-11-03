@@ -48,7 +48,7 @@ Phase 3 (plan de montage et aperçu), pour un vlog d'abord.
 
 | Étape | Contenu | État |
 | --- | --- | --- |
-| 3.1 | Préparation pour Claude : transcriptions compactes, pics sonores, planches d'images, repères posés à la main | à venir |
+| 3.1 | Préparation des rushes : proxy léger (HDR converti), planches d'images, silences et pics sonores, moments marqués à la main | ✅ |
 | 3.2 | Contrat `plan.json` et validation | ✅ |
 | 3.3 | Appel de Claude depuis le backend (`claude -p`, sessions, limites) et proposition d'un plan | ✅ |
 | 3.4 | Skill `proposer-plan` (première version en place, à affiner sur la vidéo de test) | en cours |
@@ -206,7 +206,7 @@ Deux projets ne peuvent pas avoir le même nom (même date et même titre), mêm
 
 ### Suivre les tâches longues
 
-Les traitements longs (téléchargement du modèle, essai de whisper, transcriptions, propositions de plan par Claude, et bientôt les rendus) passent dans une **file de tâches**, une à la fois. Sur le **Tableau de bord**, la section **Tâches en cours** montre en direct pour chacune : l'étape, une barre de progression, le pourcentage et le temps restant estimé.
+Les traitements longs (téléchargement du modèle, essai de whisper, transcriptions, préparations des rushes, propositions de plan par Claude, et bientôt les rendus) passent dans une **file de tâches**, une à la fois. Sur le **Tableau de bord**, la section **Tâches en cours** montre en direct pour chacune : l'étape, une barre de progression, le pourcentage et le temps restant estimé.
 - **Annuler** arrête une tâche en cours ou retire une tâche en attente.
 - Une tâche **échouée** affiche la raison ; **Relancer** la recommence avec les mêmes réglages.
 - Si l'outil est fermé pendant une tâche, elle apparaît **Interrompue** au redémarrage : **Relancer**.
@@ -229,16 +229,28 @@ Un clic sur un projet ouvre l'**écran Projet** :
 
 Le plan de montage et les aperçus arrivent en phase 3.
 
-### Transcrire les rushes et les voix
+### Analyser les rushes et les voix
 
-Sur l'écran Projet, section **Transcriptions** :
-1. La liste montre les fichiers à transcrire : les vidéos et sons de `rushes/` et de `voix/`, avec leur langue (`voix/en/` en anglais, tout le reste en français).
-2. **Transcrire les N fichiers restants** : une tâche par fichier, suivie en direct (extraction de l'audio, puis transcription). Sur le PC avec la carte graphique, comptez quelques secondes pour une minute de son.
-3. Une fois transcrit, **Lire** ouvre le lecteur avec le texte à côté :
+Sur l'écran Projet, section **Analyse des rushes** :
+1. La liste montre les vidéos et sons de `rushes/` et de `voix/`, avec leur langue (`voix/en/` en anglais, tout le reste en français) et deux états : la **transcription** et la **préparation** (« Images et son »).
+2. **Analyser les N fichiers restants** lance, pour chaque fichier, deux tâches suivies en direct :
+   - la **transcription** par whisper.cpp (quelques secondes par minute de son sur le PC avec la carte graphique) ;
+   - la **préparation** par ffmpeg : un **proxy** léger (640 px, H.264) pour lire le rush dans le navigateur, des **planches d'images** (une vignette toutes les 1 à 30 s selon la durée, avec l'horaire écrit dessus) et la **mesure du son** (silences et pics). Une vidéo d'iPhone en HDR est convertie en couleurs normales pour le proxy. Compte environ une minute pour 3 minutes de 4K.
+   Les boutons **Transcrire / Retranscrire** et **Préparer / Refaire la préparation** relancent l'une ou l'autre pour un seul fichier.
+3. **Lire** ouvre le lecteur (sur le proxy quand il existe, le rush d'origine n'est jamais modifié) avec le texte à côté :
    - un clic sur une phrase y amène la vidéo ;
    - la phrase en cours de lecture est surlignée ;
    - les mots **soulignés en pointillé** sont ceux dont whisper n'est pas sûr (noms propres, mots inventés).
-4. Si un rush est remplacé, sa transcription est marquée **Fichier modifié depuis** : **Retranscrire**.
+4. Si un rush est remplacé, sa transcription et sa préparation sont marquées comme à refaire : **Analyser** de nouveau.
+
+### Marquer les moments importants
+
+Dans le lecteur d'un rush (section **Analyse des rushes** → **Lire**) :
+1. Mets en pause sur un moment à garder absolument (une bonne prise, une blague, un kill…).
+2. Écris une note si tu veux (« la meilleure prise », « à mettre en accroche »), puis **Marquer ce moment** (ou Entrée).
+3. Les moments marqués s'affichent sous le lecteur : un clic sur l'horaire y amène la vidéo, **✕** supprime le repère.
+
+Claude garde chaque moment marqué dans le plan, sauf si ta note dit le contraire. Si tu n'as pas le temps de tout regarder, ne marque rien : Claude s'appuie alors sur la transcription, les pauses, les pics sonores et les planches d'images. Le bloc **Planches d'images** du lecteur montre ce que Claude peut voir du rush. Les repères sont enregistrés dans `travail/reperes.json`.
 
 Pour une transcription plus juste :
 - **Vocabulaire** : avant de transcrire, renseigne les noms propres de la vidéo (jeu, personnages, lieux, techniques) dans **Modifier** → **Vocabulaire des rushes**, séparés par des virgules. Ils s'ajoutent au vocabulaire commun des Paramètres. Le vocabulaire utilisé est rappelé au-dessus du texte.
@@ -247,18 +259,18 @@ Pour une transcription plus juste :
 - **Corriger à la main** : survole une phrase → **Corriger** (Entrée pour enregistrer, Échap pour annuler, texte vide pour la supprimer) ou **Supprimer**. La phrase garde son horaire et porte le badge **corrigé** ; le fichier est marqué « corrigé » dans la liste.
 - **Retranscrire** un fichier corrigé efface les corrections : l'outil demande confirmation.
 
-Les transcriptions sont rangées dans `travail/transcriptions/` du projet (un fichier JSON par rush, avec l'horaire de chaque mot). Le projet passe à l'étape **Analysé**. Claude s'en sert pour proposer le plan de montage.
+Ce que l'outil range dans `travail/` : les transcriptions (`transcriptions/`, avec l'horaire de chaque mot), les proxys (`proxy/`), les planches (`planches/`), la mesure du son (`audio/`) et l'état de chaque préparation (`preparation/`). Tout se recrée à partir des rushes. Le projet passe à l'étape **Analysé**. Claude s'en sert pour proposer le plan de montage.
 
 ### Faire proposer un plan de montage par Claude
 
-Avant : transcrire les rushes, remplir les **consignes de montage** et les **notes** des fichiers (écran Projet → **Modifier**), et écrire ton guide `creations/guides/<catégorie>/style.md` (et `hooks.md`). Claude lit tout cela ; sans guide, il fait des choix par défaut et te le signale.
+Avant : analyser les rushes, marquer les moments importants si tu as le temps, remplir les **consignes de montage** et les **notes** des fichiers (écran Projet → **Modifier**), et écrire ton guide `creations/guides/<catégorie>/style.md` (et `hooks.md`). Claude lit tout cela ; sans guide, il fait des choix par défaut et te le signale.
 
 Sur l'écran Projet, section **Plan de montage** :
 1. Facultatif : une **consigne pour Claude** (« commence par la chute du pinceau »).
 2. **Proposer un plan** : une tâche démarre et affiche ce que Claude fait (« Claude lit contexte.md », « Claude réfléchit », « Claude écrit sa réponse »). Compte une à deux minutes. Les appels passent par ton abonnement et comptent dans tes limites d'usage.
 3. Le plan s'affiche :
    - la **stratégie** et l'**accroche** choisie ;
-   - ce que **Claude signale** : ses doutes, ce qu'il n'a pas pu savoir (il ne voit pas l'image, il lit seulement ce qui est dit) ;
+   - ce que **Claude signale** : ses doutes, ce qu'il n'a pas pu savoir, ce qu'il ne sait pas encore faire (transitions où le son continue sur l'image suivante, textes à l'écran) ;
    - chaque **segment** dans l'ordre : le rush, le passage (début → fin, durée), son rôle, ce qui est dit et pourquoi il est gardé ;
    - la musique, son volume et si elle baisse sous la voix ;
    - les **problèmes** repérés par l'outil : en rouge ce qui empêchera l'aperçu (rush introuvable, passage au-delà de la fin du rush…), en orange les avertissements (durée loin de la durée visée, passage repris deux fois…).
@@ -266,7 +278,7 @@ Sur l'écran Projet, section **Plan de montage** :
 
 Ce que l'outil range dans le projet :
 - `travail/plan/contexte.md` : tout ce que Claude a lu (consignes, fichiers, assets utilisables, guide de style) ;
-- `travail/transcriptions/<rush>.md` : les transcriptions en version compacte, une phrase par ligne avec son horaire ;
+- `travail/transcriptions/<rush>.md` : les transcriptions en version compacte, avec des horaires à l'intérieur des phrases et les pauses mesurées dans le son, pour couper au bon endroit ;
 - `versions/v1/plan.json` : le plan. Le projet passe à l'étape **Plan proposé**.
 
 Claude ne peut que lire les fichiers du projet : il n'écrit rien lui-même, ne lance aucune commande et ne touche jamais aux rushes. Le réglage du modèle Claude utilisé est dans **Paramètres** → Réglages communs.
@@ -390,7 +402,10 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | L'essai de whisper indique « sur le processeur » | Sur le PC, vérifier que la version CUDA est installée et le pilote NVIDIA à jour ; la transcription marche quand même, plus lentement |
 | « Limite d'usage Claude atteinte : réessaie à … » | Ton quota d'abonnement est épuisé pour le moment : attendre l'heure indiquée, puis **Relancer** la tâche |
 | « Claude utilise une clé API … au lieu de l'abonnement » | Retirer la variable `ANTHROPIC_API_KEY` de l'environnement, se reconnecter à Claude Code avec l'abonnement, puis **Relancer** |
-| « Aucune transcription : transcris d'abord les rushes » | Section **Transcriptions** de l'écran Projet, puis relancer la proposition |
+| « Aucune transcription : transcris d'abord les rushes » | Section **Analyse des rushes** de l'écran Projet, puis relancer la proposition |
+| « ffmpeg a échoué (création du proxy) : … » | Le rush est peut-être abîmé ou dans un format inconnu : vérifier qu'il se lit dans un lecteur vidéo, puis **Refaire la préparation** |
+| Les planches n'ont pas d'horaire écrit sur les vignettes | Aucune police trouvée sur la machine (Arial sous Windows et Mac) : Claude calcule alors les horaires, la préparation reste utilisable |
+| Une vidéo de téléphone apparaît délavée ou grise dans le lecteur | Elle est en HDR et n'a pas encore de proxy : **Préparer** le fichier |
 | « Consignes de montage introuvables : .claude/skills/proposer-plan/SKILL.md » | Le dépôt est incomplet : le mettre à jour (`git pull`) |
 | « Claude n'a pas répondu en 20 minutes » ou « Claude a échoué : … » | Relancer ; si cela se répète, faire **Tester la connexion** dans Paramètres → Claude |
 | « Nouvelle session Claude (l'ancienne n'existe pas sur cette machine) » dans la tâche | Normal après un renommage du projet ou sur l'autre ordinateur : Claude repart de `contexte.md` et du plan existant |

@@ -8,6 +8,7 @@ import { existe } from "../fichiers.ts";
 import { cheminModele, FICHIER_VAD, passagesParole, telechargerModele, transcrire } from "../media/whisper.ts";
 import { lireParametres } from "../parametres.ts";
 import { proposerPlan } from "../plans/proposition.ts";
+import { preparerRush } from "../rushes/preparation.ts";
 import { transcrireFichier } from "../projets/transcriptions.ts";
 import { lancer } from "../processus.ts";
 import type { Executeur, OutilsTache } from "./file.ts";
@@ -60,6 +61,7 @@ export function executeurs(contexte: Contexte): Record<TypeTache, Executeur> {
     "essai-transcription": async (_tache, outils) => essaiTranscription(contexte, outils),
     transcription: async (tache, outils) =>
       transcrireFichier(contexte, tache.projet ?? "", String(tache.parametres.fichier), outils),
+    "preparation-rush": async (tache, outils) => preparerRush(contexte, tache.projet ?? "", String(tache.parametres.fichier), outils),
     "proposition-plan": async (tache, outils) =>
       proposerPlan(contexte, tache.projet ?? "", String(tache.parametres.consigne ?? ""), outils),
   };

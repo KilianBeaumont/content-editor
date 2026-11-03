@@ -29,6 +29,7 @@ export interface InfosVideo {
   hauteur: number;
   codec: string;
   imagesParSeconde: number | null;
+  transfert: string | null;
 }
 
 export interface InfosAudio {

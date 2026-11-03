@@ -90,6 +90,8 @@ describe("plans de montage", () => {
       [
         "# rushes/matin.mp4 : 0:30.0 (30.0 s), français",
         "",
+        "Une ligne par passage : [début-fin] en secondes dans le rush. {t} : horaire du mot qui suit.",
+        "",
         "[0.50-2.00] Bonjour à tous.",
         "(silence de 4.0 s)",
         "[6.00-8.25] On attaque le décor.",
@@ -97,6 +99,37 @@ describe("plans de montage", () => {
         "",
       ].join("\n"),
     );
+  });
+
+  it("place des repères dans les phrases, aux pauses mesurées et à défaut tous les quelques mots", async () => {
+    const mots = (texte: string, debut: number, duree: number) =>
+      texte.split(" ").map((mot, index) => ({ mot, debut: debut + index * duree, fin: debut + (index + 1) * duree, probabilite: 0.9 }));
+    const transcription: Transcription = {
+      ...(await ecrireTranscription()),
+      segments: [
+        {
+          debut: 0,
+          fin: 4.4,
+          texte: "trois méthodes que j'utilise trois outils que",
+          mots: [...mots("trois méthodes que j'utilise", 2, 0.34), ...mots("trois outils que", 3.36, 0.35)],
+          corrige: false,
+        },
+        { debut: 5, fin: 9, texte: "un deux trois quatre cinq six sept huit neuf dix", mots: mots("un deux trois quatre cinq six sept huit neuf dix", 5, 0.4), corrige: false },
+        { debut: 10, fin: 11, texte: "Texte corrigé à la main", mots: mots("texte faux", 10, 0.5), corrige: true },
+        { debut: 12, fin: 14, texte: "bonjour à tous", mots: [...mots("bonjour", 12, 0.35), ...mots("à tous", 12.35, 0.2)], corrige: false },
+      ],
+    };
+    const silences = [
+      { debut: 3.6, fin: 3.9 },
+      { debut: 12, fin: 12.8 },
+    ];
+    const audio = { pas: 0.1, niveaux: [], seuilSilence: -36, silences, pics: [{ temps: 7.2, niveau: -12 }] };
+    const lignes = transcriptionCompacte(transcription, audio).split("\n");
+    expect(lignes).toContain("[0.00-4.40] trois méthodes que j'utilise (pause 0.3 s) {3.90} trois outils que");
+    expect(lignes).toContain("[5.00-9.00] un deux trois quatre cinq six sept huit {8.20} neuf dix");
+    expect(lignes).toContain("[10.00-11.00] Texte corrigé à la main");
+    expect(lignes).toContain("[12.00-14.00] (pause 0.8 s) {12.80} bonjour à tous");
+    expect(lignes).toContain("Pics sonores (moments les plus forts du son) : 7.2.");
   });
 
   it("prépare le contexte lu par Claude : consignes, fichiers, transcriptions et guide", async () => {

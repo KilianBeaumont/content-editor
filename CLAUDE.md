@@ -498,6 +498,7 @@ Dépôts étudiés (clonés dans `../inspiration`). L'étude complète, avec ce 
 - Nom de l'univers et des deux chaînes.
 - Identité graphique des deux chaînes (créée par l'utilisateur, à intégrer dans `bibliotheque/*/identite/`).
 - Hébergeur de podcast.
+- Vidéos HDR de l'iPhone (HLG, Dolby Vision) : garder le HDR à l'export YouTube ou tout convertir en SDR (déjà le cas pour les proxys et les aperçus). À trancher en phase 4.
 - Abonnement Claude suffisant pour le volume (Pro ou Max), à juger après quelques semaines d'usage réel.
 - Emplacement de `creations/` et partage entre le PC Windows et le MacBook (PC seul, disque externe ou synchronisation). En attendant, tous les chemins enregistrés sont relatifs à `creations/`, et on évite de placer `travail/` et `versions/` dans un dossier synchronisé.
 

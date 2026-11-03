@@ -18,6 +18,7 @@ const schemaSortie = z.object({
         height: z.number().optional(),
         avg_frame_rate: z.string().optional(),
         r_frame_rate: z.string().optional(),
+        color_transfer: z.string().optional(),
         channels: z.number().optional(),
         sample_rate: z.string().optional(),
         tags: z.object({ rotate: z.string().optional() }).optional(),
@@ -56,6 +57,7 @@ export function analyserSortieFfprobe(json: string): InfosMedia {
       hauteur: pivote ? video.width : video.height,
       codec: video.codec_name ?? "inconnu",
       imagesParSeconde: fraction(video.avg_frame_rate) ?? fraction(video.r_frame_rate),
+      transfert: video.color_transfer ?? null,
     };
   }
 

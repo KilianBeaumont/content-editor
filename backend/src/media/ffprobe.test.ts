@@ -12,6 +12,7 @@ describe("analyserSortieFfprobe", () => {
           width: 1920,
           height: 1080,
           avg_frame_rate: "30000/1001",
+          color_transfer: "arib-std-b67",
           side_data_list: [{ rotation: -90 }],
         },
         { codec_type: "audio", codec_name: "aac", channels: 2, sample_rate: "48000" },
@@ -19,7 +20,7 @@ describe("analyserSortieFfprobe", () => {
     });
     expect(analyserSortieFfprobe(sortie)).toEqual({
       duree: 12.5,
-      video: { largeur: 1080, hauteur: 1920, codec: "hevc", imagesParSeconde: 29.97 },
+      video: { largeur: 1080, hauteur: 1920, codec: "hevc", imagesParSeconde: 29.97, transfert: "arib-std-b67" },
       audio: { codec: "aac", canaux: 2, frequence: 48000 },
     });
   });

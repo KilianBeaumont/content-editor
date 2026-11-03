@@ -977,3 +977,63 @@ input[type="file"] {
   flex: 1 1 320px;
   margin: 0;
 }
+
+.reperes {
+  margin-top: 14px;
+}
+
+.reperes-saisie {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.reperes-saisie input {
+  flex: 1;
+  min-width: 0;
+}
+
+.liste-reperes {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0;
+}
+
+.liste-reperes li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 0;
+}
+
+.liste-reperes .bouton {
+  margin-left: auto;
+  padding: 1px 8px;
+}
+
+.bouton-lien {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.planches {
+  margin-top: 14px;
+}
+
+.planches summary {
+  cursor: pointer;
+  color: var(--texte-doux);
+}
+
+.planches img {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  border-radius: 4px;
+}

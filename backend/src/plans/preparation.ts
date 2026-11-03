@@ -4,8 +4,12 @@ import {
   cheminPlan,
   LIBELLES_CHAINES,
   LIBELLES_GENRES,
+  type AnalyseAudio,
   type FichierMedia,
+  type Intervalle,
+  type PlanchesRush,
   type Projet,
+  type SegmentTranscrit,
   type Transcription,
 } from "@editeur/shared";
 import { listerBibliotheque } from "../bibliotheque/bibliotheque.ts";
@@ -13,10 +17,15 @@ import { codeErreur } from "../erreurs.ts";
 import { cheminSur, lireTexte } from "../fichiers.ts";
 import { decrireDossier } from "../media/fichiers-media.ts";
 import { lireTranscription, listerTranscriptions } from "../projets/transcriptions.ts";
+import { lireAnalyseAudio, lirePreparation } from "../rushes/etat.ts";
+import { lireReperes } from "../rushes/reperes.ts";
 import { listerVersions, lirePlan } from "./plans.ts";
 
 export const CONTEXTE_PLAN = "travail/plan/contexte.md";
 const SILENCE_NOTABLE = 1.5;
+const PAUSE_MIN = 0.3;
+const ECART_REPERE = 0.25;
+const MOTS_ENTRE_REPERES = 8;
 const DOSSIERS_IGNORES = ["travail/", "versions/", "exports/"];
 const TYPES_PROPOSES = new Set(["musique", "ambiance"]);
 
@@ -32,19 +41,55 @@ function duree(valeur: number | null): string {
   return `${minutes}:${(valeur - minutes * 60).toFixed(1).padStart(4, "0")} (${valeur.toFixed(1)} s)`;
 }
 
-export function transcriptionCompacte(transcription: Transcription): string {
+function texteSegment(segment: SegmentTranscrit, silences: Intervalle[]): string {
+  if (segment.corrige || segment.mots.length === 0) return segment.texte;
+  const morceaux: string[] = [];
+  let depuisRepere = 0;
+  segment.mots.forEach((mot, index) => {
+    const precedent = segment.mots[index - 1];
+    const pause = silences.find(
+      (silence) =>
+        silence.fin - silence.debut >= PAUSE_MIN - 0.01 &&
+        silence.debut < mot.fin &&
+        (precedent === undefined ? silence.debut <= mot.debut + 0.05 && silence.fin > mot.debut + 0.1 : silence.debut > precedent.debut + 0.05),
+    );
+    if (pause !== undefined) {
+      silences.splice(silences.indexOf(pause), 1);
+      morceaux.push(`(pause ${(pause.fin - pause.debut).toFixed(1)} s) {${secondes(Math.max(mot.debut, pause.fin))}}`);
+      depuisRepere = 0;
+    } else if (precedent !== undefined && (mot.debut - precedent.fin >= ECART_REPERE || depuisRepere >= MOTS_ENTRE_REPERES)) {
+      morceaux.push(`{${secondes(mot.debut)}}`);
+      depuisRepere = 0;
+    }
+    morceaux.push(mot.mot.trim());
+    depuisRepere++;
+  });
+  return morceaux.join(" ");
+}
+
+export function transcriptionCompacte(transcription: Transcription, audio: AnalyseAudio | null = null): string {
   const langue = transcription.langue === "en" ? "anglais" : "français";
-  const lignes = [`# ${transcription.source} : ${duree(transcription.duree)}, ${langue}`, ""];
+  const lignes = [
+    `# ${transcription.source} : ${duree(transcription.duree)}, ${langue}`,
+    "",
+    "Une ligne par passage : [début-fin] en secondes dans le rush. {t} : horaire du mot qui suit.",
+    ...(audio === null ? [] : ["(pause x s) : silence mesuré dans l'audio, bon endroit pour couper ; le mot qui suit reprend à {t}."]),
+    "",
+  ];
+  const silences = audio === null ? [] : [...audio.silences];
   let fin = 0;
   for (const segment of transcription.segments) {
     if (segment.debut - fin >= SILENCE_NOTABLE) lignes.push(`(silence de ${(segment.debut - fin).toFixed(1)} s)`);
-    lignes.push(`[${secondes(segment.debut)}-${secondes(segment.fin)}] ${segment.texte}`);
+    lignes.push(`[${secondes(segment.debut)}-${secondes(segment.fin)}] ${texteSegment(segment, silences)}`);
     fin = segment.fin;
   }
   if (transcription.duree !== null && transcription.duree - fin >= SILENCE_NOTABLE) {
     lignes.push(`(silence de ${(transcription.duree - fin).toFixed(1)} s jusqu'à la fin)`);
   }
   if (transcription.segments.length === 0) lignes.push("(aucune parole détectée)");
+  if (audio !== null && audio.pics.length > 0) {
+    lignes.push("", `Pics sonores (moments les plus forts du son) : ${audio.pics.map((pic) => pic.temps.toFixed(1)).join(", ")}.`);
+  }
   return `${lignes.join("\n")}\n`;
 }
 
@@ -70,6 +115,27 @@ async function lireGuide(creations: string, chemin: string): Promise<string> {
   }
 }
 
+function sectionPlanches(planches: Map<string, PlanchesRush>): string[] {
+  return [
+    "## Images des rushes",
+    "",
+    "Des planches d'images montrent ce qu'on voit dans chaque rush. Une planche est une grille de vignettes à lire de gauche à droite puis de haut en bas, une vignette par intervalle.",
+    "",
+    "| Rush | Planches | Grille | Intervalle | Horaire des vignettes |",
+    "| --- | --- | --- | --- | --- |",
+    ...[...planches].map(([chemin, rush]) => {
+      const premiere = rush.fichiers[0];
+      const fichiers = premiere === undefined ? "aucune" : `${premiere} à ${rush.fichiers.at(-1)?.split("/").at(-1) ?? ""}`;
+      const parPlanche = rush.colonnes * rush.lignes;
+      const horaire = rush.horodatees
+        ? "écrit en haut à gauche de chaque vignette"
+        : `vignette n (à partir de 0) de la planche p (à partir de 1) : ((p - 1) × ${parPlanche} + n) × ${rush.intervalle} s`;
+      return `| ${chemin} | ${fichiers} | ${rush.colonnes} × ${rush.lignes} | ${rush.intervalle} s | ${horaire} |`;
+    }),
+    "",
+  ];
+}
+
 export interface Preparation {
   transcriptions: number;
   version: string;
@@ -87,14 +153,19 @@ export async function preparerProposition(
   const { metadata } = projet;
 
   const transcrites = new Map<string, string>();
+  const planches = new Map<string, PlanchesRush>();
   for (const fichier of (await listerTranscriptions(creations, projet.id)).fichiers) {
+    const preparationRush = fichier.preparation === "absente" ? null : await lirePreparation(dossier, fichier.chemin);
+    if (preparationRush?.planches) planches.set(fichier.chemin, preparationRush.planches);
     if (fichier.etat === "absente") continue;
     const compacte = cheminTranscriptionCompacte(fichier.chemin);
     const cible = join(dossier, compacte);
+    const audio = await lireAnalyseAudio(dossier, preparationRush);
     await mkdir(dirname(cible), { recursive: true });
-    await writeFile(cible, transcriptionCompacte(await lireTranscription(creations, projet.id, fichier.chemin)), "utf8");
+    await writeFile(cible, transcriptionCompacte(await lireTranscription(creations, projet.id, fichier.chemin), audio), "utf8");
     transcrites.set(fichier.chemin, fichier.etat === "perimee" ? `${compacte} (rush modifié depuis)` : compacte);
   }
+  const reperes = await lireReperes(dossier);
 
   const { fichiers } = await decrireDossier(dossier, ffprobe, (chemin) => chemin !== "metadata.json" && !DOSSIERS_IGNORES.some((d) => chemin.startsWith(d)));
   const notes = new Map(metadata.fichiers.map((fichier) => [fichier.chemin, fichier.note]));
@@ -139,6 +210,19 @@ export async function preparerProposition(
       return `| ${fichier.chemin} | ${LIBELLES_GENRES[fichier.genre]} | ${duree(fichier.infos?.duree ?? null)} | ${image} | ${son} | ${cellule(notes.get(fichier.chemin) ?? "")} | ${transcription} |`;
     }),
     "",
+    ...(reperes.length === 0
+      ? []
+      : [
+          "## Moments marqués par l'utilisateur",
+          "",
+          "L'utilisateur a repéré ces moments en regardant les rushes : ils sont prioritaires.",
+          "",
+          "| Rush | Horaire (s) | Note |",
+          "| --- | --- | --- |",
+          ...reperes.map((repere) => `| ${repere.source} | ${secondes(repere.temps)} | ${cellule(repere.note)} |`),
+          "",
+        ]),
+    ...(planches.size === 0 ? [] : sectionPlanches(planches)),
     "## Assets de la bibliothèque utilisables",
     "",
     ...(assets.length === 0

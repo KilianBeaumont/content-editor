@@ -5,18 +5,29 @@ import {
   type CorrectionSegment,
   type DetailProjet,
   type EtatTranscription,
+  type FichierTranscriptible,
   type ReponseTranscriptions,
   type Transcription,
+  type TypeTache,
 } from "@editeur/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { envoyerJson, formaterDuree, lireJson, messageErreur, urlFichier } from "../../api.ts";
 import { Message } from "../../composants/Message.tsx";
 import { LigneTache, useTaches } from "../../composants/Taches.tsx";
+import { Reperes } from "./Reperes.tsx";
+
+const TYPES_ANALYSE = new Set<TypeTache>(["transcription", "preparation-rush"]);
 
 const LIBELLES_ETATS: Record<EtatTranscription, { texte: string; classe: string }> = {
   absente: { texte: "À transcrire", classe: "badge" },
   "a-jour": { texte: "✓ Transcrit", classe: "badge badge-ok" },
   perimee: { texte: "Fichier modifié depuis", classe: "badge badge-alerte" },
+};
+
+const LIBELLES_PREPARATION: Record<EtatTranscription, { texte: string; classe: string }> = {
+  absente: { texte: "Images et son à préparer", classe: "badge" },
+  "a-jour": { texte: "✓ Images et son", classe: "badge badge-ok" },
+  perimee: { texte: "À refaire : fichier modifié", classe: "badge badge-alerte" },
 };
 
 const SEUIL_INCERTAIN = 0.5;
@@ -25,7 +36,15 @@ function urlTranscription(projet: string, chemin: string): string {
   return `/api/projets/${projet}/transcriptions/${chemin.split("/").map(encodeURIComponent).join("/")}`;
 }
 
-function Lecture({ projet, chemin, surCorrection }: { projet: DetailProjet; chemin: string; surCorrection: () => void }) {
+interface ProprietesLecture {
+  projet: DetailProjet;
+  fichier: FichierTranscriptible;
+  surCorrection: () => void;
+}
+
+function Lecture({ projet, fichier, surCorrection }: ProprietesLecture) {
+  const { chemin } = fichier;
+  const transcrit = fichier.etat !== "absente";
   const [transcription, setTranscription] = useState<Transcription | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [temps, setTemps] = useState(0);
@@ -37,10 +56,11 @@ function Lecture({ projet, chemin, surCorrection }: { projet: DetailProjet; chem
     setTranscription(null);
     setErreur(null);
     setEdition(null);
+    if (!transcrit) return;
     lireJson<Transcription>(urlTranscription(projet.id, chemin))
       .then(setTranscription)
       .catch((e: unknown) => setErreur(messageErreur(e)));
-  }, [projet.id, chemin]);
+  }, [projet.id, chemin, transcrit]);
 
   function aller(seconde: number) {
     const element = lecteur.current;
@@ -63,7 +83,8 @@ function Lecture({ projet, chemin, surCorrection }: { projet: DetailProjet; chem
     }
   }
 
-  const source = urlFichier(`${projet.chemin}/${chemin}`);
+  const proxy = fichier.preparation === "a-jour" ? fichier.proxy : null;
+  const source = urlFichier(`${projet.chemin}/${proxy ?? chemin}`);
   const proprietes = {
     ref: lecteur,
     src: source,
@@ -88,10 +109,23 @@ function Lecture({ projet, chemin, surCorrection }: { projet: DetailProjet; chem
             Mots soulignés : transcription incertaine. Survole une phrase pour la corriger ou la supprimer.
           </p>
         )}
+        {proxy !== null && <p className="note">Lecture du proxy basse résolution : le rush d'origine n'est pas modifié.</p>}
+        <Reperes projet={projet.id} source={chemin} tempsActuel={() => lecteur.current?.currentTime ?? 0} aller={aller} />
+        {fichier.planches.length > 0 && (
+          <details className="planches">
+            <summary>Planches d'images ({fichier.planches.length}) : ce que Claude peut voir du rush</summary>
+            {fichier.planches.map((planche) => (
+              <a key={planche} href={urlFichier(`${projet.chemin}/${planche}`)} target="_blank" rel="noreferrer">
+                <img src={urlFichier(`${projet.chemin}/${planche}`)} alt={planche.split("/").at(-1)} loading="lazy" />
+              </a>
+            ))}
+          </details>
+        )}
       </div>
       <div className="lecture-texte">
         {erreur && <Message type="erreur">{erreur}</Message>}
-        {transcription === null && !erreur && <p>Chargement…</p>}
+        {!transcrit && <p className="note">Pas encore transcrit.</p>}
+        {transcrit && transcription === null && !erreur && <p>Chargement…</p>}
         {transcription !== null && segments.length === 0 && <p className="note">Aucune parole détectée.</p>}
         {suspects.size > 0 && (
           <Message type="alerte">
@@ -190,7 +224,7 @@ export function Transcriptions({ projet, surChangement }: { projet: DetailProjet
   const [selection, setSelection] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const { taches } = useTaches();
-  const tachesProjet = taches.filter((tache) => tache.type === "transcription" && tache.projet === projet.id);
+  const tachesProjet = taches.filter((tache) => TYPES_ANALYSE.has(tache.type) && tache.projet === projet.id);
   const actives = tachesProjet.filter(tacheActive);
   const nombreActives = actives.length;
   const precedent = useRef(nombreActives);
@@ -210,97 +244,111 @@ export function Transcriptions({ projet, surChangement }: { projet: DetailProjet
     precedent.current = nombreActives;
   }, [nombreActives, charger, surChangement]);
 
-  async function lancer(fichiers: string[] | null) {
+  async function lancer(type: "transcriptions" | "preparations", fichiers: string[] | null) {
     setErreur(null);
     try {
-      await envoyerJson("POST", `/api/projets/${projet.id}/transcriptions`, { fichiers });
+      await envoyerJson("POST", `/api/projets/${projet.id}/${type}`, { fichiers });
     } catch (e) {
       setErreur(messageErreur(e));
     }
   }
 
-  const tacheDe = (chemin: string) => actives.find((tache) => tache.parametres.fichier === chemin);
+  async function analyser() {
+    await lancer("transcriptions", null);
+    await lancer("preparations", null);
+  }
+
+  const tacheDe = (type: TypeTache, chemin: string) => actives.find((tache) => tache.type === type && tache.parametres.fichier === chemin);
   const dernieres = new Map<string, (typeof tachesProjet)[number]>();
   for (const tache of tachesProjet) {
-    const fichier = String(tache.parametres.fichier);
-    if (!dernieres.has(fichier)) dernieres.set(fichier, tache);
+    const cle = `${tache.type} ${String(tache.parametres.fichier)}`;
+    if (!dernieres.has(cle)) dernieres.set(cle, tache);
   }
   const echecs = [...dernieres.values()].filter((tache) => tache.etat === "echouee");
-  const aFaire = (liste?.fichiers ?? []).filter((fichier) => fichier.etat !== "a-jour" && tacheDe(fichier.chemin) === undefined);
+  const aFaire = (liste?.fichiers ?? []).filter(
+    (fichier) =>
+      (fichier.etat !== "a-jour" && tacheDe("transcription", fichier.chemin) === undefined) ||
+      (fichier.preparation !== "a-jour" && tacheDe("preparation-rush", fichier.chemin) === undefined),
+  );
+  const selectionne = liste?.fichiers.find((fichier) => fichier.chemin === selection) ?? null;
+
+  function etatTache(type: TypeTache, chemin: string, etat: EtatTranscription, libelles: Record<EtatTranscription, { texte: string; classe: string }>) {
+    const tache = tacheDe(type, chemin);
+    if (tache === undefined) return <span className={libelles[etat].classe}>{libelles[etat].texte}</span>;
+    const progression = tache.progression !== null ? ` · ${Math.floor(tache.progression * 100)} %` : "";
+    return <span className="note">{tache.etat === "attente" ? "En attente" : `${tache.etape ?? "En cours"}${progression}`}</span>;
+  }
 
   return (
     <section className="section">
       <div className="entete-section">
-        <h2>Transcriptions</h2>
+        <h2>Analyse des rushes</h2>
         {aFaire.length > 0 && (
-          <button type="button" className="bouton bouton-principal" onClick={() => void lancer(null)}>
-            Transcrire {aFaire.length === 1 ? "le fichier restant" : `les ${aFaire.length} fichiers restants`}
+          <button type="button" className="bouton bouton-principal" onClick={() => void analyser()}>
+            Analyser {aFaire.length === 1 ? "le fichier restant" : `les ${aFaire.length} fichiers restants`}
           </button>
         )}
       </div>
       <p className="section-intro">
-        whisper.cpp transcrit les rushes et les voix sur cette machine. Claude s'appuiera sur ces transcriptions pour proposer le
+        Sur cette machine, whisper.cpp transcrit les rushes et les voix, et ffmpeg prépare un proxy léger pour la lecture, des planches
+        d'images et la mesure du son (silences, pics). Claude s'appuie sur tout cela, et sur les moments que tu marques, pour proposer le
         plan de montage.
       </p>
       {erreur && <Message type="erreur">{erreur}</Message>}
       {liste === null && !erreur && <p>Chargement…</p>}
-      {liste !== null && liste.fichiers.length === 0 && (
-        <p className="note">Aucun rush ni voix à transcrire dans ce projet.</p>
-      )}
+      {liste !== null && liste.fichiers.length === 0 && <p className="note">Aucun rush ni voix à analyser dans ce projet.</p>}
       {liste !== null && liste.fichiers.length > 0 && (
         <table className="tableau tableau-inbox">
           <tbody>
-            {liste.fichiers.map((fichier) => {
-              const tache = tacheDe(fichier.chemin);
-              const etat = LIBELLES_ETATS[fichier.etat];
-              return (
-                <tr key={fichier.chemin} className={fichier.chemin === selection ? "ligne-selectionnee" : undefined}>
-                  <td className="cellule-nom">
-                    <code>{fichier.chemin}</code>
-                  </td>
-                  <td>
-                    <span className="badge">{fichier.langue.toUpperCase()}</span>
-                  </td>
-                  <td>
-                    {tache ? (
-                      <span className="note">
-                        {tache.etat === "attente" ? "En attente" : `${tache.etape ?? "En cours"}${tache.progression !== null ? ` · ${Math.floor(tache.progression * 100)} %` : ""}`}
-                      </span>
-                    ) : (
-                      <span className={etat.classe}>{etat.texte}</span>
-                    )}
-                  </td>
-                  <td className="note">
-                    {fichier.duree !== null && formaterDuree(fichier.duree)}
-                    {fichier.nombreMots !== null && ` · ${fichier.nombreMots} mots`}
-                    {fichier.corrigee && " · corrigé"}
-                  </td>
-                  <td className="cellule-action">
-                    {fichier.etat !== "absente" && (
-                      <button
-                        type="button"
-                        className="bouton bouton-discret"
-                        onClick={() => setSelection(fichier.chemin === selection ? null : fichier.chemin)}
-                      >
-                        {fichier.chemin === selection ? "Fermer" : "Lire"}
-                      </button>
-                    )}
-                    {tache === undefined && (
-                      <button
-                        type="button"
-                        className="bouton bouton-discret"
-                        onClick={() => {
-                          const perte = "Ce fichier a été corrigé à la main : retranscrire effacera tes corrections. Continuer ?";
-                          if (!fichier.corrigee || window.confirm(perte)) void lancer([fichier.chemin]);
-                        }}
-                      >
-                        {fichier.etat === "absente" ? "Transcrire" : "Retranscrire"}
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
+            {liste.fichiers.map((fichier) => (
+              <tr key={fichier.chemin} className={fichier.chemin === selection ? "ligne-selectionnee" : undefined}>
+                <td className="cellule-nom">
+                  <code>{fichier.chemin}</code>
+                </td>
+                <td>
+                  <span className="badge">{fichier.langue.toUpperCase()}</span>
+                </td>
+                <td>
+                  {etatTache("transcription", fichier.chemin, fichier.etat, LIBELLES_ETATS)}
+                  <br />
+                  {etatTache("preparation-rush", fichier.chemin, fichier.preparation, LIBELLES_PREPARATION)}
+                </td>
+                <td className="note">
+                  {fichier.duree !== null && formaterDuree(fichier.duree)}
+                  {fichier.nombreMots !== null && ` · ${fichier.nombreMots} mots`}
+                  {fichier.corrigee && " · corrigé"}
+                  {fichier.planches.length > 0 && ` · ${fichier.planches.length} planche${fichier.planches.length > 1 ? "s" : ""}`}
+                </td>
+                <td className="cellule-action">
+                  {(fichier.etat !== "absente" || fichier.preparation !== "absente") && (
+                    <button
+                      type="button"
+                      className="bouton bouton-discret"
+                      onClick={() => setSelection(fichier.chemin === selection ? null : fichier.chemin)}
+                    >
+                      {fichier.chemin === selection ? "Fermer" : "Lire"}
+                    </button>
+                  )}
+                  {tacheDe("transcription", fichier.chemin) === undefined && (
+                    <button
+                      type="button"
+                      className="bouton bouton-discret"
+                      onClick={() => {
+                        const perte = "Ce fichier a été corrigé à la main : retranscrire effacera tes corrections. Continuer ?";
+                        if (!fichier.corrigee || window.confirm(perte)) void lancer("transcriptions", [fichier.chemin]);
+                      }}
+                    >
+                      {fichier.etat === "absente" ? "Transcrire" : "Retranscrire"}
+                    </button>
+                  )}
+                  {tacheDe("preparation-rush", fichier.chemin) === undefined && (
+                    <button type="button" className="bouton bouton-discret" onClick={() => void lancer("preparations", [fichier.chemin])}>
+                      {fichier.preparation === "absente" ? "Préparer" : "Refaire la préparation"}
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       )}
@@ -318,7 +366,7 @@ export function Transcriptions({ projet, surChangement }: { projet: DetailProjet
           ))}
         </ul>
       )}
-      {selection !== null && <Lecture projet={projet} chemin={selection} surCorrection={charger} />}
+      {selectionne !== null && <Lecture projet={projet} fichier={selectionne} surCorrection={charger} />}
     </section>
   );
 }
