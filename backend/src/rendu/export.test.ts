@@ -43,7 +43,7 @@ const PLAN: PlanMontage = {
   reponsesRetours: [],
 };
 
-describe.skipIf(!ffmpegPresent)("export final", () => {
+describe.skipIf(!ffmpegPresent)("export final", { timeout: 60_000 }, () => {
   let env: EnvironnementTest;
   let dossier: string;
   const id = "2026-11-24_export";

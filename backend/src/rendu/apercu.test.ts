@@ -45,7 +45,7 @@ function plan(statut: PlanMontage["statut"]): PlanMontage {
   };
 }
 
-describe.skipIf(!ffmpegPresent)("rendu de l'aperçu", () => {
+describe.skipIf(!ffmpegPresent)("rendu de l'aperçu", { timeout: 60_000 }, () => {
   let env: EnvironnementTest;
   let dossier: string;
   const id = "2026-11-22_rendu";

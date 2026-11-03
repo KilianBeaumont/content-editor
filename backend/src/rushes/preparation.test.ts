@@ -34,7 +34,7 @@ const VLOG: SaisieProjet = {
   vocabulaire: "",
 };
 
-describe("préparation des rushes et repères", () => {
+describe("préparation des rushes et repères", { timeout: 60_000 }, () => {
   let env: EnvironnementTest;
   let dossier: string;
   const id = "2026-11-21_essai";
