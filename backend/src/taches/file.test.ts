@@ -51,8 +51,12 @@ describe("file de tâches", () => {
     expect(ordre).toEqual(["a", "b"]);
     expect(maximum).toBe(1);
 
-    await pause(20);
-    const enregistre = JSON.parse(await readFile(fichier(), "utf8")) as { taches: Tache[] };
+    let enregistre: { taches: Tache[] } = { taches: [] };
+    for (let essai = 0; essai < 100; essai++) {
+      enregistre = JSON.parse(await readFile(fichier(), "utf8")) as { taches: Tache[] };
+      if (enregistre.taches.every(({ etat }) => etat === "terminee")) break;
+      await pause(20);
+    }
     expect(enregistre.taches.map(({ libelle, etat, projet }) => ({ libelle, etat, projet }))).toEqual([
       { libelle: "B", etat: "terminee", projet: "2026-11-06_projet" },
       { libelle: "A", etat: "terminee", projet: null },
