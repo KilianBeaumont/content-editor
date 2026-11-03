@@ -154,6 +154,7 @@ describe("transcriptions d'un projet", () => {
       "preparation-rush": async () => null,
       "proposition-plan": async () => null,
       "rendu-apercu": async () => null,
+      "export-final": async () => null,
     });
     const creations = env.contexte.config.creations;
 

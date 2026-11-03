@@ -212,3 +212,10 @@ export {
   type ReponseReperes,
   type SaisieRepere,
 } from "./rushes.ts";
+export {
+  cheminFicheExport,
+  type ElementExport,
+  type ExportSortie,
+  type ReponseDescription,
+  type ReponseExports,
+  type ReponseExportsGlobaux, type SaisieExport, type SaisiePublication } from "./exports.ts";

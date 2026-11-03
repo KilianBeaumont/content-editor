@@ -7,6 +7,7 @@ export interface OptionsFfmpeg {
   action: string;
   surProgression?: (fraction: number) => void;
   surSortie?: (ligne: string) => void;
+  surJournal?: (ligne: string) => void;
   cwd?: string;
 }
 
@@ -14,11 +15,14 @@ export async function executerFfmpeg(ffmpeg: string, args: string[], options: Op
   const avecProgression = options.surProgression !== undefined;
   let resultat;
   try {
-    resultat = await lancer(ffmpeg, ["-v", "error", "-nostdin", "-y", ...(avecProgression ? ["-progress", "pipe:1", "-stats_period", "0.5"] : []), ...args], {
+    resultat = await lancer(ffmpeg, ["-v", options.surJournal === undefined ? "error" : "info", "-nostdin", "-y", ...(avecProgression ? ["-progress", "pipe:1", "-stats_period", "0.5"] : []), ...args], {
       signal: outils.signal,
       cwd: options.cwd,
       surLigne: (ligne, flux) => {
-        if (flux !== "sortie") return;
+        if (flux !== "sortie") {
+          options.surJournal?.(ligne);
+          return;
+        }
         const temps = /^out_time_us=(\d+)/.exec(ligne);
         if (temps) {
           if (options.duree) options.surProgression?.(Math.min(1, Number(temps[1]) / 1e6 / options.duree));
@@ -33,7 +37,7 @@ export async function executerFfmpeg(ffmpeg: string, args: string[], options: Op
   }
   if (outils.signal.aborted) throw new Error(`${options.action} annulée.`);
   if (resultat.code !== 0) {
-    const detail = resultat.dernieresErreurs.at(-1);
+    const detail = resultat.dernieresErreurs.filter((ligne) => /error|invalid|failed|no such|cannot|unable/i.test(ligne)).at(-1) ?? resultat.dernieresErreurs.at(-1);
     throw new Error(`ffmpeg a échoué (${options.action.toLowerCase()})${detail ? ` : ${detail}` : "."}`);
   }
 }

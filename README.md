@@ -58,7 +58,17 @@ Phase 3 (plan de montage et aperçu), pour un vlog d'abord.
 | 3.8 | Boucle de versions (`integrer-retours`) et validation de la version | ✅ |
 | 3.9 | Textes à l'écran et composants animés (Remotion) | après la première boucle |
 
-Les phases suivantes (exports, formats courts, podcast, statistiques) viendront après.
+Phase 4 (export final).
+
+| Étape | Contenu | État |
+| --- | --- | --- |
+| 4.1 | Rendu pleine qualité de la version validée depuis les rushes d'origine (1080p par défaut, cadence des rushes, HDR converti en SDR, accélération par la carte graphique) | ✅ |
+| 4.2 | Volume normalisé en deux passes (-14 LUFS, crêtes à -1 dBTP) | ✅ |
+| 4.3 | Vérification du fichier exporté (résolution, codecs, durée, volume, crêtes) | ✅ |
+| 4.4 | Rangement dans `exports/` et description prête à copier avec les crédits | ✅ |
+| 4.5 | Onglet Export du projet et écran Exports (fichiers prêts par plateforme, « publié ») | ✅ |
+
+Les phases suivantes (formats courts, podcast, statistiques) viendront après.
 
 ## Installer l'outil sur une machine
 
@@ -66,7 +76,7 @@ Les phases suivantes (exports, formats courts, podcast, statistiques) viendront 
 
 1. Installer les programmes nécessaires :
    - **Node.js 24** ou plus récent ;
-   - **ffmpeg** et **ffprobe** ;
+   - **ffmpeg** et **ffprobe** (de préférence une version « full » avec libplacebo, pour une conversion HDR plus rapide et plus fidèle à l'export ; sans elle, l'outil utilise une méthode plus lente) ;
    - **Claude Code** (`claude`), puis s'y connecter avec l'abonnement Claude (`claude` dans un terminal, puis suivre la connexion). Ne jamais créer ni renseigner de clé API.
    - **whisper.cpp**, pour la transcription :
      - Windows (carte NVIDIA) : télécharger `whisper-bin-win-cuda-12.4.0-x64.zip` sur la page des versions de https://github.com/ggml-org/whisper.cpp (dernier build `bNNNN` qui contient des fichiers), le décompresser dans `outils/whisper/bin/` à côté du dépôt ;
@@ -228,7 +238,7 @@ Un clic sur un projet ouvre l'**écran Projet**. Il est organisé comme un assis
 | 3. Plan | Faire proposer le plan par Claude, l'ajuster, le valider |
 | 4. Aperçu | Rendre l'aperçu, le regarder, le commenter, produire la version suivante, valider la version |
 | 5. Validation | Voir la version validée et ce qui bloquerait l'export |
-| 6. Export | Rendre en pleine qualité et ranger par plateforme (phase 4) |
+| 6. Export | Rendre la version validée en pleine qualité, la télécharger, copier la description avec les crédits, cocher « publié » |
 
 - Chaque onglet affiche son état : **✓** quand l'étape est faite (déduite de ce que contient le dossier), « à faire » pour la prochaine action.
 - À l'ouverture, l'écran se place sur la prochaine étape à faire. Tous les onglets restent cliquables, et l'onglet ouvert est gardé dans l'adresse (`?etape=plan`) : un rechargement de la page y revient.
@@ -335,6 +345,29 @@ Les commentaires sont enregistrés dans `versions/vN/retours.json`.
 5. Quand un aperçu te convient : **C'est la bonne : valider la version vN**. Le projet passe à l'étape **Validé** ; c'est cette version qui sera rendue en pleine qualité à l'export (phase 4). **Annuler la validation** est toujours possible.
 
 Toutes les versions restent dans `versions/` avec leur plan, leur aperçu et tes commentaires, pour pouvoir revenir en arrière.
+
+### Exporter la vidéo finale
+
+Onglet **6. Export** (ou **Export →** depuis l'onglet Validation), une fois une version validée :
+1. **Exporter la version vN** : la tâche rend la version validée en pleine qualité, avec la progression en direct (découpe de chaque segment, mélange du son, mesure du volume, assemblage, vérification). Compte environ une minute pour une minute de vidéo 4K sur le PC.
+2. Le fichier s'affiche dans un lecteur, avec ses caractéristiques et le résultat des contrôles (**✓ Fichier vérifié**, sinon la liste des points à regarder).
+3. **Télécharger**, ou récupère-le directement dans `exports/youtube/<projet>.mp4` (`exports/formats-courts/` pour une catégorie verticale).
+4. **Description à copier** : ta description (écran **Modifier**) suivie des crédits de l'auteur, des artistes invités et des musiques externes, avec leurs liens. **Copier**, puis colle-la dans YouTube. Elle est aussi enregistrée dans `description.txt` à côté du fichier.
+5. Une fois mis en ligne à la main : coche **Publié sur YouTube**.
+
+Ce que fait l'export :
+- il part des **rushes d'origine** (pas des proxys) et suit exactement le plan de la version validée : coupes, coupes décalées, plans de coupe, musique ;
+- **image** : résolution du préréglage YouTube des Paramètres (1920x1080 par défaut, 3840x2160 possible), cadence des rushes (60 i/s si filmé en 60, jamais plus), H.264, couleurs SDR (BT.709). Les vidéos HDR de l'iPhone sont converties ; avec libplacebo et une carte graphique, la conversion est plus rapide et plus fidèle ;
+- **son** : AAC 320 kb/s, volume ramené à -14 LUFS en deux passes (mesure puis correction), crêtes à -1 dBTP ;
+- **accélération** : l'encodage passe par la carte graphique quand elle est disponible (NVENC sur le PC, VideoToolbox sur le Mac), sinon par le processeur. En cas d'échec du décodage accéléré, l'export recommence automatiquement sans ;
+- **vérification** : résolution, codecs, durée par rapport au plan, volume et crêtes mesurés sur le fichier final ;
+- **droits** : l'export est refusé si l'onglet Validation signale un blocage (autorisation d'auteur, accord d'artiste, asset introuvable).
+
+Refaire l'export (après avoir validé une autre version, par exemple) remplace le fichier ; l'outil le signale si le fichier ne correspond plus à la version validée. La fiche de chaque export est rangée dans `travail/exports/`.
+
+### Retrouver tous les exports
+
+L'écran **Exports** (menu) liste les fichiers prêts de tous les projets, par plateforme. Filtres par chaîne et par état (**À publier**, **Déjà publiés**, **Tous**). Pour chaque fichier : **Ouvrir**, **Télécharger**, la version et les caractéristiques, un avertissement si une autre version a été validée depuis, et la case **Publié**. Le titre du projet ouvre son onglet Export.
 
 ### Modifier un projet, ajouter des fichiers, le mettre à la corbeille
 
@@ -454,6 +487,12 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | « Limite d'usage Claude atteinte : réessaie à … » | Ton quota d'abonnement est épuisé pour le moment : attendre l'heure indiquée, puis **Relancer** la tâche |
 | « Claude utilise une clé API … au lieu de l'abonnement » | Retirer la variable `ANTHROPIC_API_KEY` de l'environnement, se reconnecter à Claude Code avec l'abonnement, puis **Relancer** |
 | « Aucune transcription : transcris d'abord les rushes » | Section **Analyse des rushes** de l'écran Projet, puis relancer la proposition |
+| « Valide d'abord une version (onglet Aperçu) : c'est elle qui est exportée » | Onglet **4. Aperçu** : **C'est la bonne : valider la version vN** |
+| « Export bloqué : … » | Onglet **5. Validation** : corriger ce qui bloque (autorisation, accord d'artiste, asset), puis relancer l'export |
+| « La sortie … ne s'exporte pas encore pour ce projet » | Seule la vidéo principale s'exporte pour l'instant (YouTube, ou format court pour une catégorie verticale) ; vérifier aussi que la sortie est cochée dans **Modifier** |
+| « La mesure du volume a échoué : relance l'export » | **Relancer** la tâche ; si cela se répète, vérifier que la musique et les rushes se lisent |
+| L'export affiche « Nouvel essai sans accélération matérielle du décodage » | Le décodage par la carte graphique a échoué pour un rush : l'export continue sur le processeur, plus lentement, sans rien perdre |
+| L'export signale « Volume … au lieu de -14 LUFS » ou « Crêtes à … dBTP » | Rare (vidéo très courte, musique très forte) : baisser la musique dans le plan, valider une nouvelle version, puis refaire l'export |
 | « Aucun commentaire à intégrer sur l'aperçu vN » | Tous les commentaires sont déjà traités : en ajouter un, ou repasser un commentaire **À retraiter** |
 | « La version vN n'a pas encore d'aperçu à commenter » ou « … rends-la avant de la valider » | Lancer d'abord l'aperçu de cette version |
 | « Consignes de montage introuvables : .claude/skills/integrer-retours/SKILL.md » | Le dépôt est incomplet : le mettre à jour (`git pull`) |

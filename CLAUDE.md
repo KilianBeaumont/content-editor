@@ -498,7 +498,6 @@ Dépôts étudiés (clonés dans `../inspiration`). L'étude complète, avec ce 
 - Nom de l'univers et des deux chaînes.
 - Identité graphique des deux chaînes (créée par l'utilisateur, à intégrer dans `bibliotheque/*/identite/`).
 - Hébergeur de podcast.
-- Vidéos HDR de l'iPhone (HLG, Dolby Vision) : garder le HDR à l'export YouTube ou tout convertir en SDR (déjà le cas pour les proxys et les aperçus). À trancher en phase 4.
 - Abonnement Claude suffisant pour le volume (Pro ou Max), à juger après quelques semaines d'usage réel.
 - Emplacement de `creations/` et partage entre le PC Windows et le MacBook (PC seul, disque externe ou synchronisation). En attendant, tous les chemins enregistrés sont relatifs à `creations/`, et on évite de placer `travail/` et `versions/` dans un dossier synchronisé.
 
@@ -516,3 +515,10 @@ Dépôts étudiés (clonés dans `../inspiration`). L'étude complète, avec ce 
 - **Repérer les moments forts** : deux moyens complémentaires. L'utilisateur peut marquer lui-même des moments dans le lecteur, et l'outil propose aussi une détection automatique (pics sonores + planches d'images lues par Claude) pour monter vite une courte vidéo sans tout regarder.
 - **Guides de style** : `style.md` et `hooks.md` sont écrits par l'utilisateur, qui donne la direction ; l'outil ne les rédige pas.
 - **Vidéo de test de la phase 3** : un vlog court fourni par l'utilisateur (pas la partie Valorant de 38 min).
+
+### Décisions prises (2026-11-03, phase 4)
+
+- **HDR** : tout est converti en SDR (BT.709), aperçus comme exports, pour un rendu identique sur toutes les plateformes et un mélange simple avec les sources SDR.
+- **Résolution YouTube** : 1080p par défaut, 4K possible via le préréglage d'export dans Paramètres.
+- **Cadence** : celle des rushes (60 i/s si filmé en 60), plafonnée à 60 ; les aperçus restent à 30 i/s.
+- **Écran Projet** : six onglets dans l'ordre de production (Fichiers, Analyse, Plan, Aperçu, Validation, Export).

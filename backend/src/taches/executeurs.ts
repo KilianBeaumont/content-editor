@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { TypeTache } from "@editeur/shared";
+import { SORTIES, type TypeTache } from "@editeur/shared";
 import type { Contexte } from "../contexte.ts";
 import { codeErreur } from "../erreurs.ts";
 import { existe } from "../fichiers.ts";
@@ -9,6 +9,7 @@ import { cheminModele, FICHIER_VAD, passagesParole, telechargerModele, transcrir
 import { lireParametres } from "../parametres.ts";
 import { proposerPlan } from "../plans/proposition.ts";
 import { rendreApercu } from "../rendu/apercu.ts";
+import { exporterVideo } from "../rendu/export.ts";
 import { preparerRush } from "../rushes/preparation.ts";
 import { transcrireFichier } from "../projets/transcriptions.ts";
 import { lancer } from "../processus.ts";
@@ -63,6 +64,11 @@ export function executeurs(contexte: Contexte): Record<TypeTache, Executeur> {
     transcription: async (tache, outils) =>
       transcrireFichier(contexte, tache.projet ?? "", String(tache.parametres.fichier), outils),
     "preparation-rush": async (tache, outils) => preparerRush(contexte, tache.projet ?? "", String(tache.parametres.fichier), outils),
+    "export-final": async (tache, outils) => {
+      const sortie = SORTIES.find((element) => element === tache.parametres.sortie);
+      if (sortie === undefined) throw new Error("Sortie inconnue.");
+      return exporterVideo(contexte, tache.projet ?? "", sortie, outils);
+    },
     "rendu-apercu": async (tache, outils) => rendreApercu(contexte, tache.projet ?? "", String(tache.parametres.version), outils),
     "proposition-plan": async (tache, outils) =>
       proposerPlan(contexte, tache.projet ?? "", String(tache.parametres.consigne ?? ""), typeof tache.parametres.depuis === "string" ? tache.parametres.depuis : null, outils),

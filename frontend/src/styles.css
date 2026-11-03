@@ -1321,3 +1321,45 @@ input[type="file"] {
   flex-direction: column;
   gap: 12px;
 }
+
+.fiche-export {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(240px, 2fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .fiche-export {
+    grid-template-columns: 1fr;
+  }
+}
+
+.video-export {
+  display: block;
+  width: 100%;
+  border-radius: 6px;
+  background: #000;
+}
+
+.video-verticale {
+  max-height: 70vh;
+  width: auto;
+  max-width: 100%;
+}
+
+.details-export {
+  margin: 6px 0 10px;
+  padding-left: 18px;
+  color: var(--texte-doux);
+}
+
+.case-publication {
+  display: block;
+  margin-top: 12px;
+}
+
+.description-export {
+  width: 100%;
+  font-family: inherit;
+}

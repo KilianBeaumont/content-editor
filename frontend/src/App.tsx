@@ -5,6 +5,7 @@ import { PageAuteur } from "./pages/auteurs-artistes/PageAuteur.tsx";
 import { Bibliotheque } from "./pages/bibliotheque/Bibliotheque.tsx";
 import { NouvelAsset } from "./pages/bibliotheque/NouvelAsset.tsx";
 import { PageAsset } from "./pages/bibliotheque/PageAsset.tsx";
+import { Exports } from "./pages/exports/Exports.tsx";
 import { Inbox } from "./pages/inbox/Inbox.tsx";
 import { Parametres } from "./pages/parametres/Parametres.tsx";
 import { ModifierProjet } from "./pages/projets/ModifierProjet.tsx";
@@ -16,6 +17,7 @@ const MENU = [
   { chemin: "/", libelle: "Tableau de bord" },
   { chemin: "/nouveau-projet", libelle: "Nouveau projet" },
   { chemin: "/inbox", libelle: "Inbox" },
+  { chemin: "/exports", libelle: "Exports" },
   { chemin: "/bibliotheque", libelle: "Bibliothèque" },
   { chemin: "/auteurs-artistes", libelle: "Auteurs et artistes" },
   { chemin: "/parametres", libelle: "Paramètres" },
@@ -39,6 +41,7 @@ export function App() {
           <Route path="/projets/:id" element={<PageProjet />} />
           <Route path="/projets/:id/modifier" element={<ModifierProjet />} />
           <Route path="/inbox" element={<Inbox />} />
+          <Route path="/exports" element={<Exports />} />
           <Route path="/bibliotheque" element={<Bibliotheque />} />
           <Route path="/bibliotheque/nouveau" element={<NouvelAsset />} />
           <Route path="/bibliotheque/assets/:id" element={<PageAsset />} />

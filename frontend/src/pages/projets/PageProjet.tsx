@@ -16,6 +16,7 @@ import { Verification } from "../../composants/Verification.tsx";
 import { formaterDate } from "../TableauDeBord.tsx";
 import { AjoutFichiers } from "./AjoutFichiers.tsx";
 import { Apercu } from "./Apercu.tsx";
+import { Export } from "./Export.tsx";
 import { InfosProjet, ListeFichiers } from "./InfosProjet.tsx";
 import type { EtatRetourProjet } from "./ModifierProjet.tsx";
 import { estOnglet, NavigationEtapes, ongletSuggere, OngletsProjet, type Onglet } from "./OngletsProjet.tsx";
@@ -196,21 +197,21 @@ export function PageProjet() {
               </button>
             </div>
           ) : (
-            <p>
-              Version validée : <strong>{metadata.versionValidee}</strong>. C'est elle qui sera rendue en pleine qualité à l'export.
-            </p>
+            <div className="appel-suite">
+              <span>
+                Version validée : <strong>{metadata.versionValidee}</strong>. C'est elle qui sera rendue en pleine qualité.
+              </span>
+              <button type="button" className="bouton bouton-principal" disabled={exportBloque} onClick={() => choisir("export")}>
+                Export →
+              </button>
+            </div>
           )}
           <h3>Avant l'export</h3>
           {verification === null ? <p className="note">Vérification…</p> : <Verification verification={verification} />}
         </section>
       )}
 
-      {actif === "export" && (
-        <section className="section">
-          <h2>Export</h2>
-          <p className="note">Le rendu pleine qualité et le rangement par plateforme arrivent en phase 4.</p>
-        </section>
-      )}
+      {actif === "export" && <Export projet={projet} taches={taches} surChangement={charger} allerA={choisir} />}
 
       <NavigationEtapes actif={actif} choisir={choisir} />
     </>

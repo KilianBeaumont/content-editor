@@ -1,17 +1,30 @@
 import { plagesImage, type Categorie, type SegmentPlan } from "@editeur/shared";
+import { z } from "zod";
+import type { EncodeurH264 } from "../media/capacites.ts";
 
-export const IMAGES_PAR_SECONDE = 30;
+export const IMAGES_PAR_SECONDE_APERCU = 30;
 export const LOUDNESS_APERCU = -14;
+export const CRETE_MAX = -1;
 const FONDU_AUDIO = 0.03;
 const CATEGORIES_VERTICALES = new Set<Categorie>(["micro-histoire", "extrait-recit", "timelapse"]);
+const TRANSFERTS_HDR = new Set(["arib-std-b67", "smpte2084"]);
 
 export interface FormatRendu {
   largeur: number;
   hauteur: number;
 }
 
+export function estVertical(categorie: Categorie): boolean {
+  return CATEGORIES_VERTICALES.has(categorie);
+}
+
 export function formatApercu(categorie: Categorie): FormatRendu {
-  return CATEGORIES_VERTICALES.has(categorie) ? { largeur: 360, hauteur: 640 } : { largeur: 640, hauteur: 360 };
+  return estVertical(categorie) ? { largeur: 360, hauteur: 640 } : { largeur: 640, hauteur: 360 };
+}
+
+export function cadenceExport(cadences: (number | null)[]): number {
+  const connues = cadences.filter((cadence): cadence is number => cadence !== null && cadence > 0);
+  return connues.length === 0 ? 30 : Math.min(60, Math.round(Math.max(...connues)));
 }
 
 export interface DecoupeSegment {
@@ -21,7 +34,7 @@ export interface DecoupeSegment {
 
 const milliseconde = (valeur: number) => Math.round(valeur * 1000) / 1000;
 
-export function decouper(segments: Pick<SegmentPlan, "debut" | "fin" | "decalageImage">[], ips = IMAGES_PAR_SECONDE): DecoupeSegment[] {
+export function decouper(segments: Pick<SegmentPlan, "debut" | "fin" | "decalageImage">[], ips: number): DecoupeSegment[] {
   const departsSon: number[] = [];
   let total = 0;
   for (const segment of segments) {
@@ -41,19 +54,105 @@ export function decouper(segments: Pick<SegmentPlan, "debut" | "fin" | "decalage
 
 const s = (valeur: number) => String(Math.round(valeur * 1000) / 1000);
 
-export function filtreCadre(format: FormatRendu): string {
-  const { largeur: l, hauteur: h } = format;
-  return `scale=${l}:${h}:force_original_aspect_ratio=decrease,pad=${l}:${h}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=${IMAGES_PAR_SECONDE}`;
+export interface ProfilImage {
+  format: FormatRendu;
+  ips: number;
+  placebo: boolean;
+  acceleration: boolean;
 }
 
-const ENCODAGE_VIDEO = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p", "-g", String(IMAGES_PAR_SECONDE)];
+export interface SourceImage {
+  chemin: string;
+  transfert: string | null;
+}
 
-export function argumentsClipVideo(source: string | null, debut: number, images: number, format: FormatRendu, cible: string): string[] {
+export function estTransfertHdr(transfert: string | null): boolean {
+  return transfert !== null && TRANSFERTS_HDR.has(transfert);
+}
+
+export function filtreImage(profil: ProfilImage, transfert: string | null): string {
+  const { largeur: l, hauteur: h } = profil.format;
+  const hdr = estTransfertHdr(transfert);
+  if (profil.placebo) {
+    const options = [
+      `w=${l}`,
+      `h=${h}`,
+      "force_original_aspect_ratio=decrease",
+      "pad_crop_ratio=0",
+      "colorspace=bt709",
+      "color_primaries=bt709",
+      "color_trc=bt709",
+      "range=tv",
+      "format=yuv420p",
+      ...(hdr ? ["tonemapping=bt.2390"] : []),
+    ];
+    return `libplacebo=${options.join(":")},setsar=1,fps=${profil.ips}`;
+  }
+  const etapes = [`scale=${l}:${h}:force_original_aspect_ratio=decrease:flags=bicubic`];
+  if (hdr) {
+    etapes.push(
+      `zscale=tin=${transfert ?? "arib-std-b67"}:min=bt2020nc:pin=bt2020:t=linear:npl=203`,
+      "format=gbrpf32le",
+      "zscale=p=bt709",
+      "tonemap=hable:desat=0",
+      "zscale=t=bt709:m=bt709:r=tv",
+    );
+  }
+  etapes.push("format=yuv420p", `pad=${l}:${h}:(ow-iw)/2:(oh-ih)/2`, "setsar=1", `fps=${profil.ips}`);
+  return etapes.join(",");
+}
+
+export function peripheriqueImage(profil: ProfilImage): string[] {
+  return profil.placebo ? ["-init_hw_device", "vulkan"] : [];
+}
+
+export function optionsEntreeImage(profil: ProfilImage): string[] {
+  return profil.acceleration ? ["-hwaccel", "auto"] : [];
+}
+
+export function debitCibleKbps(format: FormatRendu, ips: number): number {
+  const cote = Math.min(format.largeur, format.hauteur);
+  const rapide = ips > 30;
+  if (cote >= 2160) return rapide ? 60_000 : 40_000;
+  if (cote >= 1440) return rapide ? 24_000 : 16_000;
+  if (cote >= 1080) return rapide ? 12_000 : 8_000;
+  if (cote >= 720) return rapide ? 7_500 : 5_000;
+  return rapide ? 2_500 : 1_500;
+}
+
+const COULEURS_BT709 = ["-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv"];
+
+export function encodageIntermediaire(encodeur: EncodeurH264 | "apercu", ips: number): string[] {
+  const commun = ["-pix_fmt", "yuv420p", "-g", String(ips)];
+  if (encodeur === "apercu") return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "23", ...commun];
+  if (encodeur === "h264_nvenc") return ["-c:v", "h264_nvenc", "-preset", "p5", "-rc", "vbr", "-cq", "16", "-b:v", "0", ...commun, ...COULEURS_BT709];
+  if (encodeur === "h264_videotoolbox") return ["-c:v", "h264_videotoolbox", "-q:v", "80", ...commun, ...COULEURS_BT709];
+  return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "14", ...commun, ...COULEURS_BT709];
+}
+
+export function encodageFinal(encodeur: EncodeurH264, format: FormatRendu, ips: number): string[] {
+  const debit = debitCibleKbps(format, ips);
+  const plafond = ["-maxrate", `${Math.round(debit * 1.5)}k`, "-bufsize", `${debit * 2}k`];
+  const commun = ["-pix_fmt", "yuv420p", "-g", String(Math.round(ips / 2)), "-bf", "2", "-profile:v", "high", ...COULEURS_BT709];
+  if (encodeur === "h264_nvenc") return ["-c:v", "h264_nvenc", "-preset", "p6", "-rc", "vbr", "-cq", "19", "-b:v", `${debit}k`, ...plafond, ...commun];
+  if (encodeur === "h264_videotoolbox") return ["-c:v", "h264_videotoolbox", "-b:v", `${debit}k`, ...plafond, ...commun];
+  return ["-c:v", "libx264", "-preset", "medium", "-crf", "18", ...plafond, ...commun];
+}
+
+export function argumentsClipVideo(
+  source: SourceImage | null,
+  debut: number,
+  images: number,
+  profil: ProfilImage,
+  encodage: string[],
+  cible: string,
+): string[] {
+  const { largeur, hauteur } = profil.format;
   const entree =
     source === null
-      ? ["-f", "lavfi", "-i", `color=black:s=${format.largeur}x${format.hauteur}:r=${IMAGES_PAR_SECONDE}`]
-      : ["-ss", s(debut), "-i", source, "-an", "-vf", `${filtreCadre(format)},tpad=stop_mode=clone:stop_duration=5`];
-  return [...entree, "-frames:v", String(images), ...ENCODAGE_VIDEO, cible];
+      ? ["-f", "lavfi", "-i", `color=black:s=${largeur}x${hauteur}:r=${profil.ips}`]
+      : [...peripheriqueImage(profil), ...optionsEntreeImage(profil), "-ss", s(debut), "-i", source.chemin, "-an", "-vf", `${filtreImage(profil, source.transfert)},tpad=stop_mode=clone:stop_duration=5`];
+  return [...entree, "-frames:v", String(images), ...encodage, cible];
 }
 
 export function argumentsClipAudio(source: string, debut: number, duree: number, cible: string): string[] {
@@ -79,7 +178,7 @@ export function argumentsClipAudio(source: string, debut: number, duree: number,
 }
 
 export interface CoupeRendu {
-  source: string;
+  source: SourceImage;
   debut: number;
   duree: number;
   position: number;
@@ -94,29 +193,19 @@ export interface MusiqueRendu {
   baisseSousVoix: boolean;
 }
 
-export interface GrapheFinal {
+export interface Graphe {
   entrees: string[];
   filtre: string;
 }
 
 const STEREO = "aformat=sample_rates=48000:channel_layouts=stereo";
 
-export function grapheFinal(format: FormatRendu, total: number, coupes: CoupeRendu[], musiques: MusiqueRendu[]): GrapheFinal {
+export function grapheAudio(total: number, musiques: MusiqueRendu[]): Graphe {
   const entrees: string[] = [];
   const filtres: string[] = [];
-
-  let video = "[0:v]setpts=PTS-STARTPTS";
-  coupes.forEach((coupe, index) => {
-    entrees.push("-ss", s(coupe.debut), "-t", s(coupe.duree), "-i", coupe.source);
-    filtres.push(`${video}[v${index}]`);
-    filtres.push(`[${2 + index}:v]${filtreCadre(format)},setpts=PTS-STARTPTS+${s(coupe.position)}/TB[c${index}]`);
-    video = `[v${index}][c${index}]overlay=eof_action=pass:enable='between(t,${s(coupe.position)},${s(coupe.position + coupe.duree)})'`;
-  });
-  filtres.push(`${video}[v]`);
-
   const ducking = musiques.filter((musique) => musique.baisseSousVoix).length;
-  const voix = ["[voix]", ...Array.from({ length: ducking }, (_, index) => `[sc${index}]`)].join("");
-  filtres.push(`[1:a]${STEREO}${ducking > 0 ? `,asplit=${ducking + 1}` : ""}${ducking > 0 ? voix : "[voix]"}`);
+  const sorties = ["[voix]", ...Array.from({ length: ducking }, (_, index) => `[sc${index}]`)].join("");
+  filtres.push(ducking > 0 ? `[0:a]${STEREO},asplit=${ducking + 1}${sorties}` : `[0:a]${STEREO}[voix]`);
   let pisteDucking = 0;
   const pistes = ["[voix]"];
   musiques.forEach((musique, index) => {
@@ -124,9 +213,8 @@ export function grapheFinal(format: FormatRendu, total: number, coupes: CoupeRen
     const longueur = Math.max(0.1, Math.min((musique.fin ?? total) - musique.debut, musique.dureeFichier ?? Number.POSITIVE_INFINITY));
     const entree = Math.min(1, longueur / 3);
     const sortie = Math.min(1.5, longueur / 3);
-    const retard = Math.round(musique.debut * 1000);
     filtres.push(
-      `[${2 + coupes.length + index}:a]${STEREO},atrim=0:${s(longueur)},asetpts=PTS-STARTPTS,afade=t=in:d=${s(entree)},afade=t=out:st=${s(longueur - sortie)}:d=${s(sortie)},volume=${s(musique.volumeDb)}dB,adelay=${retard}:all=1[m${index}r]`,
+      `[${1 + index}:a]${STEREO},atrim=0:${s(longueur)},asetpts=PTS-STARTPTS,afade=t=in:d=${s(entree)},afade=t=out:st=${s(longueur - sortie)}:d=${s(sortie)},volume=${s(musique.volumeDb)}dB,adelay=${Math.round(musique.debut * 1000)}:all=1[m${index}r]`,
     );
     filtres.push(
       musique.baisseSousVoix
@@ -135,7 +223,51 @@ export function grapheFinal(format: FormatRendu, total: number, coupes: CoupeRen
     );
     pistes.push(`[m${index}]`);
   });
-  const melange = pistes.length > 1 ? `${pistes.join("")}amix=inputs=${pistes.length}:normalize=0:duration=first,` : "[voix]";
-  filtres.push(`${melange}loudnorm=I=${LOUDNESS_APERCU}:TP=-1.5:LRA=11,aresample=48000[a]`);
+  filtres.push(pistes.length > 1 ? `${pistes.join("")}amix=inputs=${pistes.length}:normalize=0:duration=first[a]` : "[voix]anull[a]");
   return { entrees, filtre: filtres.join(";") };
+}
+
+export function grapheVideo(profil: ProfilImage, coupes: CoupeRendu[], premiereEntree: number): Graphe {
+  const entrees: string[] = [];
+  const filtres: string[] = [];
+  let video = "[0:v]setpts=PTS-STARTPTS";
+  coupes.forEach((coupe, index) => {
+    entrees.push(...optionsEntreeImage(profil), "-ss", s(coupe.debut), "-t", s(coupe.duree), "-i", coupe.source.chemin);
+    filtres.push(`${video}[v${index}]`);
+    filtres.push(`[${premiereEntree + index}:v]${filtreImage(profil, coupe.source.transfert)},setpts=PTS-STARTPTS+${s(coupe.position)}/TB[c${index}]`);
+    video = `[v${index}][c${index}]overlay=eof_action=pass:enable='between(t,${s(coupe.position)},${s(coupe.position + coupe.duree)})'`;
+  });
+  filtres.push(`${video}[v]`);
+  return { entrees, filtre: filtres.join(";") };
+}
+
+const nombreTexte = z.string().refine((valeur) => Number.isFinite(Number(valeur)));
+
+const schemaMesure = z.object({
+  input_i: nombreTexte,
+  input_tp: nombreTexte,
+  input_lra: nombreTexte,
+  input_thresh: nombreTexte,
+  target_offset: nombreTexte,
+});
+
+export type MesureLoudnorm = z.infer<typeof schemaMesure>;
+
+export function lireMesureLoudnorm(lignes: string[]): MesureLoudnorm | null {
+  const texte = lignes.join("\n");
+  const debut = texte.lastIndexOf("{");
+  const fin = texte.lastIndexOf("}");
+  if (debut < 0 || fin < debut) return null;
+  try {
+    const resultat = schemaMesure.safeParse(JSON.parse(texte.slice(debut, fin + 1)));
+    return resultat.success ? resultat.data : null;
+  } catch {
+    return null;
+  }
+}
+
+export function filtreLoudnorm(cible: number, mesure: MesureLoudnorm | null): string {
+  const base = `loudnorm=I=${cible}:TP=${CRETE_MAX}:LRA=11`;
+  if (mesure === null) return base;
+  return `${base}:measured_I=${mesure.input_i}:measured_TP=${mesure.input_tp}:measured_LRA=${mesure.input_lra}:measured_thresh=${mesure.input_thresh}:offset=${mesure.target_offset}:linear=true`;
 }
