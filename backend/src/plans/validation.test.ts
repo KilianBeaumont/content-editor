@@ -13,6 +13,7 @@ function plan(changement: Partial<PropositionPlan> = {}): PropositionPlan {
     segments: [segment("s1", 0, 10), segment("s2", 20, 30)],
     plansDeCoupe: [],
     musiques: [],
+    sousTitres: false,
     pointsAVerifier: [],
     reponsesRetours: [],
     ...changement,

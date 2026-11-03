@@ -459,6 +459,11 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
         </>
       )}
 
+      <label className="case-sous-titres">
+        <input type="checkbox" checked={plan.sousTitres} disabled={!editable} onChange={(evenement) => changer((copie) => ({ ...copie, sousTitres: evenement.target.checked }))} />{" "}
+        <strong>Sous-titres incrustés</strong> <span className="note">mot à mot, avec le style des Paramètres → Sous-titres (police de ta bibliothèque)</span>
+      </label>
+
       {plan.musiques.length > 0 && (
         <>
           <h3>Musique</h3>

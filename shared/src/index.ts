@@ -76,10 +76,12 @@ export {
   PARAMETRES_PAR_DEFAUT,
   schemaConfigMachine,
   schemaParametres,
+  schemaReglagesSousTitres,
   type BinairesMachine,
   type ConfigMachine,
   type Parametres,
   type PreReglageVideo,
+  type ReglagesSousTitres,
 } from "./config.ts";
 export type {
   DiagnosticBinaire,

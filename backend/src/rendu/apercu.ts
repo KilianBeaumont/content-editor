@@ -12,6 +12,7 @@ import type { OutilsTache } from "../taches/file.ts";
 import { encodageIntermediaire, formatApercu, IMAGES_PAR_SECONDE_APERCU, LOUDNESS_APERCU, type ProfilImage, type SourceImage } from "./graphe.ts";
 import { rendre } from "./moteur.ts";
 import { resoudreMusiques, verifierPlanSansErreur } from "./ressources.ts";
+import { preparerSousTitres } from "./sous-titres.ts";
 
 const ECART_DUREE_TOLERE = 0.15;
 
@@ -54,6 +55,7 @@ export async function rendreApercu(contexte: Contexte, id: string, version: stri
   const image: ProfilImage = { format, ips: IMAGES_PAR_SECONDE_APERCU, placebo: false, acceleration: false, hdr: false };
   const encodage = encodageIntermediaire("apercu", IMAGES_PAR_SECONDE_APERCU);
   const total = dureePlan(plan);
+  const sousTitres = await preparerSousTitres(config.creations, projet, plan, format);
   const temporaire = join(dossier, "travail", "rendu", `${version}-${randomUUID()}`);
   await mkdir(temporaire, { recursive: true });
   try {
@@ -70,6 +72,7 @@ export async function rendreApercu(contexte: Contexte, id: string, version: stri
       temporaire,
       sortie,
       outils,
+      sousTitres,
     );
 
     outils.progression(1, "Vérification de l'aperçu");

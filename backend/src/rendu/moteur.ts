@@ -1,5 +1,6 @@
-import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { copyFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { extname, join } from "node:path";
 import { dureePlan, type PlanMontage, type SegmentPlan } from "@editeur/shared";
 import { executerFfmpeg } from "../media/ffmpeg.ts";
 import type { OutilsTache } from "../taches/file.ts";
@@ -17,6 +18,7 @@ import {
   type ProfilImage,
   type SourceImage,
 } from "./graphe.ts";
+import type { SousTitresRendu } from "./sous-titres.ts";
 
 export interface ProfilRendu {
   image: ProfilImage;
@@ -63,6 +65,7 @@ export async function rendre(
   temporaire: string,
   sortie: string,
   outils: OutilsTache,
+  sousTitres: SousTitresRendu | null = null,
 ): Promise<void> {
   const { plan } = entrees;
   const total = dureePlan(plan);
@@ -110,6 +113,17 @@ export async function rendre(
     return source === null ? [] : [{ source, debut: coupe.debut, duree: coupe.fin - coupe.debut, position: coupe.position, cadrage: coupe.cadrage }];
   });
   const video = grapheVideo(profil.image, coupes, 2);
+  let filtreVideo = video.filtre;
+  let sortieVideo = "[v]";
+  const dossierSousTitres = sousTitres === null ? null : await mkdtemp(join(tmpdir(), "editeur-st-"));
+  if (sousTitres !== null && dossierSousTitres !== null) {
+    await mkdir(join(dossierSousTitres, "polices"));
+    await copyFile(sousTitres.police, join(dossierSousTitres, "polices", `police${extname(sousTitres.police).toLowerCase()}`));
+    await writeFile(join(dossierSousTitres, "sous-titres.ass"), sousTitres.ass, "utf8");
+    filtreVideo = `${filtreVideo};[v]ass=sous-titres.ass:fontsdir=polices[vs]`;
+    sortieVideo = "[vs]";
+  }
+  try {
   await executerFfmpeg(
     ffmpeg,
     [
@@ -124,9 +138,9 @@ export async function rendre(
       melange,
       ...video.entrees,
       "-filter_complex",
-      `${video.filtre};[1:a]${filtreLoudnorm(profil.loudness, mesure)},aresample=48000[a]`,
+      `${filtreVideo};[1:a]${filtreLoudnorm(profil.loudness, mesure)},aresample=48000[a]`,
       "-map",
-      "[v]",
+      sortieVideo,
       "-map",
       "[a]",
       "-t",
@@ -142,7 +156,10 @@ export async function rendre(
       "+faststart",
       sortie,
     ],
-    { duree: total, action: "Assemblage", surProgression: (fraction) => outils.progression(PARTS.mesure + fraction * (1 - PARTS.mesure)) },
+    { duree: total, action: "Assemblage", cwd: dossierSousTitres ?? temporaire, surProgression: (fraction) => outils.progression(PARTS.mesure + fraction * (1 - PARTS.mesure)) },
     outils,
   );
+  } finally {
+    if (dossierSousTitres !== null) await rm(dossierSousTitres, { recursive: true, force: true });
+  }
 }

@@ -40,6 +40,7 @@ function plan(statut: PlanMontage["statut"]): PlanMontage {
     ],
     plansDeCoupe: [{ source: "rushes/rush.mp4", debut: 5, fin: 5.5, position: 2, raison: "", cadrage: null }],
     musiques: [{ origine: "projet", reference: "assets/musique.wav", debut: 0.5, fin: null, volumeDb: -20, baisseSousVoix: true, raison: "" }],
+    sousTitres: false,
     pointsAVerifier: [],
     reponsesRetours: [],
   };

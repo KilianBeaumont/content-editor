@@ -38,6 +38,7 @@ const PLAN: PlanMontage = {
   ],
   plansDeCoupe: [],
   musiques: [],
+  sousTitres: false,
   pointsAVerifier: [],
   reponsesRetours: [],
 };

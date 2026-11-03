@@ -34,6 +34,7 @@ const PROPOSITION: PropositionPlan = {
   segments: [{ id: "s1", source: "rushes/matin.mp4", debut: 1, fin: 4, role: "accroche", citation: "Bonjour", raison: "Ça démarre fort.", decalageImage: 0, cadrage: null }],
   plansDeCoupe: [],
   musiques: [],
+  sousTitres: false,
   pointsAVerifier: [],
   reponsesRetours: [],
 };

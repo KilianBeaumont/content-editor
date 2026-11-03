@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { envoyerJson, lireJson, messageErreur } from "../../api.ts";
 import { ChampNombre, ChampTexte } from "../../composants/Champs.tsx";
 import { Message } from "../../composants/Message.tsx";
+import { ChampsSousTitres } from "./ChampsSousTitres.tsx";
 
 function ChampsVideo({ valeur, surChangement }: { valeur: PreReglageVideo; surChangement: (v: PreReglageVideo) => void }) {
   return (
@@ -162,6 +163,8 @@ export function SectionReglages() {
               Mots que whisper doit savoir écrire, séparés par des virgules. Chaque projet peut ajouter son propre vocabulaire.
             </span>
           </label>
+
+          <ChampsSousTitres valeur={parametres.sousTitres} surChangement={(changement) => modifier((p) => changement(p.sousTitres))} />
 
           <div className="actions">
             <button type="button" className="bouton bouton-principal" disabled={enCours} onClick={enregistrer}>

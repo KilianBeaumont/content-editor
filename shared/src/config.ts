@@ -30,6 +30,17 @@ export interface PreReglageVideo {
   loudnessLufs: number;
 }
 
+export interface ReglagesSousTitres {
+  police: string | null;
+  taillePourcent: number;
+  couleur: string;
+  couleurAccent: string;
+  contour: number;
+  motsMax: number;
+  positionPourcent: number;
+  majuscules: boolean;
+}
+
 export interface Parametres {
   version: 1;
   exports: {
@@ -43,6 +54,7 @@ export interface Parametres {
   transcription: { modele: string; vocabulaire: string };
   claude: { modele: string | null };
   rendusSimultanes: number;
+  sousTitres: ReglagesSousTitres;
 }
 
 const dimension = z.number().int().min(16).max(8192);
@@ -53,6 +65,19 @@ const schemaPreReglageVideo = z.object({
   hauteur: dimension,
   loudnessLufs: loudness,
 }) satisfies z.ZodType<PreReglageVideo>;
+
+const couleur = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur au format #RRVVBB.");
+
+export const schemaReglagesSousTitres = z.object({
+  police: z.string().min(1).nullable(),
+  taillePourcent: z.number().min(2).max(15),
+  couleur,
+  couleurAccent: couleur,
+  contour: z.number().min(0).max(10),
+  motsMax: z.number().int().min(1).max(8),
+  positionPourcent: z.number().min(10).max(95),
+  majuscules: z.boolean(),
+}) satisfies z.ZodType<ReglagesSousTitres>;
 
 export const schemaParametres = z.object({
   version: z.literal(1),
@@ -67,6 +92,7 @@ export const schemaParametres = z.object({
   transcription: z.object({ modele: z.string().trim().min(1), vocabulaire: z.string().max(2000) }),
   claude: z.object({ modele: z.string().trim().min(1).nullable() }),
   rendusSimultanes: z.number().int().min(1).max(8),
+  sousTitres: schemaReglagesSousTitres,
 }) satisfies z.ZodType<Parametres>;
 
 export const PARAMETRES_PAR_DEFAUT: Parametres = {
@@ -82,4 +108,14 @@ export const PARAMETRES_PAR_DEFAUT: Parametres = {
   transcription: { modele: "large-v3-turbo", vocabulaire: "" },
   claude: { modele: null },
   rendusSimultanes: 1,
+  sousTitres: {
+    police: null,
+    taillePourcent: 5.5,
+    couleur: "#FFFFFF",
+    couleurAccent: "#FFD43B",
+    contour: 4,
+    motsMax: 3,
+    positionPourcent: 70,
+    majuscules: false,
+  },
 };

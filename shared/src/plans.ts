@@ -82,6 +82,7 @@ export interface PropositionPlan {
   segments: SegmentPlan[];
   plansDeCoupe: PlanDeCoupe[];
   musiques: MusiquePlan[];
+  sousTitres: boolean;
   pointsAVerifier: string[];
   reponsesRetours: ReponseRetour[];
 }
@@ -279,6 +280,10 @@ export const schemaPropositionPlan = z.object({
       raison: texte(500),
     }),
   ),
+  sousTitres: z
+    .boolean()
+    .default(false)
+    .describe("true pour incruster des sous-titres mot à mot, tirés de la transcription (recommandé pour les formats courts, regardés souvent sans le son)."),
   pointsAVerifier: z
     .array(texte(500))
     .describe("Doutes ou informations manquantes à signaler à l'utilisateur (guide de style vide, passage peu clair…)."),

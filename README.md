@@ -75,7 +75,7 @@ Phase 5 (formats courts), en cours.
 | 5.1 | Écran Guides : style, accroches, vidéos d'inspiration analysées (coupes, rythme, débit, techniques) et transmises aux propositions de plan | ✅ |
 | 5.2 | Catégorie « Format court » tournée directement (cycle complet en 9:16) | ✅ |
 | 5.3 | Cadrage par segment (recadré, fond flou), zoom progressif, panoramique et zoom brusque « loupe » | ✅ |
-| 5.4 | Sous-titres mot à mot avec tes polices | à venir |
+| 5.4 | Sous-titres mot à mot avec tes polices (style dans Paramètres, activés par plan) | ✅ |
 | 5.5 | Extraits d'une vidéo longue | à venir |
 | 5.6 | Export 1080x1920 et finitions | à venir |
 
@@ -335,6 +335,15 @@ La colonne **Cadre** de l'éditeur indique le cadrage de chaque segment (et de c
 
 **Zoom brusque (« loupe »)** : coupe un passage en deux segments qui se suivent exactement dans le rush (la fin du premier = le début du second), puis donne au second un zoom plus fort (×1,5 à ×2) centré sur le détail. Le son reste continu : l'outil ne met pas de fondu entre deux segments qui se suivent. Claude propose lui-même ces cadrages et ces effets (il repère sur les planches où se trouve le sujet), surtout pour les formats courts tirés de rushes horizontaux ; tu les ajustes ensuite.
 
+### Sous-titres incrustés
+
+Des sous-titres mot à mot, groupés par deux ou trois mots, avec le mot prononcé surligné.
+1. **Une fois** : ajoute ta police à la **Bibliothèque** (type **Police**, fichier TTF, OTF ou TTC), puis **Paramètres** → Réglages communs → **Sous-titres incrustés** : choisis la police, la taille (en % de la hauteur), le nombre de mots à la fois, la position (en % depuis le haut ; 60 à 75 % pour un format court, loin des boutons des applis), le contour, les couleurs du texte et du mot prononcé, majuscules ou non. **Enregistrer**.
+2. **Dans chaque plan** : case **Sous-titres incrustés** de l'éditeur. Claude la coche d'office pour les formats courts.
+3. L'aperçu et l'export incrustent les sous-titres.
+
+Le texte vient des transcriptions des rushes, **avec tes corrections** (onglet Analyse) : corrige une transcription avant de rendre si un mot est faux. Les hésitations (« euh », « hum ») sont retirées automatiquement, et les mots suivent exactement la ligne de temps du montage.
+
 L'aperçu et l'export appliquent le cadrage (à partir des proxys pour l'aperçu, des rushes d'origine en pleine qualité pour l'export).
 
 Quand tout est bon : **Valider le plan** (impossible tant qu'il reste une erreur en rouge). Le plan validé ne se modifie plus ; **Repasser en brouillon** le rend modifiable tant que l'aperçu n'a pas été rendu. L'aperçu se lance depuis le plan validé (voir ci-dessous).
@@ -493,7 +502,7 @@ Ensuite, à chaque proposition de plan d'un projet de cette catégorie, Claude r
 
 ### Créer un format court tourné directement
 
-Pour une vidéo verticale pensée pour TikTok, Reels et Shorts dès le tournage : **Nouveau projet**, catégorie **format court** (sur les deux chaînes). Tout le cycle fonctionne comme pour un vlog, en 9:16 : analyse des rushes, plan, aperçu en 360x640, commentaires, export en 1080x1920 dans `exports/formats-courts/`. Pense à remplir le guide **format court** et à y déposer des vidéos d'inspiration. Tu peux filmer en vertical ou en horizontal : un rush horizontal se recadre en 9:16 segment par segment (voir « Cadrer et zoomer »). Les sous-titres arrivent à l'étape suivante.
+Pour une vidéo verticale pensée pour TikTok, Reels et Shorts dès le tournage : **Nouveau projet**, catégorie **format court** (sur les deux chaînes). Tout le cycle fonctionne comme pour un vlog, en 9:16 : analyse des rushes, plan, aperçu en 360x640, commentaires, export en 1080x1920 dans `exports/formats-courts/`. Pense à remplir le guide **format court** et à y déposer des vidéos d'inspiration. Tu peux filmer en vertical ou en horizontal : un rush horizontal se recadre en 9:16 segment par segment (voir « Cadrer et zoomer »). Pour les sous-titres, voir « Sous-titres incrustés ».
 
 ### Changer de dossier creations ou passer d'une machine à l'autre
 
@@ -538,6 +547,8 @@ Pour une vidéo verticale pensée pour TikTok, Reels et Shorts dès le tournage 
 | « La sortie … ne s'exporte pas encore pour ce projet » | Seule la vidéo principale s'exporte pour l'instant (YouTube, ou format court pour une catégorie verticale) ; vérifier aussi que la sortie est cochée dans **Modifier** |
 | Analyse d'une vidéo d'inspiration : « Transcription impossible : … » à la fin du message | L'analyse continue sans la transcription (vidéo sans parole, ou modèle whisper absent : Paramètres → Transcription) |
 | « Consignes introuvables : .claude/skills/analyser-inspiration/SKILL.md » | Le dépôt est incomplet : le mettre à jour (`git pull`) |
+| « Choisis la police des sous-titres : Paramètres → Sous-titres » | Ajoute ta police à la Bibliothèque (type Police), puis choisis-la dans Paramètres → Sous-titres incrustés ; ou décoche **Sous-titres incrustés** dans le plan |
+| « La police des sous-titres doit être un fichier .ttf, .otf, .ttc » ou « Impossible de lire le nom de la police » | Utilise une police TTF ou OTF classique (les WOFF des sites web ne conviennent pas) |
 | « Ce ffmpeg ne sait pas encoder en HEVC 10 bits » | Installer une version complète de ffmpeg (avec libx265), ou exporter en SDR |
 | « Le HDR n'est possible que pour YouTube, avec des rushes filmés en HDR » | Exporter en SDR : les rushes de la version validée ne sont pas en HDR |
 | « Les rushes de la version validée ne sont pas en 4K » | Exporter en qualité **Standard**, ou filmer en 4K |

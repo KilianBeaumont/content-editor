@@ -1491,3 +1491,12 @@ input[type="file"] {
   align-items: center;
   gap: 8px;
 }
+
+.case-sous-titres {
+  display: block;
+  margin: 16px 0;
+}
+
+.champ-case {
+  align-self: end;
+}

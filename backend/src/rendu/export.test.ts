@@ -39,6 +39,7 @@ const PLAN: PlanMontage = {
   ],
   plansDeCoupe: [{ source: "rushes/rush.mp4", debut: 5, fin: 5.5, position: 2, raison: "", cadrage: null }],
   musiques: [],
+  sousTitres: false,
   pointsAVerifier: [],
   reponsesRetours: [],
 };
