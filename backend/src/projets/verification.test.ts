@@ -28,6 +28,7 @@ const RECIT: SaisieProjet = {
   artistes: [],
   assetsBibliotheque: [],
   futurRoman: false,
+  vocabulaire: "",
 };
 
 describe("vérification avant export", () => {

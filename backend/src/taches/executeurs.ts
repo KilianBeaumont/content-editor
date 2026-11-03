@@ -5,7 +5,7 @@ import type { TypeTache } from "@editeur/shared";
 import type { Contexte } from "../contexte.ts";
 import { codeErreur } from "../erreurs.ts";
 import { existe } from "../fichiers.ts";
-import { cheminModele, telechargerModele, transcrire } from "../media/whisper.ts";
+import { cheminModele, FICHIER_VAD, passagesParole, telechargerModele, transcrire } from "../media/whisper.ts";
 import { lireParametres } from "../parametres.ts";
 import { transcrireFichier } from "../projets/transcriptions.ts";
 import { lancer } from "../processus.ts";
@@ -32,10 +32,21 @@ async function essaiTranscription(contexte: Contexte, outils: OutilsTache): Prom
 
     const debut = Date.now();
     outils.progression(null, "Chargement du modèle");
-    const { acceleration } = await transcrire(config.binaires.whisper, modele, wav, "fr", join(dossier, "silence"), outils, "Transcription de l'extrait");
+    const modeleVad = join(config.modeles, FICHIER_VAD);
+    const vad = (await existe(modeleVad)) ? modeleVad : null;
+    const { acceleration } = await transcrire(
+      config.binaires.whisper,
+      modele,
+      wav,
+      { langue: "fr", sortieSansExtension: join(dossier, "silence"), etape: "Transcription de l'extrait" },
+      outils,
+    );
     const secondes = ((Date.now() - debut) / 1000).toFixed(1).replace(".", ",");
     const materiel = acceleration === null ? "sur le processeur (plus lent)" : `avec l'accélération ${acceleration}`;
-    return `whisper.cpp fonctionne ${materiel} : modèle ${transcription.modele} chargé et extrait traité en ${secondes} s.`;
+    const passages = vad === null ? null : await passagesParole(config.binaires.whisper, vad, wav, outils.signal);
+    const detection =
+      vad === null ? " (détection de la parole absente)" : passages === null ? " (outil de détection de la parole introuvable)" : ", avec la détection de la parole";
+    return `whisper.cpp fonctionne ${materiel}${detection} : modèle ${transcription.modele} chargé et extrait traité en ${secondes} s.`;
   } finally {
     await rm(dossier, { recursive: true, force: true });
   }
@@ -44,7 +55,7 @@ async function essaiTranscription(contexte: Contexte, outils: OutilsTache): Prom
 export function executeurs(contexte: Contexte): Record<TypeTache, Executeur> {
   return {
     "telechargement-modele": async (tache, outils) =>
-      telechargerModele(contexte.config.modeles, String(tache.parametres.modele), outils),
+      telechargerModele(contexte.config.modeles, String(tache.parametres.fichier), String(tache.parametres.depot), outils),
     "essai-transcription": async (_tache, outils) => essaiTranscription(contexte, outils),
     transcription: async (tache, outils) =>
       transcrireFichier(contexte, tache.projet ?? "", String(tache.parametres.fichier), outils),

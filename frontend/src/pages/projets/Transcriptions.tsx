@@ -1,6 +1,8 @@
 import {
   genreFichier,
+  repetitionsSuspectes,
   tacheActive,
+  type CorrectionSegment,
   type DetailProjet,
   type EtatTranscription,
   type ReponseTranscriptions,
@@ -23,15 +25,18 @@ function urlTranscription(projet: string, chemin: string): string {
   return `/api/projets/${projet}/transcriptions/${chemin.split("/").map(encodeURIComponent).join("/")}`;
 }
 
-function Lecture({ projet, chemin }: { projet: DetailProjet; chemin: string }) {
+function Lecture({ projet, chemin, surCorrection }: { projet: DetailProjet; chemin: string; surCorrection: () => void }) {
   const [transcription, setTranscription] = useState<Transcription | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [temps, setTemps] = useState(0);
+  const [edition, setEdition] = useState<{ debut: number; texte: string } | null>(null);
+  const [enCours, setEnCours] = useState(false);
   const lecteur = useRef<HTMLVideoElement & HTMLAudioElement>(null);
 
   useEffect(() => {
     setTranscription(null);
     setErreur(null);
+    setEdition(null);
     lireJson<Transcription>(urlTranscription(projet.id, chemin))
       .then(setTranscription)
       .catch((e: unknown) => setErreur(messageErreur(e)));
@@ -44,6 +49,20 @@ function Lecture({ projet, chemin }: { projet: DetailProjet; chemin: string }) {
     void element.play();
   }
 
+  async function corriger(corrections: CorrectionSegment[]) {
+    setEnCours(true);
+    setErreur(null);
+    try {
+      setTranscription(await envoyerJson<Transcription>("PUT", urlTranscription(projet.id, chemin), { corrections }));
+      setEdition(null);
+      surCorrection();
+    } catch (e) {
+      setErreur(messageErreur(e));
+    } finally {
+      setEnCours(false);
+    }
+  }
+
   const source = urlFichier(`${projet.chemin}/${chemin}`);
   const proprietes = {
     ref: lecteur,
@@ -52,6 +71,8 @@ function Lecture({ projet, chemin }: { projet: DetailProjet; chemin: string }) {
     preload: "metadata",
     onTimeUpdate: () => setTemps(lecteur.current?.currentTime ?? 0),
   };
+  const segments = transcription?.segments ?? [];
+  const suspects = new Set(repetitionsSuspectes(segments).map((index) => segments[index]?.debut ?? -1));
 
   return (
     <div className="lecture-transcription">
@@ -60,31 +81,105 @@ function Lecture({ projet, chemin }: { projet: DetailProjet; chemin: string }) {
         {transcription && (
           <p className="note">
             {transcription.langue === "en" ? "Anglais" : "Français"} · modèle {transcription.modele}
-            {transcription.acceleration && ` (${transcription.acceleration})`} · mots soulignés : transcription incertaine
+            {transcription.acceleration && ` (${transcription.acceleration})`}
+            {transcription.vad && " · détection de la parole"}
+            {transcription.vocabulaire && ` · vocabulaire : ${transcription.vocabulaire}`}
+            <br />
+            Mots soulignés : transcription incertaine. Survole une phrase pour la corriger ou la supprimer.
           </p>
         )}
       </div>
       <div className="lecture-texte">
         {erreur && <Message type="erreur">{erreur}</Message>}
         {transcription === null && !erreur && <p>Chargement…</p>}
-        {transcription !== null && transcription.segments.length === 0 && <p className="note">Aucune parole détectée.</p>}
-        {transcription?.segments.map((segment) => (
-          <p
-            key={segment.debut}
-            className={temps >= segment.debut && temps < segment.fin ? "segment segment-actuel" : "segment"}
-            onClick={() => aller(segment.debut)}
-          >
-            <span className="segment-temps">{formaterDuree(segment.debut)}</span>{" "}
-            {segment.mots.length === 0
-              ? segment.texte
-              : segment.mots.map((mot, index) => (
-                  <span key={`${mot.debut}-${index}`} className={mot.probabilite < SEUIL_INCERTAIN ? "mot-incertain" : undefined}>
-                    {index > 0 && " "}
-                    {mot.mot}
-                  </span>
-                ))}
-          </p>
-        ))}
+        {transcription !== null && segments.length === 0 && <p className="note">Aucune parole détectée.</p>}
+        {suspects.size > 0 && (
+          <Message type="alerte">
+            {suspects.size === 1 ? "1 phrase répétée" : `${suspects.size} phrases répétées`} à la suite : sans doute une erreur de
+            transcription.{" "}
+            <button
+              type="button"
+              className="bouton bouton-discret"
+              disabled={enCours}
+              onClick={() => void corriger([...suspects].map((debut) => ({ debut, texte: null })))}
+            >
+              Supprimer les répétitions
+            </button>
+          </Message>
+        )}
+        {segments.map((segment) => {
+          if (edition?.debut === segment.debut) {
+            const enregistrer = () => void corriger([{ debut: segment.debut, texte: edition.texte }]);
+            return (
+              <div key={segment.debut} className="segment segment-edition">
+                <span className="segment-temps">{formaterDuree(segment.debut)}</span>
+                <textarea
+                  rows={2}
+                  autoFocus
+                  value={edition.texte}
+                  onChange={(evenement) => setEdition({ debut: segment.debut, texte: evenement.target.value })}
+                  onKeyDown={(evenement) => {
+                    if (evenement.key === "Escape") setEdition(null);
+                    if (evenement.key === "Enter" && !evenement.shiftKey) {
+                      evenement.preventDefault();
+                      enregistrer();
+                    }
+                  }}
+                />
+                <span className="ligne-actions">
+                  <button type="button" className="bouton bouton-principal bouton-discret" disabled={enCours} onClick={enregistrer}>
+                    Enregistrer
+                  </button>
+                  <button type="button" className="bouton bouton-discret" onClick={() => setEdition(null)}>
+                    Annuler
+                  </button>
+                  <span className="note">Entrée pour enregistrer, Échap pour annuler. Texte vide : la phrase est supprimée.</span>
+                </span>
+              </div>
+            );
+          }
+          const actuel = temps >= segment.debut && temps < segment.fin;
+          const classes = ["segment", actuel ? "segment-actuel" : "", suspects.has(segment.debut) ? "segment-suspect" : ""]
+            .filter((classe) => classe !== "")
+            .join(" ");
+          return (
+            <div key={segment.debut} className={classes} onClick={() => aller(segment.debut)}>
+              <span className="segment-temps">{formaterDuree(segment.debut)}</span>{" "}
+              {segment.mots.length === 0 || segment.corrige
+                ? segment.texte
+                : segment.mots.map((mot, index) => (
+                    <span key={`${mot.debut}-${index}`} className={mot.probabilite < SEUIL_INCERTAIN ? "mot-incertain" : undefined}>
+                      {index > 0 && " "}
+                      {mot.mot}
+                    </span>
+                  ))}
+              {segment.corrige && <span className="badge segment-badge">corrigé</span>}
+              <span className="segment-actions">
+                <button
+                  type="button"
+                  className="bouton bouton-discret"
+                  onClick={(evenement) => {
+                    evenement.stopPropagation();
+                    setEdition({ debut: segment.debut, texte: segment.texte });
+                  }}
+                >
+                  Corriger
+                </button>
+                <button
+                  type="button"
+                  className="bouton bouton-discret"
+                  disabled={enCours}
+                  onClick={(evenement) => {
+                    evenement.stopPropagation();
+                    void corriger([{ debut: segment.debut, texte: null }]);
+                  }}
+                >
+                  Supprimer
+                </button>
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -178,6 +273,7 @@ export function Transcriptions({ projet, surChangement }: { projet: DetailProjet
                   <td className="note">
                     {fichier.duree !== null && formaterDuree(fichier.duree)}
                     {fichier.nombreMots !== null && ` · ${fichier.nombreMots} mots`}
+                    {fichier.corrigee && " · corrigé"}
                   </td>
                   <td className="cellule-action">
                     {fichier.etat !== "absente" && (
@@ -190,7 +286,14 @@ export function Transcriptions({ projet, surChangement }: { projet: DetailProjet
                       </button>
                     )}
                     {tache === undefined && (
-                      <button type="button" className="bouton bouton-discret" onClick={() => void lancer([fichier.chemin])}>
+                      <button
+                        type="button"
+                        className="bouton bouton-discret"
+                        onClick={() => {
+                          const perte = "Ce fichier a été corrigé à la main : retranscrire effacera tes corrections. Continuer ?";
+                          if (!fichier.corrigee || window.confirm(perte)) void lancer([fichier.chemin]);
+                        }}
+                      >
                         {fichier.etat === "absente" ? "Transcrire" : "Retranscrire"}
                       </button>
                     )}
@@ -215,7 +318,7 @@ export function Transcriptions({ projet, surChangement }: { projet: DetailProjet
           ))}
         </ul>
       )}
-      {selection !== null && <Lecture projet={projet} chemin={selection} />}
+      {selection !== null && <Lecture projet={projet} chemin={selection} surCorrection={charger} />}
     </section>
   );
 }

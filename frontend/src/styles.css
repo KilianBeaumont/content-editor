@@ -905,3 +905,44 @@ input[type="file"] {
     grid-template-columns: 1fr;
   }
 }
+﻿
+.segment {
+  position: relative;
+}
+
+.segment-actions {
+  display: none;
+  margin-left: 8px;
+}
+
+.segment:hover .segment-actions {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.segment-actions .bouton {
+  padding: 1px 8px;
+  font-size: 0.8rem;
+}
+
+.segment-suspect {
+  color: var(--alerte);
+  text-decoration: line-through dotted;
+}
+
+.segment-badge {
+  margin-left: 6px;
+  font-size: 0.7rem;
+}
+
+.segment-edition {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: default;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.segment-edition textarea {
+  max-width: none;
+}

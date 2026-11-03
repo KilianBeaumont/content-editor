@@ -6,7 +6,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { OutilsTache } from "../taches/file.ts";
-import { accelerationWhisper, analyserJsonWhisper, progressionWhisper, telechargerModele } from "./whisper.ts";
+import {
+  accelerationWhisper,
+  analyserJsonWhisper,
+  argumentsWhisper,
+  commandeDetectionParole,
+  filtrerHorsParole,
+  lirePassagesParole,
+  DEPOT_MODELES,
+  DEPOT_VAD,
+  progressionWhisper,
+  telechargerModele,
+} from "./whisper.ts";
 
 describe("lecture de la sortie de whisper.cpp", () => {
   it("recolle les morceaux de mots et ignore les jetons spéciaux", () => {
@@ -38,6 +49,7 @@ describe("lecture de la sortie de whisper.cpp", () => {
           { mot: "ceci", debut: 0.61, fin: 0.8, probabilite: 0.8 },
           { mot: "est", debut: 1.01, fin: 1.09, probabilite: 1 },
         ],
+        corrige: false,
       },
     ]);
   });
@@ -49,9 +61,42 @@ describe("lecture de la sortie de whisper.cpp", () => {
     expect(accelerationWhisper(["whisper_backend_init_gpu: using MTL0 backend"])).toBe("Metal");
     expect(accelerationWhisper(["whisper_init_with_params_no_state: use gpu = 0"])).toBeNull();
   });
+
+  it("limite les boucles et ajoute le vocabulaire", () => {
+    expect(argumentsWhisper("m.bin", "a.wav", { langue: "fr", sortieSansExtension: "sortie" })).toEqual([
+      "-m", "m.bin", "-f", "a.wav", "-l", "fr", "-ojf", "-of", "sortie", "-pp", "-mc", "0", "-sns",
+    ]);
+    expect(argumentsWhisper("m.bin", "a.wav", { langue: "en", sortieSansExtension: "s", vocabulaire: "Valorant, Jett." }).slice(13)).toEqual([
+      "--prompt",
+      "Valorant, Jett.",
+      "--carry-initial-prompt",
+    ]);
+  });
 });
 
-describe("téléchargement du modèle", () => {
+describe("détection de la parole", () => {
+  it("lit les passages parlés et retire les phrases inventées hors de ces passages", () => {
+    const passages = lirePassagesParole([
+      "whisper_vad_segments_from_probs: VAD segment 0: start = 0.10, end = 2.01 (duration: 1.91)",
+      "whisper_vad_segments_from_probs: VAD segment 1: start = 30.75, end = 32.13 (duration: 1.38)",
+      "Speech segment 0: start = 10.00, end = 201.00",
+    ]);
+    expect(passages).toEqual([
+      { debut: 0.1, fin: 2.01 },
+      { debut: 30.75, fin: 32.13 },
+    ]);
+    const segment = (debut: number, fin: number, texte: string) => ({ debut, fin, texte, mots: [], corrige: false });
+    const segments = [segment(0, 1.9, "On lance la partie."), segment(12, 14, "Sous-titres réalisés par la communauté."), segment(30, 32, "Il reste deux ennemis.")];
+    expect(filtrerHorsParole(segments, passages).map(({ texte }) => texte)).toEqual(["On lance la partie.", "Il reste deux ennemis."]);
+  });
+
+  it("cherche l'outil de détection à côté de whisper-cli", () => {
+    expect(commandeDetectionParole("whisper-cli")).toBe("whisper-vad-speech-segments");
+    expect(commandeDetectionParole(join("outils", "whisper", "whisper-cli.exe"))).toBe(join("outils", "whisper", "whisper-vad-speech-segments.exe"));
+  });
+});
+
+describe("téléchargement d'un modèle", () => {
   const contenu = Buffer.from("modèle de test ".repeat(1000));
   let dossier: string;
   let serveur: Server;
@@ -73,7 +118,7 @@ describe("téléchargement du modèle", () => {
     dossier = await mkdtemp(join(tmpdir(), "editeur-modeles-"));
     empreinte = createHash("sha256").update(contenu).digest("hex");
     serveur = createServer((requete, reponse) => {
-      if (requete.url !== "/ggml-test.bin") {
+      if (requete.url !== `/${DEPOT_MODELES}/resolve/main/ggml-test.bin`) {
         reponse.writeHead(404).end();
         return;
       }
@@ -91,17 +136,24 @@ describe("téléchargement du modèle", () => {
 
   it("télécharge, vérifie l'empreinte et suit la progression", async () => {
     const suivi = outils();
-    expect(await telechargerModele(dossier, "test", suivi, adresse)).toMatch(/^Modèle test téléchargé et vérifié/);
+    expect(await telechargerModele(dossier, "ggml-test.bin", DEPOT_MODELES, suivi, adresse)).toMatch(
+      /^Modèle ggml-test\.bin téléchargé et vérifié/,
+    );
     expect(await readFile(join(dossier, "ggml-test.bin"))).toEqual(contenu);
     expect(suivi.vues.at(-1)).toBe(1);
-    expect(await telechargerModele(dossier, "test", outils(), adresse)).toBe("Le modèle test est déjà présent.");
+    expect(await telechargerModele(dossier, "ggml-test.bin", DEPOT_MODELES, outils(), adresse)).toBe(
+      "Le modèle ggml-test.bin est déjà présent.",
+    );
   });
 
-  it("refuse un fichier abîmé, un modèle inconnu et un nom dangereux sans rien laisser", async () => {
+  it("refuse un fichier abîmé, un modèle inconnu et un nom ou un dépôt non prévus, sans rien laisser", async () => {
     empreinte = "0".repeat(64);
-    await expect(telechargerModele(dossier, "test", outils(), adresse)).rejects.toThrow(/empreinte SHA-256 différente/);
-    await expect(telechargerModele(dossier, "inconnu", outils(), adresse)).rejects.toThrow(/erreur 404/);
-    await expect(telechargerModele(dossier, "../sortie", outils(), adresse)).rejects.toThrow(/Nom de modèle invalide/);
+    await expect(telechargerModele(dossier, "ggml-test.bin", DEPOT_MODELES, outils(), adresse)).rejects.toThrow(
+      /empreinte SHA-256 différente/,
+    );
+    await expect(telechargerModele(dossier, "ggml-inconnu.bin", DEPOT_VAD, outils(), adresse)).rejects.toThrow(/erreur 404/);
+    await expect(telechargerModele(dossier, "../sortie.bin", DEPOT_MODELES, outils(), adresse)).rejects.toThrow(/Modèle invalide/);
+    await expect(telechargerModele(dossier, "ggml-test.bin", "pirate/depot", outils(), adresse)).rejects.toThrow(/Modèle invalide/);
     expect(await readdir(dossier)).toEqual([]);
   });
 });

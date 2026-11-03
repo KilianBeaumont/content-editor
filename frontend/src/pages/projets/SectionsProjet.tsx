@@ -38,6 +38,7 @@ export interface Formulaire {
   duree: string;
   aGarder: string;
   aEviter: string;
+  vocabulaire: string;
   artistes: string[];
   assets: string[];
 }
@@ -72,6 +73,7 @@ export function formulaireVide(): Formulaire {
     duree: "",
     aGarder: "",
     aEviter: "",
+    vocabulaire: "",
     artistes: [],
     assets: [],
   };
@@ -92,6 +94,7 @@ export function formulaireDepuis(metadata: MetadataProjet): Formulaire {
     duree: consignes.dureeViseeMinutes === null ? "" : String(consignes.dureeViseeMinutes).replace(".", ","),
     aGarder: consignes.aGarder,
     aEviter: consignes.aEviter,
+    vocabulaire: metadata.vocabulaire,
     artistes: metadata.artistes,
     assets: metadata.assetsBibliotheque,
   };
@@ -159,6 +162,7 @@ export function saisieCommune(
       bibliotheque.some(({ asset }) => asset.id === id && (asset.chaine === "commun" || asset.chaine === chaine)),
     ),
     futurRoman: recit && auteur.mode === "moi" && auteur.futurRoman,
+    vocabulaire: formulaire.vocabulaire,
   };
 }
 
@@ -341,6 +345,12 @@ export function SectionConsignes({ formulaire, modifier }: ProprietesSection) {
       </label>
       <ZoneTexte libelle="À garder absolument" valeur={formulaire.aGarder} surChangement={(aGarder) => modifier({ aGarder })} />
       <ZoneTexte libelle="À éviter" valeur={formulaire.aEviter} surChangement={(aEviter) => modifier({ aEviter })} />
+      <ZoneTexte
+        libelle="Vocabulaire des rushes"
+        valeur={formulaire.vocabulaire}
+        surChangement={(vocabulaire) => modifier({ vocabulaire })}
+        aide="Noms et termes propres à cette vidéo (jeu, personnages, lieux, techniques), séparés par des virgules : la transcription les écrira mieux."
+      />
     </section>
   );
 }

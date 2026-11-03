@@ -146,12 +146,16 @@ export {
 export {
   cheminTranscription,
   langueDuFichier,
+  repartirMots,
+  repetitionsSuspectes,
+  type CorrectionSegment,
   type EtatModeleWhisper,
   type EtatTranscription,
   type FichierTranscriptible,
   type MotTranscrit,
   type ReponseLancementTranscriptions,
   type ReponseTranscriptions,
+  type SaisieCorrections,
   type SegmentTranscrit,
   type Transcription,
 } from "./transcriptions.ts";

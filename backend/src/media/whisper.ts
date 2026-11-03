@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { createWriteStream } from "node:fs";
 import { mkdir, readFile, rm, stat } from "node:fs/promises";
-import { join } from "node:path";
+import { basename, dirname, extname, join } from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { EtatModeleWhisper, SegmentTranscrit } from "@editeur/shared";
@@ -11,45 +11,58 @@ import { existe, renommer } from "../fichiers.ts";
 import { lancer } from "../processus.ts";
 import type { OutilsTache } from "../taches/file.ts";
 
-const URL_MODELES = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main";
+const HUGGING_FACE = "https://huggingface.co";
+export const DEPOT_MODELES = "ggerganov/whisper.cpp";
+export const DEPOT_VAD = "ggml-org/whisper-vad";
+export const FICHIER_VAD = "ggml-silero-v5.1.2.bin";
+const DEPOTS_AUTORISES = [DEPOT_MODELES, DEPOT_VAD];
 
 export class WhisperIntrouvableError extends Error {}
 
+export function fichierModele(nom: string): string {
+  return `ggml-${nom}.bin`;
+}
+
 export function cheminModele(dossier: string, nom: string): string {
-  return join(dossier, `ggml-${nom}.bin`);
+  return join(dossier, fichierModele(nom));
 }
 
 export async function etatModele(dossier: string, nom: string): Promise<EtatModeleWhisper> {
   const chemin = cheminModele(dossier, nom);
+  const cheminVad = join(dossier, FICHIER_VAD);
+  const vad = { chemin: cheminVad, present: await existe(cheminVad) };
   try {
-    return { nom, chemin, present: true, taille: (await stat(chemin)).size };
+    return { nom, chemin, present: true, taille: (await stat(chemin)).size, vad };
   } catch (erreur) {
     if (codeErreur(erreur) !== "ENOENT") throw erreur;
-    return { nom, chemin, present: false, taille: null };
+    return { nom, chemin, present: false, taille: null, vad };
   }
 }
 
 export async function telechargerModele(
   dossier: string,
-  nom: string,
+  fichier: string,
+  depot: string,
   outils: OutilsTache,
-  adresse = URL_MODELES,
+  adresse = HUGGING_FACE,
 ): Promise<string> {
-  if (!/^[a-z0-9.-]+$/.test(nom)) throw new Error(`Nom de modèle invalide : ${nom}`);
-  const cible = cheminModele(dossier, nom);
-  if (await existe(cible)) return `Le modèle ${nom} est déjà présent.`;
+  if (!/^[a-z0-9][a-z0-9._-]*.bin$/.test(fichier) || !DEPOTS_AUTORISES.includes(depot)) {
+    throw new Error(`Modèle invalide : ${fichier}`);
+  }
+  const cible = join(dossier, fichier);
+  if (await existe(cible)) return `Le modèle ${fichier} est déjà présent.`;
   await mkdir(dossier, { recursive: true });
 
   outils.progression(0, "Connexion à Hugging Face");
-  const reponse = await fetch(`${adresse}/ggml-${nom}.bin`, { signal: outils.signal });
+  const reponse = await fetch(`${adresse}/${depot}/resolve/main/${fichier}`, { signal: outils.signal });
   if (!reponse.ok || reponse.body === null) {
-    throw new Error(`Modèle introuvable sur Hugging Face (erreur ${reponse.status}) : ${nom}`);
+    throw new Error(`Modèle introuvable sur Hugging Face (erreur ${reponse.status}) : ${fichier}`);
   }
   const total = Number(reponse.headers.get("content-length")) || null;
   const empreinte = (reponse.headers.get("x-linked-etag") ?? "").replaceAll('"', "");
   const attendue = /^[0-9a-f]{64}$/.test(empreinte) ? empreinte : null;
 
-  const temporaire = join(dossier, `.ggml-${nom}.bin.${randomUUID()}.part`);
+  const temporaire = join(dossier, `.${fichier}.${randomUUID()}.part`);
   const hachage = createHash("sha256");
   let recu = 0;
   const compteur = new Transform({
@@ -73,7 +86,8 @@ export async function telechargerModele(
     await rm(temporaire, { force: true });
     throw erreur;
   }
-  return `Modèle ${nom} téléchargé et vérifié (${Math.round(recu / 1024 / 1024)} Mo).`;
+  const taille = recu < 1024 * 1024 ? `${Math.round(recu / 1024)} Ko` : `${Math.round(recu / 1024 / 1024)} Mo`;
+  return `Modèle ${fichier} téléchargé et vérifié (${taille}).`;
 }
 
 export function progressionWhisper(ligne: string): number | null {
@@ -120,7 +134,7 @@ export function analyserJsonWhisper(json: string): SegmentTranscrit[] {
           mots.push({ mot: jeton.text.trim(), debut, fin, probabilite });
         }
       }
-      return { debut: segment.offsets.from / 1000, fin: segment.offsets.to / 1000, texte: segment.text.trim(), mots };
+      return { debut: segment.offsets.from / 1000, fin: segment.offsets.to / 1000, texte: segment.text.trim(), mots, corrige: false };
     })
     .filter((segment) => segment.texte !== "");
 }
@@ -130,19 +144,65 @@ export interface ResultatWhisper {
   acceleration: string | null;
 }
 
-export async function transcrire(
-  whisper: string,
-  modele: string,
-  wav: string,
-  langue: string,
-  sortieSansExtension: string,
-  outils: OutilsTache,
-  etape = "Transcription",
-): Promise<ResultatWhisper> {
+export interface OptionsWhisper {
+  langue: string;
+  sortieSansExtension: string;
+  vocabulaire?: string;
+  etape?: string;
+}
+
+export function argumentsWhisper(modele: string, wav: string, options: OptionsWhisper): string[] {
+  const args = ["-m", modele, "-f", wav, "-l", options.langue, "-ojf", "-of", options.sortieSansExtension, "-pp", "-mc", "0", "-sns"];
+  if (options.vocabulaire) args.push("--prompt", options.vocabulaire, "--carry-initial-prompt");
+  return args;
+}
+
+export interface PassageParole {
+  debut: number;
+  fin: number;
+}
+
+export function lirePassagesParole(lignes: string[]): PassageParole[] {
+  const passages: PassageParole[] = [];
+  for (const ligne of lignes) {
+    const resultat = /VAD segment \d+: start = ([\d.]+), end = ([\d.]+)/.exec(ligne);
+    if (resultat) passages.push({ debut: Number(resultat[1]), fin: Number(resultat[2]) });
+  }
+  return passages;
+}
+
+export function filtrerHorsParole(segments: SegmentTranscrit[], passages: PassageParole[], marge = 0.3): SegmentTranscrit[] {
+  return segments.filter((segment) =>
+    passages.some((passage) => segment.debut < passage.fin + marge && segment.fin > passage.debut - marge),
+  );
+}
+
+export function commandeDetectionParole(whisper: string): string {
+  const extension = extname(whisper);
+  const nom = `whisper-vad-speech-segments${extension}`;
+  return basename(whisper) === whisper ? nom : join(dirname(whisper), nom);
+}
+
+export async function passagesParole(whisper: string, modeleVad: string, wav: string, signal: AbortSignal): Promise<PassageParole[] | null> {
+  const lignes: string[] = [];
+  try {
+    const resultat = await lancer(commandeDetectionParole(whisper), ["-vm", modeleVad, "-f", wav], {
+      signal,
+      surLigne: (ligne) => lignes.push(ligne),
+    });
+    return resultat.code === 0 ? lirePassagesParole(lignes) : null;
+  } catch (erreur) {
+    if (codeErreur(erreur) === "ENOENT") return null;
+    throw erreur;
+  }
+}
+
+export async function transcrire(whisper: string, modele: string, wav: string, options: OptionsWhisper, outils: OutilsTache): Promise<ResultatWhisper> {
+  const etape = options.etape ?? "Transcription";
   const lignes: string[] = [];
   let resultat;
   try {
-    resultat = await lancer(whisper, ["-m", modele, "-f", wav, "-l", langue, "-ojf", "-of", sortieSansExtension, "-pp"], {
+    resultat = await lancer(whisper, argumentsWhisper(modele, wav, options), {
       signal: outils.signal,
       surLigne: (ligne) => {
         if (lignes.length < 200) lignes.push(ligne);
@@ -162,7 +222,7 @@ export async function transcrire(
     throw new Error(`whisper.cpp a échoué${detail ? ` : ${detail.trim()}` : "."}`);
   }
   return {
-    segments: analyserJsonWhisper(await readFile(`${sortieSansExtension}.json`, "utf8")),
+    segments: analyserJsonWhisper(await readFile(`${options.sortieSansExtension}.json`, "utf8")),
     acceleration: accelerationWhisper(lignes),
   };
 }

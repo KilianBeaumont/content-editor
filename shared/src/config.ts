@@ -40,7 +40,7 @@ export interface Parametres {
     podcast: { debitKbps: number; loudnessLufs: number };
     pochettePodcast: { cote: number };
   };
-  transcription: { modele: string };
+  transcription: { modele: string; vocabulaire: string };
   claude: { modele: string | null };
   rendusSimultanes: number;
 }
@@ -64,7 +64,7 @@ export const schemaParametres = z.object({
     podcast: z.object({ debitKbps: z.number().int().min(32).max(320), loudnessLufs: loudness }),
     pochettePodcast: z.object({ cote: z.number().int().min(500).max(5000) }),
   }),
-  transcription: z.object({ modele: z.string().trim().min(1) }),
+  transcription: z.object({ modele: z.string().trim().min(1), vocabulaire: z.string().max(2000) }),
   claude: z.object({ modele: z.string().trim().min(1).nullable() }),
   rendusSimultanes: z.number().int().min(1).max(8),
 }) satisfies z.ZodType<Parametres>;
@@ -79,7 +79,7 @@ export const PARAMETRES_PAR_DEFAUT: Parametres = {
     podcast: { debitKbps: 192, loudnessLufs: -16 },
     pochettePodcast: { cote: 3000 },
   },
-  transcription: { modele: "large-v3-turbo" },
+  transcription: { modele: "large-v3-turbo", vocabulaire: "" },
   claude: { modele: null },
   rendusSimultanes: 1,
 };

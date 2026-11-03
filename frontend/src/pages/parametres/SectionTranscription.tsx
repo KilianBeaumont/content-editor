@@ -8,7 +8,8 @@ export function SectionTranscription() {
   const [modele, setModele] = useState<EtatModeleWhisper | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const { taches } = useTaches();
-  const telechargement = taches.find((tache) => tache.type === "telechargement-modele") ?? null;
+  const telechargements = taches.filter((tache) => tache.type === "telechargement-modele").slice(0, 2);
+  const etatsTelechargements = telechargements.map((tache) => tache.etat).join(",");
   const essai = taches.find((tache) => tache.type === "essai-transcription") ?? null;
 
   const charger = useCallback(() => {
@@ -19,8 +20,8 @@ export function SectionTranscription() {
 
   useEffect(charger, [charger]);
   useEffect(() => {
-    if (telechargement?.etat === "terminee") charger();
-  }, [telechargement?.etat, charger]);
+    if (etatsTelechargements.includes("terminee")) charger();
+  }, [etatsTelechargements, charger]);
 
   async function lancer(chemin: string): Promise<Tache | null> {
     setErreur(null);
@@ -32,7 +33,8 @@ export function SectionTranscription() {
     }
   }
 
-  const telechargementActif = telechargement?.etat === "attente" || telechargement?.etat === "en-cours";
+  const telechargementActif = telechargements.some((tache) => tache.etat === "attente" || tache.etat === "en-cours");
+  const manquant = modele !== null && (!modele.present || !modele.vad.present);
   const essaiActif = essai?.etat === "attente" || essai?.etat === "en-cours";
 
   return (
@@ -54,17 +56,25 @@ export function SectionTranscription() {
           )}
           <br />
           <code className="note">{modele.chemin}</code>
+          <br />
+          Détection de la parole :{" "}
+          {modele.vad.present ? (
+            <span className="badge badge-ok">✓ présente</span>
+          ) : (
+            <span className="badge badge-alerte">✗ absente</span>
+          )}{" "}
+          <span className="note">évite que whisper invente ou répète du texte pendant la musique, les bruits ou les silences.</span>
         </p>
       )}
       <div className="actions">
-        {modele !== null && !modele.present && (
+        {manquant && (
           <button
             type="button"
             className="bouton bouton-principal"
             disabled={telechargementActif}
             onClick={() => void lancer("/api/whisper/modele/telecharger")}
           >
-            Télécharger le modèle (Hugging Face)
+            {modele.present ? "Télécharger la détection de la parole (1 Mo)" : "Télécharger les modèles (Hugging Face)"}
           </button>
         )}
         <button type="button" className="bouton" disabled={essaiActif || modele?.present !== true} onClick={() => void lancer("/api/whisper/essai")}>
@@ -72,9 +82,9 @@ export function SectionTranscription() {
         </button>
       </div>
       {erreur && <Message type="erreur">{erreur}</Message>}
-      {(telechargement !== null || essai !== null) && (
+      {(telechargements.length > 0 || essai !== null) && (
         <ul className="liste-taches">
-          {telechargement !== null && (telechargementActif || !modele?.present) && <LigneTache tache={telechargement} />}
+          {(telechargementActif || manquant) && telechargements.map((tache) => <LigneTache key={tache.id} tache={tache} />)}
           {essai !== null && <LigneTache tache={essai} />}
         </ul>
       )}

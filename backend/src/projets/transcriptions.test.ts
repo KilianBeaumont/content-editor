@@ -4,7 +4,7 @@ import type { ReponseCreationProjet, ReponseTranscriptions, SaisieProjet, Transc
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { FileDeTaches } from "../taches/file.ts";
 import { preparerEnvironnementTest, type EnvironnementTest } from "../test-outils.ts";
-import { lancerTranscriptions } from "./transcriptions.ts";
+import { lancerTranscriptions, vocabulaireWhisper } from "./transcriptions.ts";
 
 const RECIT: SaisieProjet = {
   chaine: "recits",
@@ -25,6 +25,7 @@ const RECIT: SaisieProjet = {
   artistes: [],
   assetsBibliotheque: [],
   futurRoman: false,
+  vocabulaire: "",
 };
 
 describe("transcriptions d'un projet", () => {
@@ -59,7 +60,14 @@ describe("transcriptions d'un projet", () => {
       tailleSource: infos.size,
       modifieSource: infos.mtime.toISOString(),
       creeLe: "2026-11-03T10:00:00.000Z",
-      segments: [{ debut: 0, fin: 2, texte: "Il était une fois.", mots: [{ mot: "Il", debut: 0, fin: 0.3, probabilite: 0.9 }] }],
+      vad: true,
+      vocabulaire: "",
+      corrigee: false,
+      segments: [
+        { debut: 0, fin: 2, texte: "Il était une fois.", mots: [{ mot: "Il", debut: 0, fin: 0.3, probabilite: 0.9 }], corrige: false },
+        { debut: 2, fin: 4, texte: "Le dernier dragon de Ashkar.", mots: [], corrige: false },
+        { debut: 4, fin: 6, texte: "Merci d'avoir regardé.", mots: [], corrige: false },
+      ],
       ...changement,
     };
     await mkdir(join(dossier, "travail", "transcriptions", "voix", "fr"), { recursive: true });
@@ -69,8 +77,8 @@ describe("transcriptions d'un projet", () => {
 
   it("propose les rushes et les voix, avec leur langue, mais pas les images", async () => {
     expect(await lister()).toEqual([
-      { chemin: "voix/en/narration-en.wav", langue: "en", etat: "absente", duree: null, nombreMots: null },
-      { chemin: "voix/fr/narration.wav", langue: "fr", etat: "absente", duree: null, nombreMots: null },
+      { chemin: "voix/en/narration-en.wav", langue: "en", etat: "absente", duree: null, nombreMots: null, corrigee: false },
+      { chemin: "voix/fr/narration.wav", langue: "fr", etat: "absente", duree: null, nombreMots: null, corrigee: false },
     ]);
   });
 
@@ -86,6 +94,48 @@ describe("transcriptions d'un projet", () => {
 
     await writeFile(join(dossier, "voix", "fr", "narration.wav"), "nouvelle prise plus longue");
     expect((await lister()).find((fichier) => fichier.chemin === "voix/fr/narration.wav")?.etat).toBe("perimee");
+  });
+
+  it("corrige une phrase, en supprime une autre et le signale", async () => {
+    await ecrireTranscription("voix/fr/narration.wav");
+    const url = `/api/projets/${id}/transcriptions/voix/fr/narration.wav`;
+    const reponse = await env.app.inject({
+      method: "PUT",
+      url,
+      payload: { corrections: [{ debut: 2, texte: "Le dernier dragon d'Ashkar." }, { debut: 4, texte: null }] },
+    });
+    expect(reponse.statusCode).toBe(200);
+    const corrigee = reponse.json<Transcription>();
+    expect(corrigee.corrigee).toBe(true);
+    expect(corrigee.segments.map(({ texte, corrige }) => ({ texte, corrige }))).toEqual([
+      { texte: "Il était une fois.", corrige: false },
+      { texte: "Le dernier dragon d'Ashkar.", corrige: true },
+    ]);
+    expect(corrigee.segments[1]?.mots.map(({ mot }) => mot)).toEqual(["Le", "dernier", "dragon", "d'Ashkar."]);
+    expect((await lister()).find((fichier) => fichier.chemin === "voix/fr/narration.wav")).toMatchObject({ etat: "a-jour", corrigee: true });
+
+    const perime = await env.app.inject({ method: "PUT", url, payload: { corrections: [{ debut: 4, texte: "Merci." }] } });
+    expect(perime.statusCode).toBe(409);
+  });
+
+  it("lit encore une transcription faite avant les corrections", async () => {
+    const ancienne = await ecrireTranscription("voix/fr/narration.wav");
+    const { vad, vocabulaire, corrigee, ...sansNouveautes } = ancienne;
+    await writeFile(
+      join(dossier, "travail", "transcriptions", "voix", "fr", "narration.wav.json"),
+      JSON.stringify({ ...sansNouveautes, segments: ancienne.segments.map(({ corrige, ...segment }) => segment) }),
+    );
+    const lue = await env.app.inject({ method: "GET", url: `/api/projets/${id}/transcriptions/voix/fr/narration.wav` });
+    expect(lue.json<Transcription>()).toMatchObject({ vad: false, vocabulaire: "", corrigee: false });
+    expect(lue.json<Transcription>().segments[0]?.corrige).toBe(false);
+    expect({ vad, vocabulaire, corrigee }).toEqual({ vad: true, vocabulaire: "", corrigee: false });
+  });
+
+  it("réunit le vocabulaire commun et celui du projet sans doublon", () => {
+    expect(vocabulaireWhisper("Kilian, La Forge des Mondes", "Valorant; Jett\nspike, Kilian")).toBe(
+      "Kilian, La Forge des Mondes, Valorant, Jett, spike.",
+    );
+    expect(vocabulaireWhisper("", " ")).toBe("");
   });
 
   it("répond 404 sans transcription et refuse un chemin hors du projet", async () => {

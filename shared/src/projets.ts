@@ -127,6 +127,7 @@ export interface SaisieProjet {
   artistes: string[];
   assetsBibliotheque: string[];
   futurRoman: boolean;
+  vocabulaire: string;
 }
 
 export interface MetadataProjet {
@@ -148,6 +149,7 @@ export interface MetadataProjet {
   sessionClaude: string | null;
   creeLe: string;
   futurRoman: boolean;
+  vocabulaire: string;
 }
 
 export interface Projet {
@@ -203,6 +205,7 @@ export const schemaSaisieProjet = z.object({
   artistes: z.array(z.string()),
   assetsBibliotheque: z.array(z.string()),
   futurRoman: z.boolean(),
+  vocabulaire: texte(2000),
 }) satisfies z.ZodType<SaisieProjet>;
 
 export const schemaMetadataProjet = z.object({
@@ -224,6 +227,7 @@ export const schemaMetadataProjet = z.object({
   sessionClaude: z.string().nullable(),
   creeLe: z.string(),
   futurRoman: z.boolean(),
+  vocabulaire: z.string(),
 }) satisfies z.ZodType<MetadataProjet>;
 
 export const PLATEFORMES_PAR_SORTIE: Record<Sortie, readonly PlateformeAutorisation[]> = {

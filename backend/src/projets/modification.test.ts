@@ -36,6 +36,7 @@ const RECIT: SaisieProjet = {
   artistes: ["aurore"],
   assetsBibliotheque: ["generique"],
   futurRoman: false,
+  vocabulaire: "",
 };
 
 function modification(saisie: SaisieProjet, changements: Partial<ModificationProjet> = {}): ModificationProjet {

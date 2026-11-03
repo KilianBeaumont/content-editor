@@ -41,6 +41,7 @@ Phase 2 (analyse), en cours. Pour obtenir une première vidéo au plus vite, on 
 | 2.1 | File de tâches avec progression en direct | ✅ |
 | 2.2 | whisper.cpp : modèle, téléchargement, essai | ✅ |
 | 2.3 | Transcription des rushes d'un projet | ✅ |
+| 2.3 bis | Fiabilité de la transcription : détection de la parole, vocabulaire, correction à la main | ✅ |
 | Phase 3 | Plan de montage par Claude, aperçu, commentaires | à venir |
 | 2.4 à 2.6 | Écran Guides et analyse des vidéos d'inspiration | à venir |
 
@@ -65,8 +66,9 @@ Les phases suivantes (exports, formats courts, podcast, statistiques) viendront 
    - Chemins de **ffmpeg**, **ffprobe**, **claude** et **whisper** : laisse le nom seul si le programme est trouvé, sinon mets le chemin complet. Chaque champ affiche si le programme est trouvé, avec sa version.
    - **Enregistrer**, puis **Revérifier les programmes** si tu as installé quelque chose entre-temps.
 5. Section **Transcription** :
-   - si le modèle est **absent** : **Télécharger le modèle** (environ 1,6 Go, vérifié automatiquement) ;
-   - puis **Tester whisper.cpp** : le résultat indique si la carte graphique est utilisée (CUDA sur le PC, Metal sur le Mac) ou le processeur (plus lent).
+   - si le modèle ou la **détection de la parole** sont **absents** : **Télécharger les modèles** (environ 1,6 Go pour le modèle, 1 Mo pour la détection de la parole, vérifiés automatiquement) ;
+   - puis **Tester whisper.cpp** : le résultat indique si la carte graphique est utilisée (CUDA sur le PC, Metal sur le Mac) ou le processeur (plus lent), et si la détection de la parole fonctionne.
+   - Dans **Réglages communs**, le **Vocabulaire commun à toutes les transcriptions** : ton pseudo, le nom de l'univers, des chaînes, des personnages… séparés par des virgules. whisper les écrira correctement.
 6. Section **Claude** : **Tester la connexion**. Le résultat doit indiquer l'abonnement (pas de clé API) et affiche ton utilisation sur 5 heures et sur 7 jours.
 
 Ces réglages sont propres à chaque machine (fichier `config.local.json`, jamais partagé). Les **Réglages communs** (préréglages d'export, modèle de transcription, modèle Claude, rendus simultanés) sont enregistrés dans `creations/parametres.json` et suivent le dossier `creations/`.
@@ -225,6 +227,13 @@ Sur l'écran Projet, section **Transcriptions** :
    - les mots **soulignés en pointillé** sont ceux dont whisper n'est pas sûr (noms propres, mots inventés).
 4. Si un rush est remplacé, sa transcription est marquée **Fichier modifié depuis** : **Retranscrire**.
 
+Pour une transcription plus juste :
+- **Vocabulaire** : avant de transcrire, renseigne les noms propres de la vidéo (jeu, personnages, lieux, techniques) dans **Modifier** → **Vocabulaire des rushes**, séparés par des virgules. Ils s'ajoutent au vocabulaire commun des Paramètres. Le vocabulaire utilisé est rappelé au-dessus du texte.
+- **Détection de la parole** : si elle est installée (Paramètres → Transcription), les phrases que whisper invente pendant la musique, les bruits ou les silences sont retirées automatiquement. Le message de fin de tâche indique combien.
+- **Répétitions** : une phrase répétée trois fois ou plus d'affilée est surlignée, avec un bouton **Supprimer les répétitions** qui garde la première.
+- **Corriger à la main** : survole une phrase → **Corriger** (Entrée pour enregistrer, Échap pour annuler, texte vide pour la supprimer) ou **Supprimer**. La phrase garde son horaire et porte le badge **corrigé** ; le fichier est marqué « corrigé » dans la liste.
+- **Retranscrire** un fichier corrigé efface les corrections : l'outil demande confirmation.
+
 Les transcriptions sont rangées dans `travail/transcriptions/` du projet (un fichier JSON par rush, avec l'horaire de chaque mot). Le projet passe à l'étape **Analysé**. Claude s'en servira pour proposer le plan de montage (phase 3).
 
 ### Modifier un projet, ajouter des fichiers, le mettre à la corbeille
@@ -338,6 +347,9 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | « Entrées ignorées » dans Bibliothèque | Une entrée de `catalogue.json` est incomplète ou mal écrite : la corriger d'après le message |
 | « whisper.cpp introuvable » ou « Modèle … absent » | Paramètres : vérifier le chemin de whisper-cli et le dossier des modèles, puis **Télécharger le modèle** |
 | Une transcription échoue avec « Ce fichier n'a pas de piste audio » | Le rush est muet (timelapse, capture d'écran) : il n'y a rien à transcrire |
+| La transcription contient des phrases inventées ou répétées pendant la musique ou les silences | Paramètres → Transcription : télécharger la **détection de la parole**, puis **Retranscrire** ; sinon **Supprimer les répétitions** ou corriger à la main |
+| L'essai de whisper indique « outil de détection de la parole introuvable » | Le programme `whisper-vad-speech-segments` doit être à côté de `whisper-cli` (il est dans le zip Windows et dans Homebrew) ; la transcription marche quand même, sans ce filtre |
+| « La transcription a changé entre-temps : recharge la page » | Le fichier a été retranscrit pendant que tu corrigeais : recharger la page puis refaire la correction |
 | L'essai de whisper indique « sur le processeur » | Sur le PC, vérifier que la version CUDA est installée et le pilote NVIDIA à jour ; la transcription marche quand même, plus lentement |
 | « ffprobe est introuvable » dans Inbox | Installer ffmpeg (qui contient ffprobe) ou renseigner le chemin de ffprobe dans **Paramètres** |
 | « Espace disque insuffisant » | Libérer de la place sur le disque qui contient `creations/`, ou déplacer `creations/` sur un autre disque (Paramètres) |

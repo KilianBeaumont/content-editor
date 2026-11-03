@@ -48,6 +48,7 @@ const COMPLEMENTS_METADATA: Partial<MetadataProjet> = {
   versionValidee: null,
   sessionClaude: null,
   futurRoman: false,
+  vocabulaire: "",
 };
 
 function cheminDansInbox(creations: string, chemin: string): string {
@@ -267,6 +268,7 @@ export async function creerProjet(
     sessionClaude: null,
     creeLe: maintenant.toISOString(),
     futurRoman: saisie.futurRoman,
+    vocabulaire: saisie.vocabulaire,
   };
   await ecrireJsonAtomique(join(dossier, METADATA), metadata);
 
@@ -342,6 +344,7 @@ export async function modifierProjet(creations: string, id: string, modification
     fichiers: ancien.fichiers.map((fichier) => ({ ...fichier, note: modification.notes[fichier.chemin] ?? fichier.note })),
     datePublicationPrevue: saisie.datePublicationPrevue,
     futurRoman: saisie.futurRoman,
+    vocabulaire: saisie.vocabulaire,
   };
   projet = { ...projet, metadata };
   await ecrireMetadata(creations, projet);

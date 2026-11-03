@@ -150,6 +150,18 @@ export function SectionReglages() {
               surChangement={(rendusSimultanes) => modifier((p) => (p.rendusSimultanes = rendusSimultanes))}
             />
           </div>
+          <label className="champ">
+            <span className="champ-libelle">Vocabulaire commun à toutes les transcriptions</span>
+            <textarea
+              rows={2}
+              value={parametres.transcription.vocabulaire}
+              placeholder="ton pseudo, le nom de l'univers, des chaînes, des personnages…"
+              onChange={(evenement) => modifier((p) => (p.transcription.vocabulaire = evenement.target.value))}
+            />
+            <span className="champ-aide">
+              Mots que whisper doit savoir écrire, séparés par des virgules. Chaque projet peut ajouter son propre vocabulaire.
+            </span>
+          </label>
 
           <div className="actions">
             <button type="button" className="bouton bouton-principal" disabled={enCours} onClick={enregistrer}>
