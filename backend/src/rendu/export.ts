@@ -8,6 +8,7 @@ import {
   qualite4kPossible,
   dureePlan,
   genreFichier,
+  type CouleursExport,
   type Dimensions,
   type ExportSortie,
   type OptionsQualite,
@@ -31,7 +32,7 @@ import { listerProjets } from "../projets/liste.ts";
 import { lireProjet } from "../projets/projets.ts";
 import { verifierExportable } from "../projets/verification.ts";
 import type { OutilsTache } from "../taches/file.ts";
-import { cadenceExport, encodageFinal, encodageIntermediaire, estVertical, type ProfilImage, type SourceImage } from "./graphe.ts";
+import { cadenceExport, encodageFinal, encodageIntermediaire, estTransfertHdr, estVertical, type ProfilImage, type SourceImage } from "./graphe.ts";
 import { mesurerVolume, rendre, type ProfilRendu } from "./moteur.ts";
 import { descriptionProjet } from "./description.ts";
 import { resoudreMusiques, verifierPlanSansErreur } from "./ressources.ts";
@@ -49,6 +50,7 @@ const schemaFiche = z.object({
   hauteur: z.number(),
   imagesParSeconde: z.number(),
   encodeur: z.string(),
+  couleurs: z.enum(["sdr", "hdr"]).default("sdr"),
   dureePlan: z.number(),
   duree: z.number().nullable(),
   volumeLufs: z.number().nullable(),
@@ -87,12 +89,14 @@ interface RushesPlan {
   sources: Map<string, SourceImage>;
   cadences: (number | null)[];
   dimensions: Dimensions | null;
+  hdr: boolean;
 }
 
 async function rushesDuPlan(dossier: string, plan: PlanMontage, ffprobe: string): Promise<RushesPlan> {
   const sources = new Map<string, SourceImage>();
   const cadences: (number | null)[] = [];
   let dimensions: Dimensions | null = null;
+  let hdr = false;
   for (const chemin of new Set([...plan.segments.map((segment) => segment.source), ...plan.plansDeCoupe.map((coupe) => coupe.source)])) {
     if (genreFichier(chemin) !== "video") continue;
     const absolu = cheminSur(dossier, chemin);
@@ -100,11 +104,12 @@ async function rushesDuPlan(dossier: string, plan: PlanMontage, ffprobe: string)
     if (infos.video === null) continue;
     sources.set(chemin, { chemin: absolu, transfert: infos.video.transfert });
     cadences.push(infos.video.imagesParSeconde);
+    hdr ||= estTransfertHdr(infos.video.transfert);
     if (dimensions === null || infos.video.largeur * infos.video.hauteur > dimensions.largeur * dimensions.hauteur) {
       dimensions = { largeur: infos.video.largeur, hauteur: infos.video.hauteur };
     }
   }
-  return { sources, cadences, dimensions };
+  return { sources, cadences, dimensions, hdr };
 }
 
 function prereglage(parametres: Parametres, sortie: Sortie): Parametres["exports"]["youtube"] {
@@ -116,12 +121,14 @@ export async function listerExports(creations: string, id: string, ffprobe: stri
   const dossier = cheminSur(creations, projet.chemin);
   const version = projet.metadata.versionValidee;
   const plan = version === null ? null : await lirePlan(dossier, version);
-  const rushes = plan === null ? null : (await rushesDuPlan(dossier, plan, ffprobe)).dimensions;
+  const analyse = plan === null ? null : await rushesDuPlan(dossier, plan, ffprobe);
+  const rushes = analyse?.dimensions ?? null;
   const parametres = await lireParametres(creations);
   const qualites: OptionsQualite[] = sortiesVideo(projet).map((sortie) => {
     const { largeur, hauteur } = prereglage(parametres, sortie);
     const standard = { largeur, hauteur };
-    return { sortie, standard, uhd: qualite4kPossible(standard, rushes) ? dimensionsQualite(standard, "4k") : null, rushes };
+    const uhd = qualite4kPossible(standard, rushes) ? dimensionsQualite(standard, "4k") : null;
+    return { sortie, standard, uhd, rushes, hdr: sortie === "youtube" && analyse !== null && analyse.hdr };
   });
   return { exports: await fichesExports(dossier, projet), sortiesVideo: sortiesVideo(projet), qualites };
 }
@@ -154,7 +161,14 @@ function temps(secondes: number): string {
   return `${Math.floor(secondes / 60)}:${String(Math.round(secondes % 60)).padStart(2, "0")}`;
 }
 
-export async function exporterVideo(contexte: Contexte, id: string, sortie: Sortie, qualite: QualiteExport, outils: OutilsTache): Promise<string> {
+export async function exporterVideo(
+  contexte: Contexte,
+  id: string,
+  sortie: Sortie,
+  qualite: QualiteExport,
+  couleurs: CouleursExport,
+  outils: OutilsTache,
+): Promise<string> {
   const { config } = contexte;
   const { ffmpeg, ffprobe } = config.binaires;
   const debutRendu = Date.now();
@@ -164,7 +178,7 @@ export async function exporterVideo(contexte: Contexte, id: string, sortie: Sort
   await verifierPlanSansErreur(config.creations, projet, plan, ffprobe);
 
   outils.progression(0, "Analyse des rushes d'origine");
-  const { sources, cadences, dimensions } = await rushesDuPlan(dossier, plan, ffprobe);
+  const { sources, cadences, dimensions, hdr: rushesHdr } = await rushesDuPlan(dossier, plan, ffprobe);
   const reglage = prereglage(await lireParametres(config.creations), sortie);
   const standard = { largeur: reglage.largeur, hauteur: reglage.hauteur };
   if (qualite === "4k" && !qualite4kPossible(standard, dimensions)) {
@@ -173,14 +187,18 @@ export async function exporterVideo(contexte: Contexte, id: string, sortie: Sort
   const format = dimensionsQualite(standard, qualite);
   const ips = cadenceExport(cadences);
   const capacites = await capacitesFfmpeg(ffmpeg);
+  const hdr = couleurs === "hdr";
+  if (hdr && (sortie !== "youtube" || !rushesHdr)) throw new Error("Le HDR n'est possible que pour YouTube, avec des rushes filmés en HDR.");
+  if (hdr && capacites.encodeurHevc === null) throw new Error("Ce ffmpeg ne sait pas encoder en HEVC 10 bits : exporte en SDR ou installe une version complète de ffmpeg.");
+  const encodeur = hdr ? (capacites.encodeurHevc ?? "libx265") : capacites.encodeur;
   const total = dureePlan(plan);
   const musiques = await resoudreMusiques(config.creations, dossier, plan, ffprobe);
   const profil = (acceleration: boolean): ProfilRendu => {
-    const image: ProfilImage = { format, ips, placebo: acceleration && capacites.placebo, acceleration };
+    const image: ProfilImage = { format, ips, placebo: acceleration && capacites.placebo, acceleration, hdr };
     return {
       image,
-      encodageClip: encodageIntermediaire(capacites.encodeur, ips),
-      encodageSortie: encodageFinal(capacites.encodeur, format, ips),
+      encodageClip: encodageIntermediaire(encodeur, ips),
+      encodageSortie: encodageFinal(encodeur, format, ips),
       loudness: reglage.loudnessLufs,
       deuxPasses: true,
       debitAudio: "320k",
@@ -216,7 +234,9 @@ export async function exporterVideo(contexte: Contexte, id: string, sortie: Sort
       if (infos.video.largeur !== format.largeur || infos.video.hauteur !== format.hauteur) {
         controles.push(`Résolution ${infos.video.largeur}x${infos.video.hauteur} au lieu de ${format.largeur}x${format.hauteur}.`);
       }
-      if (infos.video.codec !== "h264") controles.push(`Codec vidéo ${infos.video.codec} au lieu de H.264.`);
+      const codec = hdr ? "hevc" : "h264";
+      if (infos.video.codec !== codec) controles.push(`Codec vidéo ${infos.video.codec} au lieu de ${hdr ? "HEVC" : "H.264"}.`);
+      if (hdr && infos.video.transfert !== "arib-std-b67") controles.push("Le fichier n'est pas marqué HDR (HLG) : YouTube le traitera en SDR.");
     }
     if (infos.audio === null) controles.push("Le fichier n'a pas de son.");
     else if (infos.audio.codec !== "aac") controles.push(`Codec audio ${infos.audio.codec} au lieu de AAC.`);
@@ -242,7 +262,8 @@ export async function exporterVideo(contexte: Contexte, id: string, sortie: Sort
       largeur: format.largeur,
       hauteur: format.hauteur,
       imagesParSeconde: ips,
-      encodeur: capacites.encodeur,
+      encodeur,
+      couleurs,
       dureePlan: total,
       duree: infos.duree,
       volumeLufs,
@@ -256,7 +277,7 @@ export async function exporterVideo(contexte: Contexte, id: string, sortie: Sort
     await mkdir(dirname(join(dossier, cheminFicheExport(sortie))), { recursive: true });
     await ecrireJsonAtomique(join(dossier, cheminFicheExport(sortie)), fiche);
     const bilan = controles.length === 0 ? "contrôles OK" : `${controles.length} point${controles.length > 1 ? "s" : ""} à vérifier`;
-    return `Export ${DEFINITIONS_SORTIES[sortie].libelle} (${plan.version}) : ${temps(infos.duree ?? total)}, ${format.largeur}x${format.hauteur} à ${ips} i/s, ${volumeLufs?.toFixed(1) ?? "?"} LUFS, en ${Math.round(fiche.dureeRenduSecondes)} s (${bilan}).`;
+    return `Export ${DEFINITIONS_SORTIES[sortie].libelle} (${plan.version}) : ${temps(infos.duree ?? total)}, ${format.largeur}x${format.hauteur} à ${ips} i/s${hdr ? " en HDR" : ""}, ${volumeLufs?.toFixed(1) ?? "?"} LUFS, en ${Math.round(fiche.dureeRenduSecondes)} s (${bilan}).`;
   } finally {
     await rm(temporaire, { recursive: true, force: true });
   }

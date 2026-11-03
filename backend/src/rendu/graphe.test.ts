@@ -4,6 +4,8 @@ import {
   cadenceExport,
   debitCibleKbps,
   decouper,
+  encodageFinal,
+  encodageIntermediaire,
   filtreImage,
   filtreLoudnorm,
   formatApercu,
@@ -13,7 +15,7 @@ import {
   type ProfilImage,
 } from "./graphe.ts";
 
-const APERCU: ProfilImage = { format: formatApercu("vlog"), ips: 30, placebo: false, acceleration: false };
+const APERCU: ProfilImage = { format: formatApercu("vlog"), ips: 30, placebo: false, acceleration: false, hdr: false };
 
 describe("découpage du plan", () => {
   it("garde le son exact et compte les images sans dérive, décalages compris", () => {
@@ -53,6 +55,32 @@ describe("filtres d'image", () => {
   it("découpe le son avec des fondus contre les clics", () => {
     const args = argumentsClipAudio("rush.mp4", 3.72, 4.53, "a001.wav");
     expect(args[args.indexOf("-af") + 1]).toBe("apad=whole_dur=4.53,afade=t=in:d=0.03,afade=t=out:st=4.5:d=0.03");
+  });
+});
+
+describe("export HDR (HLG)", () => {
+  const HDR: ProfilImage = { format: { largeur: 3840, hauteur: 2160 }, ips: 60, placebo: true, acceleration: true, hdr: true };
+
+  it("garde le HDR en HLG 10 bits et y place les sources SDR", () => {
+    expect(filtreImage(HDR, "arib-std-b67")).toContain("color_trc=arib-std-b67:range=tv:format=yuv420p10le");
+    expect(filtreImage(HDR, null)).not.toContain("tonemapping");
+    const classique = { ...HDR, placebo: false };
+    expect(filtreImage(classique, "arib-std-b67")).toBe(
+      "scale=3840:2160:force_original_aspect_ratio=decrease:flags=bicubic,format=yuv420p10le,pad=3840:2160:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=60",
+    );
+    expect(filtreImage(classique, null)).toContain("zscale=tin=bt709:min=bt709:pin=bt709:t=linear:npl=203,format=gbrpf32le,zscale=p=bt2020:t=arib-std-b67");
+  });
+
+  it("encode en HEVC Main 10 marqué BT.2020 / HLG, avec un débit HDR", () => {
+    const final = encodageFinal("hevc_nvenc", HDR.format, 60);
+    expect(final).toEqual(expect.arrayContaining(["hevc_nvenc", "main10", "p010le", "hvc1", "bt2020nc", "arib-std-b67", "75000k"]));
+    expect(encodageIntermediaire("libx265", 60)).toEqual(expect.arrayContaining(["libx265", "yuv420p10le", "arib-std-b67"]));
+    expect(encodageFinal("h264_nvenc", HDR.format, 60)).toEqual(expect.arrayContaining(["h264_nvenc", "bt709", "60000k"]));
+  });
+
+  it("superpose les plans de coupe en 10 bits", () => {
+    const graphe = grapheVideo(HDR, [{ source: { chemin: "rush.MOV", transfert: "arib-std-b67" }, debut: 1, duree: 2, position: 3 }], 2);
+    expect(graphe.filtre).toContain("overlay=eof_action=pass:format=yuv420p10:enable=");
   });
 });
 

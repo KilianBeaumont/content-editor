@@ -1,6 +1,6 @@
 import { plagesImage, type Categorie, type SegmentPlan } from "@editeur/shared";
 import { z } from "zod";
-import type { EncodeurH264 } from "../media/capacites.ts";
+import type { Encodeur } from "../media/capacites.ts";
 
 export const IMAGES_PAR_SECONDE_APERCU = 30;
 export const LOUDNESS_APERCU = -14;
@@ -59,6 +59,7 @@ export interface ProfilImage {
   ips: number;
   placebo: boolean;
   acceleration: boolean;
+  hdr: boolean;
 }
 
 export interface SourceImage {
@@ -70,25 +71,27 @@ export function estTransfertHdr(transfert: string | null): boolean {
   return transfert !== null && TRANSFERTS_HDR.has(transfert);
 }
 
+function filtreHlgClassique(transfert: string | null): string[] {
+  if (transfert === "arib-std-b67") return [];
+  const entree = transfert === "smpte2084" ? "tin=smpte2084:min=bt2020nc:pin=bt2020" : "tin=bt709:min=bt709:pin=bt709";
+  return [`zscale=${entree}:t=linear:npl=203`, "format=gbrpf32le", "zscale=p=bt2020:t=arib-std-b67:m=bt2020nc:r=tv"];
+}
+
 export function filtreImage(profil: ProfilImage, transfert: string | null): string {
   const { largeur: l, hauteur: h } = profil.format;
   const hdr = estTransfertHdr(transfert);
   if (profil.placebo) {
-    const options = [
-      `w=${l}`,
-      `h=${h}`,
-      "force_original_aspect_ratio=decrease",
-      "pad_crop_ratio=0",
-      "colorspace=bt709",
-      "color_primaries=bt709",
-      "color_trc=bt709",
-      "range=tv",
-      "format=yuv420p",
-      ...(hdr ? ["tonemapping=bt.2390"] : []),
-    ];
+    const couleurs = profil.hdr
+      ? ["colorspace=bt2020nc", "color_primaries=bt2020", "color_trc=arib-std-b67", "range=tv", "format=yuv420p10le"]
+      : ["colorspace=bt709", "color_primaries=bt709", "color_trc=bt709", "range=tv", "format=yuv420p", ...(hdr ? ["tonemapping=bt.2390"] : [])];
+    const options = [`w=${l}`, `h=${h}`, "force_original_aspect_ratio=decrease", "pad_crop_ratio=0", ...couleurs];
     return `libplacebo=${options.join(":")},setsar=1,fps=${profil.ips}`;
   }
   const etapes = [`scale=${l}:${h}:force_original_aspect_ratio=decrease:flags=bicubic`];
+  if (profil.hdr) {
+    etapes.push(...filtreHlgClassique(transfert), "format=yuv420p10le", `pad=${l}:${h}:(ow-iw)/2:(oh-ih)/2`, "setsar=1", `fps=${profil.ips}`);
+    return etapes.join(",");
+  }
   if (hdr) {
     etapes.push(
       `zscale=tin=${transfert ?? "arib-std-b67"}:min=bt2020nc:pin=bt2020:t=linear:npl=203`,
@@ -110,7 +113,7 @@ export function optionsEntreeImage(profil: ProfilImage): string[] {
   return profil.acceleration ? ["-hwaccel", "auto"] : [];
 }
 
-export function debitCibleKbps(format: FormatRendu, ips: number): number {
+function debitSdrKbps(format: FormatRendu, ips: number): number {
   const cote = Math.min(format.largeur, format.hauteur);
   const rapide = ips > 30;
   if (cote >= 2160) return rapide ? 60_000 : 40_000;
@@ -120,9 +123,35 @@ export function debitCibleKbps(format: FormatRendu, ips: number): number {
   return rapide ? 2_500 : 1_500;
 }
 
-const COULEURS_BT709 = ["-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv"];
+export function debitCibleKbps(format: FormatRendu, ips: number, hdr = false): number {
+  return Math.round(debitSdrKbps(format, ips) * (hdr ? 1.25 : 1));
+}
 
-export function encodageIntermediaire(encodeur: EncodeurH264 | "apercu", ips: number): string[] {
+const COULEURS_BT709 = ["-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv"];
+const COULEURS_HLG = ["-colorspace", "bt2020nc", "-color_primaries", "bt2020", "-color_trc", "arib-std-b67", "-color_range", "tv"];
+
+function encodageHevc(encodeur: Encodeur, reglage: "clip" | "final", debit: number, ips: number): string[] {
+  const plafond = reglage === "final" ? ["-maxrate", `${Math.round(debit * 1.15)}k`, "-bufsize", `${debit * 2}k`] : [];
+  const gop = ["-g", String(reglage === "final" ? Math.round(ips / 2) : ips)];
+  const fin = [...gop, "-tag:v", "hvc1", ...COULEURS_HLG];
+  if (encodeur === "hevc_nvenc") {
+    const qualite = reglage === "final" ? ["-preset", "p6", "-rc", "vbr", "-cq", "19", "-b:v", `${debit}k`] : ["-preset", "p5", "-rc", "vbr", "-cq", "16", "-b:v", "0"];
+    return ["-c:v", "hevc_nvenc", ...qualite, ...plafond, "-profile:v", "main10", "-pix_fmt", "p010le", ...fin];
+  }
+  if (encodeur === "hevc_videotoolbox") {
+    const qualite = reglage === "final" ? ["-b:v", `${debit}k`] : ["-q:v", "80"];
+    return ["-c:v", "hevc_videotoolbox", ...qualite, ...plafond, "-profile:v", "main10", "-pix_fmt", "p010le", ...fin];
+  }
+  const qualite = reglage === "final" ? ["-preset", "medium", "-crf", "18"] : ["-preset", "veryfast", "-crf", "14"];
+  return ["-c:v", "libx265", ...qualite, ...plafond, "-pix_fmt", "yuv420p10le", ...fin];
+}
+
+function estHevc(encodeur: Encodeur): boolean {
+  return encodeur.startsWith("hevc") || encodeur === "libx265";
+}
+
+export function encodageIntermediaire(encodeur: Encodeur | "apercu", ips: number): string[] {
+  if (encodeur !== "apercu" && estHevc(encodeur)) return encodageHevc(encodeur, "clip", 0, ips);
   const commun = ["-pix_fmt", "yuv420p", "-g", String(ips)];
   if (encodeur === "apercu") return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "23", ...commun];
   if (encodeur === "h264_nvenc") return ["-c:v", "h264_nvenc", "-preset", "p5", "-rc", "vbr", "-cq", "16", "-b:v", "0", ...commun, ...COULEURS_BT709];
@@ -130,7 +159,8 @@ export function encodageIntermediaire(encodeur: EncodeurH264 | "apercu", ips: nu
   return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "14", ...commun, ...COULEURS_BT709];
 }
 
-export function encodageFinal(encodeur: EncodeurH264, format: FormatRendu, ips: number): string[] {
+export function encodageFinal(encodeur: Encodeur, format: FormatRendu, ips: number): string[] {
+  if (estHevc(encodeur)) return encodageHevc(encodeur, "final", debitCibleKbps(format, ips, true), ips);
   const debit = debitCibleKbps(format, ips);
   const plafond = ["-maxrate", `${Math.round(debit * 1.15)}k`, "-bufsize", `${debit * 2}k`];
   const commun = ["-pix_fmt", "yuv420p", "-g", String(Math.round(ips / 2)), "-bf", "2", "-profile:v", "high", ...COULEURS_BT709];
@@ -150,7 +180,7 @@ export function argumentsClipVideo(
   const { largeur, hauteur } = profil.format;
   const entree =
     source === null
-      ? ["-f", "lavfi", "-i", `color=black:s=${largeur}x${hauteur}:r=${profil.ips}`]
+      ? ["-f", "lavfi", "-i", `color=black:s=${largeur}x${hauteur}:r=${profil.ips}${profil.hdr ? ",format=yuv420p10le" : ""}`]
       : [...peripheriqueImage(profil), ...optionsEntreeImage(profil), "-ss", s(debut), "-i", source.chemin, "-an", "-vf", `${filtreImage(profil, source.transfert)},tpad=stop_mode=clone:stop_duration=5`];
   return [...entree, "-frames:v", String(images), ...encodage, cible];
 }
@@ -235,7 +265,7 @@ export function grapheVideo(profil: ProfilImage, coupes: CoupeRendu[], premiereE
     entrees.push(...optionsEntreeImage(profil), "-ss", s(coupe.debut), "-t", s(coupe.duree), "-i", coupe.source.chemin);
     filtres.push(`${video}[v${index}]`);
     filtres.push(`[${premiereEntree + index}:v]${filtreImage(profil, coupe.source.transfert)},setpts=PTS-STARTPTS+${s(coupe.position)}/TB[c${index}]`);
-    video = `[v${index}][c${index}]overlay=eof_action=pass:enable='between(t,${s(coupe.position)},${s(coupe.position + coupe.duree)})'`;
+    video = `[v${index}][c${index}]overlay=eof_action=pass${profil.hdr ? ":format=yuv420p10" : ""}:enable='between(t,${s(coupe.position)},${s(coupe.position + coupe.duree)})'`;
   });
   filtres.push(`${video}[v]`);
   return { entrees, filtre: filtres.join(";") };

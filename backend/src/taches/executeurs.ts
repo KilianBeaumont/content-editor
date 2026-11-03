@@ -67,7 +67,7 @@ export function executeurs(contexte: Contexte): Record<TypeTache, Executeur> {
     "export-final": async (tache, outils) => {
       const sortie = SORTIES.find((element) => element === tache.parametres.sortie);
       if (sortie === undefined) throw new Error("Sortie inconnue.");
-      return exporterVideo(contexte, tache.projet ?? "", sortie, tache.parametres.qualite === "4k" ? "4k" : "standard", outils);
+      return exporterVideo(contexte, tache.projet ?? "", sortie, tache.parametres.qualite === "4k" ? "4k" : "standard", tache.parametres.couleurs === "hdr" ? "hdr" : "sdr", outils);
     },
     "rendu-apercu": async (tache, outils) => rendreApercu(contexte, tache.projet ?? "", String(tache.parametres.version), outils),
     "proposition-plan": async (tache, outils) =>

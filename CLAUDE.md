@@ -518,7 +518,8 @@ Dépôts étudiés (clonés dans `../inspiration`). L'étude complète, avec ce 
 
 ### Décisions prises (2026-11-03, phase 4)
 
-- **HDR** : tout est converti en SDR (BT.709), aperçus comme exports, pour un rendu identique sur toutes les plateformes et un mélange simple avec les sources SDR.
+- **HDR** : aperçus, formats courts et exports SDR en BT.709. Pour YouTube, quand les rushes sont filmés en HDR, l'export peut garder le HDR (choisi par défaut) : HLG, BT.2020, HEVC 10 bits ; les sources SDR y sont placées dans l'espace HDR.
+- **Qualité YouTube** : 4K proposée et choisie d'office quand les rushes sont en 4K, sinon la résolution du préréglage.
 - **Résolution YouTube** : 1080p par défaut, 4K possible via le préréglage d'export dans Paramètres.
 - **Cadence** : celle des rushes (60 i/s si filmé en 60), plafonnée à 60 ; les aperçus restent à 30 i/s.
 - **Écran Projet** : six onglets dans l'ordre de production (Fichiers, Analyse, Plan, Aperçu, Validation, Export).

@@ -352,6 +352,9 @@ Onglet **6. Export** (ou **Export →** depuis l'onglet Validation), une fois un
 1. Choisis la **qualité** :
    - **Standard** : la résolution du préréglage YouTube des Paramètres (1920x1080 par défaut) ;
    - **4K** : le double (3840x2160), proposée seulement si les rushes de la version validée sont au moins en 4K, et choisie d'office dans ce cas. Recommandée : YouTube compresse beaucoup mieux une vidéo envoyée en 4K, même quand elle est regardée en 1080p. Le rendu prend environ deux fois plus de temps et le fichier pèse environ 530 Mo par minute en 60 i/s (contre 100 Mo en 1080p).
+   Et les **couleurs** (YouTube, rushes filmés en HDR comme ceux de l'iPhone) :
+   - **HDR** (choisi d'office) : garde la luminosité et les couleurs de tes rushes, en HLG / HEVC 10 bits. YouTube l'affiche en HDR sur les écrans compatibles et fabrique lui-même une version SDR pour les autres ;
+   - **SDR** : couleurs converties en H.264, identiques partout.
 2. **Exporter la version vN** : la tâche rend la version validée en pleine qualité, avec la progression en direct (découpe de chaque segment, mélange du son, mesure du volume, assemblage, vérification). Compte environ une minute pour une minute de vidéo 4K sur le PC.
 3. Le fichier s'affiche dans un lecteur, avec ses caractéristiques et le résultat des contrôles (**✓ Fichier vérifié**, sinon la liste des points à regarder).
 4. **Télécharger**, ou récupère-le directement dans `exports/youtube/<projet>.mp4` (`exports/formats-courts/` pour une catégorie verticale).
@@ -360,7 +363,7 @@ Onglet **6. Export** (ou **Export →** depuis l'onglet Validation), une fois un
 
 Ce que fait l'export :
 - il part des **rushes d'origine** (pas des proxys) et suit exactement le plan de la version validée : coupes, coupes décalées, plans de coupe, musique ;
-- **image** : résolution choisie (standard ou 4K), cadence des rushes (60 i/s si filmé en 60, jamais plus), H.264 à un débit proche des recommandations de YouTube (environ 12 Mb/s en 1080p60, 60 Mb/s en 4K60), couleurs SDR (BT.709). Les vidéos HDR de l'iPhone sont converties : elles paraissent moins lumineuses que sur l'écran HDR du téléphone, c'est normal ; avec libplacebo et une carte graphique, la conversion est plus rapide et plus fidèle ;
+- **image** : résolution choisie (standard ou 4K), couleurs choisies (HDR ou SDR), cadence des rushes (60 i/s si filmé en 60, jamais plus), à un débit proche des recommandations de YouTube : en SDR, H.264 BT.709 (environ 12 Mb/s en 1080p60, 60 Mb/s en 4K60) ; en HDR, HEVC 10 bits HLG / BT.2020 (25 % de débit en plus). En SDR, les vidéos HDR de l'iPhone sont converties et paraissent moins lumineuses que sur l'écran du téléphone, c'est normal. L'aperçu reste toujours en SDR ; avec libplacebo et une carte graphique, la conversion est plus rapide et plus fidèle ;
 - **son** : AAC 320 kb/s, volume ramené à -14 LUFS en deux passes (mesure puis correction), crêtes à -1 dBTP ;
 - **accélération** : l'encodage passe par la carte graphique quand elle est disponible (NVENC sur le PC, VideoToolbox sur le Mac), sinon par le processeur. En cas d'échec du décodage accéléré, l'export recommence automatiquement sans ;
 - **vérification** : résolution, codecs, durée par rapport au plan, volume et crêtes mesurés sur le fichier final ;
@@ -493,6 +496,8 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | « Valide d'abord une version (onglet Aperçu) : c'est elle qui est exportée » | Onglet **4. Aperçu** : **C'est la bonne : valider la version vN** |
 | « Export bloqué : … » | Onglet **5. Validation** : corriger ce qui bloque (autorisation, accord d'artiste, asset), puis relancer l'export |
 | « La sortie … ne s'exporte pas encore pour ce projet » | Seule la vidéo principale s'exporte pour l'instant (YouTube, ou format court pour une catégorie verticale) ; vérifier aussi que la sortie est cochée dans **Modifier** |
+| « Ce ffmpeg ne sait pas encoder en HEVC 10 bits » | Installer une version complète de ffmpeg (avec libx265), ou exporter en SDR |
+| « Le HDR n'est possible que pour YouTube, avec des rushes filmés en HDR » | Exporter en SDR : les rushes de la version validée ne sont pas en HDR |
 | « Les rushes de la version validée ne sont pas en 4K » | Exporter en qualité **Standard**, ou filmer en 4K |
 | « La mesure du volume a échoué : relance l'export » | **Relancer** la tâche ; si cela se répète, vérifier que la musique et les rushes se lisent |
 | L'export affiche « Nouvel essai sans accélération matérielle du décodage » | Le décodage par la carte graphique a échoué pour un rush : l'export continue sur le processeur, plus lentement, sans rien perdre |

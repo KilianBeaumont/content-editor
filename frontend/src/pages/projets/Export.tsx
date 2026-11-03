@@ -2,6 +2,7 @@ import {
   DEFINITIONS_SORTIES,
   tacheActive,
   type DetailProjet,
+  type CouleursExport,
   type ExportSortie,
   type QualiteExport,
   type ReponseDescription,
@@ -48,11 +49,11 @@ function FicheExport({ projet, fiche, publier }: ProprietesFiche) {
             Version {fiche.version}, exportée le {dateHeure(fiche.creeLe)} en {Math.round(fiche.dureeRenduSecondes)} s
           </li>
           <li>
-            {fiche.largeur}x{fiche.hauteur} à {fiche.imagesParSeconde} i/s · {temps(fiche.duree ?? fiche.dureePlan)} · {formaterTaille(fiche.taille)}
+            {fiche.largeur}x{fiche.hauteur} à {fiche.imagesParSeconde} i/s · {fiche.couleurs === "hdr" ? "HDR (HLG)" : "SDR"} · {temps(fiche.duree ?? fiche.dureePlan)} · {formaterTaille(fiche.taille)}
           </li>
           <li>
             Volume {fiche.volumeLufs?.toFixed(1).replace(".", ",") ?? "?"} LUFS · crêtes {fiche.creteDb?.toFixed(1).replace(".", ",") ?? "?"} dBTP · encodé avec{" "}
-            {fiche.encodeur === "libx264" ? "le processeur" : fiche.encodeur === "h264_nvenc" ? "la carte graphique (NVENC)" : "VideoToolbox"}
+            {fiche.encodeur === "libx264" || fiche.encodeur === "libx265" ? "le processeur" : fiche.encodeur.endsWith("nvenc") ? "la carte graphique (NVENC)" : "VideoToolbox"}
           </li>
         </ul>
         {fiche.controles.length === 0 ? (
@@ -95,6 +96,7 @@ export function Export({ projet, taches, surChangement, allerA }: ProprietesExpo
   const [copie, setCopie] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [choix, setChoix] = useState<Partial<Record<Sortie, QualiteExport>>>({});
+  const [choixCouleurs, setChoixCouleurs] = useState<Partial<Record<Sortie, CouleursExport>>>({});
   const tachesExport = taches.filter((tache) => tache.type === "export-final" && tache.projet === projet.id);
   const actives = tachesExport.filter(tacheActive).map((tache) => tache.id).join(",");
   const precedentes = useRef(actives);
@@ -117,11 +119,11 @@ export function Export({ projet, taches, surChangement, allerA }: ProprietesExpo
     precedentes.current = actives;
   }, [actives, charger, surChangement]);
 
-  async function exporter(sortie: Sortie, qualite: QualiteExport, remplace: boolean) {
+  async function exporter(sortie: Sortie, qualite: QualiteExport, couleurs: CouleursExport, remplace: boolean) {
     if (remplace && !window.confirm("Refaire l'export remplacera le fichier actuel. Continuer ?")) return;
     setErreur(null);
     try {
-      await envoyerJson("POST", `/api/projets/${projet.id}/exports`, { sortie, qualite });
+      await envoyerJson("POST", `/api/projets/${projet.id}/exports`, { sortie, qualite, couleurs });
     } catch (e) {
       setErreur(messageErreur(e));
     }
@@ -174,6 +176,7 @@ export function Export({ projet, taches, surChangement, allerA }: ProprietesExpo
         const derniere = tachesExport.find((tache) => tache.parametres.sortie === sortie) ?? null;
         const options = exports?.qualites.find((element) => element.sortie === sortie) ?? null;
         const qualite: QualiteExport = choix[sortie] ?? (options?.uhd ? "4k" : "standard");
+        const couleurs: CouleursExport = options?.hdr ? (choixCouleurs[sortie] ?? "hdr") : "sdr";
         return (
           <div key={sortie} className="bloc-apercu">
             <div className="entete-section">
@@ -181,9 +184,10 @@ export function Export({ projet, taches, surChangement, allerA }: ProprietesExpo
                 {DEFINITIONS_SORTIES[sortie].libelle} <span className="note">· {DEFINITIONS_SORTIES[sortie].aide}</span>
               </h3>
               {validee !== null && active === null && (
-                <button type="button" className={fiche === null ? "bouton bouton-principal" : "bouton"} onClick={() => void exporter(sortie, qualite, fiche !== null)}>
+                <button type="button" className={fiche === null ? "bouton bouton-principal" : "bouton"} onClick={() => void exporter(sortie, qualite, couleurs, fiche !== null)}>
                   {fiche === null ? `Exporter la version ${validee}` : `Refaire l'export (${validee})`}
                   {qualite === "4k" ? " en 4K" : ""}
+                  {couleurs === "hdr" ? " HDR" : ""}
                 </button>
               )}
             </div>
@@ -199,6 +203,18 @@ export function Export({ projet, taches, surChangement, allerA }: ProprietesExpo
                     ? `indisponible${options.rushes === null ? "" : ` : rushes en ${options.rushes.largeur}x${options.rushes.hauteur}`}`
                     : `${options.uhd.largeur}x${options.uhd.hauteur}, recommandé : YouTube compresse mieux une vidéo envoyée en 4K, même regardée en 1080p`}
                 </label>
+                {options.hdr && (
+                  <>
+                    <label>
+                      <input type="radio" checked={couleurs === "hdr"} onChange={() => setChoixCouleurs({ ...choixCouleurs, [sortie]: "hdr" })} /> Couleurs HDR (HLG,
+                      HEVC 10 bits) : garde la luminosité et les couleurs de tes rushes HDR, YouTube les affiche en HDR sur les écrans compatibles
+                    </label>
+                    <label>
+                      <input type="radio" checked={couleurs === "sdr"} onChange={() => setChoixCouleurs({ ...choixCouleurs, [sortie]: "sdr" })} /> Couleurs SDR (H.264) :
+                      converties, identiques partout
+                    </label>
+                  </>
+                )}
               </div>
             )}
             {active !== null && (

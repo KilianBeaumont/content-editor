@@ -1,14 +1,18 @@
 import { executer } from "../processus.ts";
 
 export type EncodeurH264 = "h264_nvenc" | "h264_videotoolbox" | "libx264";
+export type EncodeurHevc = "hevc_nvenc" | "hevc_videotoolbox" | "libx265";
+export type Encodeur = EncodeurH264 | EncodeurHevc;
 
 export interface CapacitesFfmpeg {
   encodeur: EncodeurH264;
+  encodeurHevc: EncodeurHevc | null;
   placebo: boolean;
 }
 
 const DELAI_MS = 20_000;
 const ENCODEURS_MATERIELS: EncodeurH264[] = process.platform === "darwin" ? ["h264_videotoolbox"] : ["h264_nvenc"];
+const ENCODEURS_HEVC: EncodeurHevc[] = process.platform === "darwin" ? ["hevc_videotoolbox", "libx265"] : ["hevc_nvenc", "libx265"];
 const cache = new Map<string, Promise<CapacitesFfmpeg>>();
 
 async function fonctionne(ffmpeg: string, args: string[]): Promise<boolean> {
@@ -28,6 +32,14 @@ async function detecter(ffmpeg: string): Promise<CapacitesFfmpeg> {
       break;
     }
   }
+  let encodeurHevc: EncodeurHevc | null = null;
+  for (const candidat of ENCODEURS_HEVC) {
+    const options = candidat === "libx265" ? ["-pix_fmt", "yuv420p10le"] : ["-profile:v", "main10", "-pix_fmt", "p010le"];
+    if (await fonctionne(ffmpeg, ["-f", "lavfi", "-i", "color=c=black:s=256x256:d=0.1", "-frames:v", "2", "-c:v", candidat, ...options, "-f", "null", "-"])) {
+      encodeurHevc = candidat;
+      break;
+    }
+  }
   const placebo = await fonctionne(ffmpeg, [
     "-init_hw_device",
     "vulkan",
@@ -43,7 +55,7 @@ async function detecter(ffmpeg: string): Promise<CapacitesFfmpeg> {
     "null",
     "-",
   ]);
-  return { encodeur, placebo };
+  return { encodeur, encodeurHevc, placebo };
 }
 
 export function capacitesFfmpeg(ffmpeg: string): Promise<CapacitesFfmpeg> {

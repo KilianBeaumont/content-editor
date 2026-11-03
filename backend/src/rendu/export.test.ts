@@ -99,9 +99,9 @@ describe.skipIf(!ffmpegPresent)("export final", { timeout: 60_000 }, () => {
     const { exports, sortiesVideo, qualites } = (await env.app.inject({ method: "GET", url: `/api/projets/${id}/exports` })).json<ReponseExports>();
     expect(sortiesVideo).toEqual(["youtube"]);
     expect(qualites).toEqual([
-      { sortie: "youtube", standard: { largeur: 640, hauteur: 360 }, uhd: { largeur: 1280, hauteur: 720 }, rushes: { largeur: 1280, hauteur: 720 } },
+      { sortie: "youtube", standard: { largeur: 640, hauteur: 360 }, uhd: { largeur: 1280, hauteur: 720 }, rushes: { largeur: 1280, hauteur: 720 }, hdr: false },
     ]);
-    expect(exports[0]).toMatchObject({ sortie: "youtube", fichier: `exports/youtube/${id}.mp4`, version: "v1", imagesParSeconde: 50, controles: [], publieLe: null });
+    expect(exports[0]).toMatchObject({ sortie: "youtube", fichier: `exports/youtube/${id}.mp4`, version: "v1", imagesParSeconde: 50, couleurs: "sdr", controles: [], publieLe: null });
     const sonde = spawnSync("ffprobe", ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height,nb_frames,color_transfer", "-of", "csv=p=0", join(dossier, exports[0]?.fichier ?? "")]);
     expect(sonde.stdout.toString().trim()).toBe("640,360,bt709,175");
     expect(await readFile(join(dossier, "exports/youtube/description.txt"), "utf8")).toBe("Export\n");

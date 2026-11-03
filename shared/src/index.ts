@@ -214,9 +214,11 @@ export {
 } from "./rushes.ts";
 export {
   cheminFicheExport,
+  COULEURS_EXPORT,
   dimensionsQualite,
   qualite4kPossible,
   QUALITES_EXPORT,
+  type CouleursExport,
   type Dimensions,
   type ElementExport,
   type ExportSortie,

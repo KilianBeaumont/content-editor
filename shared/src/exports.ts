@@ -9,6 +9,7 @@ export interface ExportSortie {
   hauteur: number;
   imagesParSeconde: number;
   encodeur: string;
+  couleurs: CouleursExport;
   dureePlan: number;
   duree: number | null;
   volumeLufs: number | null;
@@ -18,6 +19,9 @@ export interface ExportSortie {
   controles: string[];
   publieLe: string | null;
 }
+
+export const COULEURS_EXPORT = ["sdr", "hdr"] as const;
+export type CouleursExport = (typeof COULEURS_EXPORT)[number];
 
 export const QUALITES_EXPORT = ["standard", "4k"] as const;
 export type QualiteExport = (typeof QUALITES_EXPORT)[number];
@@ -32,6 +36,7 @@ export interface OptionsQualite {
   standard: Dimensions;
   uhd: Dimensions | null;
   rushes: Dimensions | null;
+  hdr: boolean;
 }
 
 export interface ReponseExports {
@@ -43,6 +48,7 @@ export interface ReponseExports {
 export interface SaisieExport {
   sortie: Sortie;
   qualite: QualiteExport;
+  couleurs: CouleursExport;
 }
 
 export function dimensionsQualite(standard: Dimensions, qualite: QualiteExport): Dimensions {

@@ -49,7 +49,7 @@ export async function rendreApercu(contexte: Contexte, id: string, version: stri
   }
 
   const format = formatApercu(projet.metadata.categorie);
-  const image: ProfilImage = { format, ips: IMAGES_PAR_SECONDE_APERCU, placebo: false, acceleration: false };
+  const image: ProfilImage = { format, ips: IMAGES_PAR_SECONDE_APERCU, placebo: false, acceleration: false, hdr: false };
   const encodage = encodageIntermediaire("apercu", IMAGES_PAR_SECONDE_APERCU);
   const total = dureePlan(plan);
   const temporaire = join(dossier, "travail", "rendu", `${version}-${randomUUID()}`);
