@@ -132,7 +132,7 @@ export function encodageIntermediaire(encodeur: EncodeurH264 | "apercu", ips: nu
 
 export function encodageFinal(encodeur: EncodeurH264, format: FormatRendu, ips: number): string[] {
   const debit = debitCibleKbps(format, ips);
-  const plafond = ["-maxrate", `${Math.round(debit * 1.5)}k`, "-bufsize", `${debit * 2}k`];
+  const plafond = ["-maxrate", `${Math.round(debit * 1.15)}k`, "-bufsize", `${debit * 2}k`];
   const commun = ["-pix_fmt", "yuv420p", "-g", String(Math.round(ips / 2)), "-bf", "2", "-profile:v", "high", ...COULEURS_BT709];
   if (encodeur === "h264_nvenc") return ["-c:v", "h264_nvenc", "-preset", "p6", "-rc", "vbr", "-cq", "19", "-b:v", `${debit}k`, ...plafond, ...commun];
   if (encodeur === "h264_videotoolbox") return ["-c:v", "h264_videotoolbox", "-b:v", `${debit}k`, ...plafond, ...commun];

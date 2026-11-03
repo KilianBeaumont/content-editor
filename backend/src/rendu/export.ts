@@ -4,9 +4,15 @@ import { dirname, join } from "node:path";
 import {
   cheminFicheExport,
   DEFINITIONS_SORTIES,
+  dimensionsQualite,
+  qualite4kPossible,
   dureePlan,
   genreFichier,
+  type Dimensions,
   type ExportSortie,
+  type OptionsQualite,
+  type Parametres,
+  type QualiteExport,
   type PlanMontage,
   type Projet,
   type ReponseExports,
@@ -68,24 +74,65 @@ async function lireFiche(dossier: string, sortie: Sortie): Promise<ExportSortie 
   }
 }
 
-export async function listerExports(creations: string, id: string): Promise<ReponseExports> {
-  const projet = await lireProjet(creations, id);
-  const dossier = cheminSur(creations, projet.chemin);
+async function fichesExports(dossier: string, projet: Projet): Promise<ExportSortie[]> {
   const exports: ExportSortie[] = [];
   for (const sortie of projet.metadata.sorties) {
     const fiche = await lireFiche(dossier, sortie);
     if (fiche !== null && (await existe(join(dossier, fiche.fichier)))) exports.push(fiche);
   }
-  return { exports, sortiesVideo: sortiesVideo(projet) };
+  return exports;
 }
 
-export async function marquerPublie(creations: string, id: string, sortie: Sortie, publie: boolean): Promise<ReponseExports> {
+interface RushesPlan {
+  sources: Map<string, SourceImage>;
+  cadences: (number | null)[];
+  dimensions: Dimensions | null;
+}
+
+async function rushesDuPlan(dossier: string, plan: PlanMontage, ffprobe: string): Promise<RushesPlan> {
+  const sources = new Map<string, SourceImage>();
+  const cadences: (number | null)[] = [];
+  let dimensions: Dimensions | null = null;
+  for (const chemin of new Set([...plan.segments.map((segment) => segment.source), ...plan.plansDeCoupe.map((coupe) => coupe.source)])) {
+    if (genreFichier(chemin) !== "video") continue;
+    const absolu = cheminSur(dossier, chemin);
+    const infos = await sonderMedia(ffprobe, absolu);
+    if (infos.video === null) continue;
+    sources.set(chemin, { chemin: absolu, transfert: infos.video.transfert });
+    cadences.push(infos.video.imagesParSeconde);
+    if (dimensions === null || infos.video.largeur * infos.video.hauteur > dimensions.largeur * dimensions.hauteur) {
+      dimensions = { largeur: infos.video.largeur, hauteur: infos.video.hauteur };
+    }
+  }
+  return { sources, cadences, dimensions };
+}
+
+function prereglage(parametres: Parametres, sortie: Sortie): Parametres["exports"]["youtube"] {
+  return sortie === "formats-courts" ? parametres.exports.formatCourt : parametres.exports.youtube;
+}
+
+export async function listerExports(creations: string, id: string, ffprobe: string): Promise<ReponseExports> {
+  const projet = await lireProjet(creations, id);
+  const dossier = cheminSur(creations, projet.chemin);
+  const version = projet.metadata.versionValidee;
+  const plan = version === null ? null : await lirePlan(dossier, version);
+  const rushes = plan === null ? null : (await rushesDuPlan(dossier, plan, ffprobe)).dimensions;
+  const parametres = await lireParametres(creations);
+  const qualites: OptionsQualite[] = sortiesVideo(projet).map((sortie) => {
+    const { largeur, hauteur } = prereglage(parametres, sortie);
+    const standard = { largeur, hauteur };
+    return { sortie, standard, uhd: qualite4kPossible(standard, rushes) ? dimensionsQualite(standard, "4k") : null, rushes };
+  });
+  return { exports: await fichesExports(dossier, projet), sortiesVideo: sortiesVideo(projet), qualites };
+}
+
+export async function marquerPublie(creations: string, id: string, sortie: Sortie, publie: boolean, ffprobe: string): Promise<ReponseExports> {
   const projet = await lireProjet(creations, id);
   const dossier = cheminSur(creations, projet.chemin);
   const fiche = await lireFiche(dossier, sortie);
   if (fiche === null) throw new ErreurHttp(404, `Aucun export ${DEFINITIONS_SORTIES[sortie].libelle} pour ce projet.`);
   await ecrireJsonAtomique(join(dossier, cheminFicheExport(sortie)), { ...fiche, publieLe: publie ? new Date().toISOString() : null });
-  return listerExports(creations, id);
+  return listerExports(creations, id, ffprobe);
 }
 
 export async function verifierExportPossible(creations: string, projet: Projet, sortie: Sortie): Promise<PlanMontage> {
@@ -107,7 +154,7 @@ function temps(secondes: number): string {
   return `${Math.floor(secondes / 60)}:${String(Math.round(secondes % 60)).padStart(2, "0")}`;
 }
 
-export async function exporterVideo(contexte: Contexte, id: string, sortie: Sortie, outils: OutilsTache): Promise<string> {
+export async function exporterVideo(contexte: Contexte, id: string, sortie: Sortie, qualite: QualiteExport, outils: OutilsTache): Promise<string> {
   const { config } = contexte;
   const { ffmpeg, ffprobe } = config.binaires;
   const debutRendu = Date.now();
@@ -117,20 +164,13 @@ export async function exporterVideo(contexte: Contexte, id: string, sortie: Sort
   await verifierPlanSansErreur(config.creations, projet, plan, ffprobe);
 
   outils.progression(0, "Analyse des rushes d'origine");
-  const sources = new Map<string, SourceImage>();
-  const cadences: (number | null)[] = [];
-  for (const chemin of new Set([...plan.segments.map((segment) => segment.source), ...plan.plansDeCoupe.map((coupe) => coupe.source)])) {
-    if (genreFichier(chemin) !== "video") continue;
-    const absolu = cheminSur(dossier, chemin);
-    const infos = await sonderMedia(ffprobe, absolu);
-    if (infos.video === null) continue;
-    sources.set(chemin, { chemin: absolu, transfert: infos.video.transfert });
-    cadences.push(infos.video.imagesParSeconde);
+  const { sources, cadences, dimensions } = await rushesDuPlan(dossier, plan, ffprobe);
+  const reglage = prereglage(await lireParametres(config.creations), sortie);
+  const standard = { largeur: reglage.largeur, hauteur: reglage.hauteur };
+  if (qualite === "4k" && !qualite4kPossible(standard, dimensions)) {
+    throw new Error("Les rushes de la version validée ne sont pas en 4K : exporte en qualité standard.");
   }
-
-  const parametres = await lireParametres(config.creations);
-  const prereglage = sortie === "formats-courts" ? parametres.exports.formatCourt : parametres.exports.youtube;
-  const format = { largeur: prereglage.largeur, hauteur: prereglage.hauteur };
+  const format = dimensionsQualite(standard, qualite);
   const ips = cadenceExport(cadences);
   const capacites = await capacitesFfmpeg(ffmpeg);
   const total = dureePlan(plan);
@@ -141,7 +181,7 @@ export async function exporterVideo(contexte: Contexte, id: string, sortie: Sort
       image,
       encodageClip: encodageIntermediaire(capacites.encodeur, ips),
       encodageSortie: encodageFinal(capacites.encodeur, format, ips),
-      loudness: prereglage.loudnessLufs,
+      loudness: reglage.loudnessLufs,
       deuxPasses: true,
       debitAudio: "320k",
     };
@@ -167,7 +207,7 @@ export async function exporterVideo(contexte: Contexte, id: string, sortie: Sort
 
     outils.progression(1, "Vérification du fichier exporté");
     const infos = await sonderMedia(ffprobe, fichierTemporaire);
-    const volume = await mesurerVolume(ffmpeg, fichierTemporaire, prereglage.loudnessLufs, outils, "Mesure du volume exporté");
+    const volume = await mesurerVolume(ffmpeg, fichierTemporaire, reglage.loudnessLufs, outils, "Mesure du volume exporté");
     const volumeLufs = volume === null ? null : Number(volume.input_i);
     const creteDb = volume === null ? null : Number(volume.input_tp);
     const controles: string[] = [];
@@ -185,8 +225,8 @@ export async function exporterVideo(contexte: Contexte, id: string, sortie: Sort
     }
     if (volumeLufs === null) controles.push("Volume non mesurable.");
     else if (volumeLufs < -50) controles.push("Le son est quasiment silencieux.");
-    else if (Math.abs(volumeLufs - prereglage.loudnessLufs) > ECART_VOLUME_TOLERE) {
-      controles.push(`Volume ${volumeLufs.toFixed(1)} LUFS au lieu de ${prereglage.loudnessLufs} LUFS visés.`);
+    else if (Math.abs(volumeLufs - reglage.loudnessLufs) > ECART_VOLUME_TOLERE) {
+      controles.push(`Volume ${volumeLufs.toFixed(1)} LUFS au lieu de ${reglage.loudnessLufs} LUFS visés.`);
     }
     if (creteDb !== null && creteDb > CRETE_TOLEREE) controles.push(`Crêtes à ${creteDb.toFixed(1)} dBTP : risque de saturation.`);
 
@@ -227,7 +267,7 @@ export async function listerTousLesExports(creations: string): Promise<ReponseEx
   const elements: ReponseExportsGlobaux["elements"] = [];
   for (const resume of projets) {
     const projet = await lireProjet(creations, resume.id);
-    const { exports } = await listerExports(creations, resume.id);
+    const exports = await fichesExports(cheminSur(creations, projet.chemin), projet);
     for (const fiche of exports) {
       elements.push({
         projet: {

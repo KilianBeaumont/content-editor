@@ -19,13 +19,38 @@ export interface ExportSortie {
   publieLe: string | null;
 }
 
+export const QUALITES_EXPORT = ["standard", "4k"] as const;
+export type QualiteExport = (typeof QUALITES_EXPORT)[number];
+
+export interface Dimensions {
+  largeur: number;
+  hauteur: number;
+}
+
+export interface OptionsQualite {
+  sortie: Sortie;
+  standard: Dimensions;
+  uhd: Dimensions | null;
+  rushes: Dimensions | null;
+}
+
 export interface ReponseExports {
   exports: ExportSortie[];
   sortiesVideo: Sortie[];
+  qualites: OptionsQualite[];
 }
 
 export interface SaisieExport {
   sortie: Sortie;
+  qualite: QualiteExport;
+}
+
+export function dimensionsQualite(standard: Dimensions, qualite: QualiteExport): Dimensions {
+  return qualite === "4k" ? { largeur: standard.largeur * 2, hauteur: standard.hauteur * 2 } : standard;
+}
+
+export function qualite4kPossible(standard: Dimensions, rushes: Dimensions | null): boolean {
+  return rushes !== null && Math.min(rushes.largeur, rushes.hauteur) >= 2 * Math.min(standard.largeur, standard.hauteur);
 }
 
 export interface SaisiePublication {

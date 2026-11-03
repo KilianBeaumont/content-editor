@@ -3,6 +3,7 @@ import {
   tacheActive,
   type DetailProjet,
   type ExportSortie,
+  type QualiteExport,
   type ReponseDescription,
   type ReponseExports,
   type Sortie,
@@ -93,6 +94,7 @@ export function Export({ projet, taches, surChangement, allerA }: ProprietesExpo
   const [description, setDescription] = useState<string>("");
   const [copie, setCopie] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [choix, setChoix] = useState<Partial<Record<Sortie, QualiteExport>>>({});
   const tachesExport = taches.filter((tache) => tache.type === "export-final" && tache.projet === projet.id);
   const actives = tachesExport.filter(tacheActive).map((tache) => tache.id).join(",");
   const precedentes = useRef(actives);
@@ -115,11 +117,11 @@ export function Export({ projet, taches, surChangement, allerA }: ProprietesExpo
     precedentes.current = actives;
   }, [actives, charger, surChangement]);
 
-  async function exporter(sortie: Sortie, remplace: boolean) {
+  async function exporter(sortie: Sortie, qualite: QualiteExport, remplace: boolean) {
     if (remplace && !window.confirm("Refaire l'export remplacera le fichier actuel. Continuer ?")) return;
     setErreur(null);
     try {
-      await envoyerJson("POST", `/api/projets/${projet.id}/exports`, { sortie });
+      await envoyerJson("POST", `/api/projets/${projet.id}/exports`, { sortie, qualite });
     } catch (e) {
       setErreur(messageErreur(e));
     }
@@ -170,6 +172,8 @@ export function Export({ projet, taches, surChangement, allerA }: ProprietesExpo
         const fiche = exports?.exports.find((element) => element.sortie === sortie) ?? null;
         const active = tachesExport.find((tache) => tache.parametres.sortie === sortie && tacheActive(tache)) ?? null;
         const derniere = tachesExport.find((tache) => tache.parametres.sortie === sortie) ?? null;
+        const options = exports?.qualites.find((element) => element.sortie === sortie) ?? null;
+        const qualite: QualiteExport = choix[sortie] ?? (options?.uhd ? "4k" : "standard");
         return (
           <div key={sortie} className="bloc-apercu">
             <div className="entete-section">
@@ -177,11 +181,26 @@ export function Export({ projet, taches, surChangement, allerA }: ProprietesExpo
                 {DEFINITIONS_SORTIES[sortie].libelle} <span className="note">· {DEFINITIONS_SORTIES[sortie].aide}</span>
               </h3>
               {validee !== null && active === null && (
-                <button type="button" className={fiche === null ? "bouton bouton-principal" : "bouton"} onClick={() => void exporter(sortie, fiche !== null)}>
+                <button type="button" className={fiche === null ? "bouton bouton-principal" : "bouton"} onClick={() => void exporter(sortie, qualite, fiche !== null)}>
                   {fiche === null ? `Exporter la version ${validee}` : `Refaire l'export (${validee})`}
+                  {qualite === "4k" ? " en 4K" : ""}
                 </button>
               )}
             </div>
+            {validee !== null && active === null && options !== null && (
+              <div className="choix-qualite" role="radiogroup" aria-label="Qualité">
+                <label>
+                  <input type="radio" checked={qualite === "standard"} onChange={() => setChoix({ ...choix, [sortie]: "standard" })} /> Standard ·{" "}
+                  {options.standard.largeur}x{options.standard.hauteur}
+                </label>
+                <label className={options.uhd === null ? "note" : undefined}>
+                  <input type="radio" checked={qualite === "4k"} disabled={options.uhd === null} onChange={() => setChoix({ ...choix, [sortie]: "4k" })} /> 4K ·{" "}
+                  {options.uhd === null
+                    ? `indisponible${options.rushes === null ? "" : ` : rushes en ${options.rushes.largeur}x${options.rushes.hauteur}`}`
+                    : `${options.uhd.largeur}x${options.uhd.hauteur}, recommandé : YouTube compresse mieux une vidéo envoyée en 4K, même regardée en 1080p`}
+                </label>
+              </div>
+            )}
             {active !== null && (
               <ul className="liste-taches">
                 <LigneTache tache={active} />

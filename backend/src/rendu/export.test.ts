@@ -96,8 +96,11 @@ describe.skipIf(!ffmpegPresent)("export final", { timeout: 60_000 }, () => {
     expect(tache?.erreur).toBeNull();
     expect(tache?.resultat).toMatch(/^Export YouTube \(v1\) : 0:04, 640x360 à 50 i\/s, -1[3-5]\.\d LUFS, en \d+ s \(contrôles OK\)\.$/);
 
-    const { exports, sortiesVideo } = (await env.app.inject({ method: "GET", url: `/api/projets/${id}/exports` })).json<ReponseExports>();
+    const { exports, sortiesVideo, qualites } = (await env.app.inject({ method: "GET", url: `/api/projets/${id}/exports` })).json<ReponseExports>();
     expect(sortiesVideo).toEqual(["youtube"]);
+    expect(qualites).toEqual([
+      { sortie: "youtube", standard: { largeur: 640, hauteur: 360 }, uhd: { largeur: 1280, hauteur: 720 }, rushes: { largeur: 1280, hauteur: 720 } },
+    ]);
     expect(exports[0]).toMatchObject({ sortie: "youtube", fichier: `exports/youtube/${id}.mp4`, version: "v1", imagesParSeconde: 50, controles: [], publieLe: null });
     const sonde = spawnSync("ffprobe", ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height,nb_frames,color_transfer", "-of", "csv=p=0", join(dossier, exports[0]?.fichier ?? "")]);
     expect(sonde.stdout.toString().trim()).toBe("640,360,bt709,175");

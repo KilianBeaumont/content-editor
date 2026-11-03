@@ -1,4 +1,4 @@
-import { SORTIES, tacheActive, type ReponseDescription, type ReponseExports, type ReponseExportsGlobaux, type Tache } from "@editeur/shared";
+import { QUALITES_EXPORT, SORTIES, tacheActive, type ReponseDescription, type ReponseExports, type ReponseExportsGlobaux, type Tache } from "@editeur/shared";
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import type { Contexte } from "../contexte.ts";
@@ -18,7 +18,7 @@ interface ParametresSortie {
   Params: { id: string; sortie: string };
 }
 
-const schemaExport = z.object({ sortie: z.enum(SORTIES) });
+const schemaExport = z.object({ sortie: z.enum(SORTIES), qualite: z.enum(QUALITES_EXPORT).default("standard") });
 const schemaPublication = z.object({ publie: z.boolean() });
 
 export function routesExports(contexte: Contexte, file: FileDeTaches): FastifyPluginAsync {
@@ -27,11 +27,11 @@ export function routesExports(contexte: Contexte, file: FileDeTaches): FastifyPl
 
     app.get("/exports", async (): Promise<ReponseExportsGlobaux> => listerTousLesExports(creations()));
 
-    app.get<ParametresId>("/projets/:id/exports", async (requete): Promise<ReponseExports> => listerExports(creations(), requete.params.id));
+    app.get<ParametresId>("/projets/:id/exports", async (requete): Promise<ReponseExports> => listerExports(creations(), requete.params.id, contexte.config.binaires.ffprobe));
 
     app.post<ParametresId>("/projets/:id/exports", async (requete, reponse): Promise<Tache> => {
       const { id } = requete.params;
-      const { sortie } = schemaExport.parse(requete.body);
+      const { sortie, qualite } = schemaExport.parse(requete.body);
       const projet = await lireProjet(creations(), id);
       try {
         await verifierExportPossible(creations(), projet, sortie);
@@ -41,7 +41,7 @@ export function routesExports(contexte: Contexte, file: FileDeTaches): FastifyPl
       const enCours = file.liste().some((tache) => tache.type === "export-final" && tache.projet === id && tache.parametres.sortie === sortie && tacheActive(tache));
       if (enCours) throw new ErreurHttp(409, "Cet export est déjà en cours.");
       reponse.code(202);
-      return file.ajouter("export-final", `Export final (${projet.metadata.versionValidee ?? ""})`, id, { sortie });
+      return file.ajouter("export-final", `Export final ${qualite === "4k" ? "4K " : ""}(${projet.metadata.versionValidee ?? ""})`, id, { sortie, qualite });
     });
 
     app.get<ParametresId>("/projets/:id/description", async (requete): Promise<ReponseDescription> => {
@@ -53,7 +53,7 @@ export function routesExports(contexte: Contexte, file: FileDeTaches): FastifyPl
 
     app.post<ParametresSortie>("/projets/:id/exports/:sortie/publication", async (requete): Promise<ReponseExports> => {
       const sortie = z.enum(SORTIES).parse(requete.params.sortie);
-      return marquerPublie(creations(), requete.params.id, sortie, schemaPublication.parse(requete.body).publie);
+      return marquerPublie(creations(), requete.params.id, sortie, schemaPublication.parse(requete.body).publie, contexte.config.binaires.ffprobe);
     });
   };
 }

@@ -1363,3 +1363,10 @@ input[type="file"] {
   width: 100%;
   font-family: inherit;
 }
+
+.choix-qualite {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0 12px;
+}

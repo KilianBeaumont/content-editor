@@ -214,8 +214,14 @@ export {
 } from "./rushes.ts";
 export {
   cheminFicheExport,
+  dimensionsQualite,
+  qualite4kPossible,
+  QUALITES_EXPORT,
+  type Dimensions,
   type ElementExport,
   type ExportSortie,
+  type OptionsQualite,
+  type QualiteExport,
   type ReponseDescription,
   type ReponseExports,
   type ReponseExportsGlobaux, type SaisieExport, type SaisiePublication } from "./exports.ts";
