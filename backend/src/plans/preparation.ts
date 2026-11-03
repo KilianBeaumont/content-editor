@@ -31,7 +31,7 @@ const PAUSE_MIN = 0.3;
 const ECART_REPERE = 0.25;
 const MOTS_ENTRE_REPERES = 8;
 const DOSSIERS_IGNORES = ["travail/", "versions/", "exports/"];
-const TYPES_PROPOSES = new Set(["musique", "ambiance"]);
+const TYPES_PROPOSES = new Set(["musique", "ambiance", "son"]);
 
 export function cheminTranscriptionCompacte(chemin: string): string {
   return `travail/transcriptions/${chemin}.md`;

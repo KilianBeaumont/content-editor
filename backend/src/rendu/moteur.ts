@@ -7,6 +7,7 @@ import type { OutilsTache } from "../taches/file.ts";
 import {
   argumentsClipAudio,
   argumentsClipVideo,
+  type BruitageRendu,
   decouper,
   filtreLoudnorm,
   grapheAudio,
@@ -34,6 +35,7 @@ export interface EntreesRendu {
   image: (chemin: string) => SourceImage | null;
   son: (chemin: string) => string;
   musiques: MusiqueRendu[];
+  bruitages: BruitageRendu[];
 }
 
 const PARTS = { clips: 0.55, melange: 0.6, mesure: 0.65 };
@@ -78,7 +80,7 @@ export async function rendre(
     outils.progression((index / decoupes.length) * PARTS.clips, `Découpe du segment ${segment.id} (${index + 1}/${decoupes.length})`);
     if (decoupe.image.images > 0) {
       const clip = nomClip("v", index, "mp4");
-      const args = argumentsClipVideo(entrees.image(segment.source), decoupe.image.debut, decoupe.image.images, profil.image, profil.encodageClip, join(temporaire, clip), segment.cadrage);
+      const args = argumentsClipVideo(entrees.image(segment.source), decoupe.image.debut, decoupe.image.images, profil.image, profil.encodageClip, join(temporaire, clip), segment.cadrage, segment.transition);
       await executerFfmpeg(ffmpeg, args, { duree: null, action: "Découpe de l'image" }, outils);
       videos.push(clip);
     }
@@ -90,9 +92,9 @@ export async function rendre(
   await writeFile(join(temporaire, "videos.txt"), videos.map((nom) => `file '${nom}'`).join("\n"), "utf8");
   await writeFile(join(temporaire, "audios.txt"), audios.map((nom) => `file '${nom}'`).join("\n"), "utf8");
 
-  outils.progression(PARTS.clips, "Mélange de la voix et de la musique");
+  outils.progression(PARTS.clips, "Mélange de la voix, de la musique et des bruitages");
   const melange = join(temporaire, "melange.wav");
-  const audio = grapheAudio(total, entrees.musiques);
+  const audio = grapheAudio(total, entrees.musiques, entrees.bruitages);
   await executerFfmpeg(
     ffmpeg,
     ["-f", "concat", "-safe", "0", "-i", join(temporaire, "audios.txt"), ...audio.entrees, "-filter_complex", audio.filtre, "-map", "[a]", "-t", String(total), "-c:a", "pcm_s16le", "-ar", "48000", melange],

@@ -28,6 +28,9 @@ const REGLAGES: ReglagesSousTitres = {
   motsMax: 3,
   positionPourcent: 70,
   majuscules: true,
+  surlignage: true,
+  fond: false,
+  accrocheXxl: false,
 };
 
 const mot = (texte: string, debut: number, fin: number) => ({ mot: texte, debut, fin, probabilite: 0.9 });
@@ -46,8 +49,8 @@ describe("sous-titres", () => {
       ],
     } as Pick<Transcription, "segments"> as Transcription;
     const segments = [
-      { id: "s1", source: "rush.mp4", debut: 30.8, fin: 32, role: "", citation: "", raison: "", decalageImage: 0, cadrage: null },
-      { id: "s2", source: "rush.mp4", debut: 10, fin: 12, role: "", citation: "", raison: "", decalageImage: 0, cadrage: null },
+      { id: "s1", source: "rush.mp4", debut: 30.8, fin: 32, role: "", citation: "", raison: "", decalageImage: 0, cadrage: null, transition: "coupe" as const },
+      { id: "s2", source: "rush.mp4", debut: 10, fin: 12, role: "", citation: "", raison: "", decalageImage: 0, cadrage: null, transition: "coupe" as const },
     ];
     const mots = motsSurTimeline({ segments }, new Map([["rush.mp4", transcription]]));
     expect(mots.map(({ mot: texte, debut }) => [texte, Math.round(debut * 100) / 100])).toEqual([
@@ -84,5 +87,41 @@ describe("sous-titres", () => {
     expect(ass).toContain("Style: Defaut,Ma Police,96,&H00FFFFFF&,&H00FFFFFF&,&H00000000&,&H64000000&,0,0,0,0,100,100,0,0,1,4,0,5,86,86,0,1");
     expect(ass).toContain("Dialogue: 0,0:00:00.20,0:00:00.50,Defaut,,0,0,0,,{\\an5\\pos(540,1344)}{\\c&H003BD4FF&}TROIS{\\c&H00FFFFFF&} OUTILS");
     expect(ass).toContain("Dialogue: 0,0:00:00.50,0:00:01.15,Defaut,,0,0,0,,{\\an5\\pos(540,1344)}TROIS {\\c&H003BD4FF&}OUTILS{\\c&H00FFFFFF&}");
+  });
+
+  it("affiche le groupe entier sans surlignage, sur un bandeau sombre", () => {
+    const mots = [
+      { mot: "trois", debut: 0.2, fin: 0.5 },
+      { mot: "outils", debut: 0.5, fin: 0.9 },
+    ];
+    const ass = genererAss(mots, { largeur: 1080, hauteur: 1920 }, { ...REGLAGES, surlignage: false, fond: true }, "Ma Police");
+    expect(ass).toContain("Style: Defaut,Ma Police,96,&H00FFFFFF&,&H00FFFFFF&,&H50000000&,&H64000000&,0,0,0,0,100,100,0,0,3,21,0,5,86,86,0,1");
+    expect(ass.match(/^Dialogue: /gm)).toHaveLength(1);
+    expect(ass).toContain("Dialogue: 0,0:00:00.20,0:00:01.15,Defaut,,0,0,0,,{\\an5\\pos(540,1344)}TROIS OUTILS");
+  });
+
+  it("montre l'accroche mot par mot en très grand, puis les sous-titres normaux", () => {
+    const mots = [
+      { mot: "stop", debut: 0.1, fin: 0.5 },
+      { mot: "regarde", debut: 0.6, fin: 1.1 },
+      { mot: "ça", debut: 2.8, fin: 3.1 },
+    ];
+    const ass = genererAss(mots, { largeur: 1080, hauteur: 1920 }, { ...REGLAGES, accrocheXxl: true }, "Ma Police");
+    expect(ass).toContain("Style: Accroche,Ma Police,173,&H003BD4FF&");
+    expect(ass).toContain("Dialogue: 0,0:00:00.10,0:00:00.60,Accroche,,0,0,0,,{\\an5\\pos(540,864)\\fscx70");
+    expect(ass).toContain("Dialogue: 0,0:00:00.60,0:00:01.35,Accroche,,0,0,0,,{\\an5\\pos(540,864)\\fscx70");
+    expect(ass).toContain("Dialogue: 0,0:00:02.80,0:00:03.35,Defaut,,0,0,0,,{\\an5\\pos(540,1344)}{\\c&H003BD4FF&}ÇA");
+  });
+
+  it("pose les textes à l'écran avec leur style, leur place et leur apparition", () => {
+    const textes = [
+      { texte: "3 outils", debut: 0, fin: 2.5, position: "haut" as const, taillePourcent: 10, couleur: null, apparition: "pop" as const },
+      { texte: "{fin}", debut: 5, fin: 6, position: "centre" as const, taillePourcent: 20, couleur: "#FF0000", apparition: "fondu" as const },
+    ];
+    const ass = genererAss([], { largeur: 1080, hauteur: 1920 }, REGLAGES, "Ma Police", textes);
+    expect(ass).toContain("Style: Texte1,Ma Police,192,&H003BD4FF&");
+    expect(ass).toContain("Style: Texte2,Ma Police,384,&H000000FF&");
+    expect(ass).toContain("Dialogue: 1,0:00:00.00,0:00:02.50,Texte1,,0,0,0,,{\\an5\\pos(540,384)\\fscx70\\fscy70\\t(0,120,\\fscx112\\fscy112)\\t(120,220,\\fscx100\\fscy100)}3 outils");
+    expect(ass).toContain("Dialogue: 1,0:00:05.00,0:00:06.00,Texte2,,0,0,0,,{\\an5\\pos(540,960)\\fad(200,200)}fin");
   });
 });

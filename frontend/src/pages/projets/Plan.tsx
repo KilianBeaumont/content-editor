@@ -1,4 +1,4 @@
-import { tacheActive, type DetailProjet, type Tache } from "@editeur/shared";
+import { tacheActive, type DetailProjet, type ElementBibliotheque, type Tache } from "@editeur/shared";
 import { useState } from "react";
 import { envoyerJson, messageErreur } from "../../api.ts";
 import { Message } from "../../composants/Message.tsx";
@@ -10,10 +10,11 @@ interface ProprietesPlan {
   projet: DetailProjet;
   donnees: DonneesPlans;
   taches: Tache[];
+  bibliotheque: ElementBibliotheque[];
   allerA: (onglet: "analyse" | "apercu") => void;
 }
 
-export function Plan({ projet, donnees, taches, allerA }: ProprietesPlan) {
+export function Plan({ projet, donnees, taches, bibliotheque, allerA }: ProprietesPlan) {
   const { plans, proxies, remplacer } = donnees;
   const [consigne, setConsigne] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
@@ -49,7 +50,7 @@ export function Plan({ projet, donnees, taches, allerA }: ProprietesPlan) {
         <Message type="erreur">{courante.erreur}</Message>
       ) : (
         <>
-          <EditeurPlan projet={projet} version={courante} initial={courante.plan} proxies={proxies} surEnregistrement={remplacer} />
+          <EditeurPlan projet={projet} version={courante} initial={courante.plan} proxies={proxies} bibliotheque={bibliotheque} surEnregistrement={remplacer} />
           {courante.plan.statut === "valide" && (
             <div className="appel-suite">
               <span>{courante.apercu ? `L'aperçu ${courante.version} est rendu : regarde-le et commente-le.` : "Plan validé : lance son aperçu."}</span>

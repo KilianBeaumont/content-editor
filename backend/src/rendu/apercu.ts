@@ -11,7 +11,7 @@ import { etatPreparation, lirePreparation } from "../rushes/etat.ts";
 import type { OutilsTache } from "../taches/file.ts";
 import { encodageIntermediaire, formatApercu, IMAGES_PAR_SECONDE_APERCU, LOUDNESS_APERCU, type ProfilImage, type SourceImage } from "./graphe.ts";
 import { rendre } from "./moteur.ts";
-import { resoudreMusiques, verifierPlanSansErreur } from "./ressources.ts";
+import { resoudreBruitages, resoudreMusiques, verifierPlanSansErreur } from "./ressources.ts";
 import { preparerSousTitres } from "./sous-titres.ts";
 
 const ECART_DUREE_TOLERE = 0.15;
@@ -67,6 +67,7 @@ export async function rendreApercu(contexte: Contexte, id: string, version: stri
         image: (chemin) => proxies.get(chemin) ?? null,
         son: (chemin) => proxies.get(chemin)?.chemin ?? cheminSur(dossier, chemin),
         musiques: await resoudreMusiques(config.creations, dossier, plan, ffprobe),
+        bruitages: await resoudreBruitages(config.creations, dossier, plan),
       },
       { image, encodageClip: encodage, encodageSortie: encodage, loudness: LOUDNESS_APERCU, deuxPasses: false, debitAudio: "128k" },
       temporaire,

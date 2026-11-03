@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { validerPlan, type SourcesPlan } from "./validation.ts";
 
 function segment(id: string, debut: number, fin: number, source = "rushes/a.mp4"): SegmentPlan {
-  return { id, source, debut, fin, role: "moment fort", citation: "", raison: "", decalageImage: 0, cadrage: null };
+  return { id, source, debut, fin, role: "moment fort", citation: "", raison: "", decalageImage: 0, cadrage: null, transition: "coupe" };
 }
 
 function plan(changement: Partial<PropositionPlan> = {}): PropositionPlan {
@@ -13,6 +13,8 @@ function plan(changement: Partial<PropositionPlan> = {}): PropositionPlan {
     segments: [segment("s1", 0, 10), segment("s2", 20, 30)],
     plansDeCoupe: [],
     musiques: [],
+    bruitages: [],
+    textes: [],
     sousTitres: false,
     pointsAVerifier: [],
     reponsesRetours: [],
@@ -183,6 +185,31 @@ describe("décalages d'image et plans de coupe", () => {
       "erreur - Plan de coupe 2 : la fin doit venir après le début.",
       "erreur - Plan de coupe 3 : la fin dépasse la durée de la vidéo (1:00,0).",
       "erreur - Plan de coupe 4 : dépasse la fin de la vidéo finale (0:20,0).",
+    ]);
+  });
+});
+
+describe("habillage", () => {
+  const SON: AssetBibliotheque = { ...ASSET, id: "whoosh", type: "son", chemin: "commun/sons/whoosh.wav" };
+
+  it("vérifie les bruitages : son de la bibliothèque, dans la vidéo", () => {
+    const assets = new Map([
+      ["lofi", { asset: ASSET, valide: true }],
+      ["whoosh", { asset: SON, valide: true }],
+    ]);
+    const bruitage = (reference: string, position: number) => ({ origine: "bibliotheque" as const, reference, position, volumeDb: -6, raison: "" });
+    const problemes = validerPlan(plan({ bruitages: [bruitage("whoosh", 3), bruitage("lofi", 4), bruitage("whoosh", 25)] }), sources({ assets, assetsChoisis: ["lofi", "whoosh"] }));
+    expect(messages(problemes)).toEqual(["erreur - Bruitage introuvable dans la bibliothèque : lofi.", "erreur - Le bruitage whoosh tombe après la fin de la vidéo."]);
+  });
+
+  it("vérifie les textes à l'écran : bornes, fin de vidéo, place des sous-titres", () => {
+    const texte = (debut: number, fin: number, position: "haut" | "bas" = "haut") => ({ texte: "Titre", debut, fin, position, taillePourcent: 10, couleur: null, apparition: "pop" as const });
+    const problemes = validerPlan(plan({ sousTitres: true, textes: [texte(0, 2), texte(3, 2), texte(19, 22), texte(25, 26), texte(1, 2, "bas")] }), sources());
+    expect(messages(problemes)).toEqual([
+      "erreur - Texte 2 (« Titre ») : la fin doit venir après le début.",
+      "avertissement - Texte 3 (« Titre ») : dépasse la fin de la vidéo, il sera coupé.",
+      "erreur - Texte 4 (« Titre ») : commence après la fin de la vidéo.",
+      "avertissement - Texte 5 (« Titre ») : en bas, il risque de chevaucher les sous-titres.",
     ]);
   });
 });

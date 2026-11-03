@@ -187,7 +187,7 @@ export function PageProjet() {
 
       {actif === "analyse" && <Transcriptions projet={projet} surChangement={charger} />}
 
-      {actif === "plan" && <Plan projet={projet} donnees={donneesPlans} taches={taches} allerA={choisir} />}
+      {actif === "plan" && <Plan projet={projet} donnees={donneesPlans} taches={taches} bibliotheque={bibliotheque} allerA={choisir} />}
 
       {actif === "apercu" && (
         <Apercu projet={projet} versions={donneesPlans.plans?.versions ?? []} taches={taches} surChangement={charger} allerA={choisir} />

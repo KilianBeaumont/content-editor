@@ -13,7 +13,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { envoyerJson, lireJson, messageErreur, urlFichier } from "../../api.ts";
 import { Message } from "../../composants/Message.tsx";
 import { LigneTache } from "../../composants/Taches.tsx";
-import { temps } from "./EditeurPlan.tsx";
+import { temps } from "./ChampsPlan.tsx";
 
 type VersionRendue = VersionPlan & { plan: PlanMontage };
 

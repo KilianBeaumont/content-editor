@@ -40,6 +40,33 @@ export function rectangleCadre(ratioSource: number, ratioSortie: number, etat: E
   };
 }
 
+export const TRANSITIONS = ["coupe", "flash", "fondu"] as const;
+export type Transition = (typeof TRANSITIONS)[number];
+
+export const POSITIONS_TEXTE = ["haut", "centre", "bas"] as const;
+export type PositionTexte = (typeof POSITIONS_TEXTE)[number];
+
+export const APPARITIONS_TEXTE = ["pop", "fondu", "aucune"] as const;
+export type ApparitionTexte = (typeof APPARITIONS_TEXTE)[number];
+
+export interface TexteEcran {
+  texte: string;
+  debut: number;
+  fin: number;
+  position: PositionTexte;
+  taillePourcent: number;
+  couleur: string | null;
+  apparition: ApparitionTexte;
+}
+
+export interface Bruitage {
+  origine: OrigineMusique;
+  reference: string;
+  position: number;
+  volumeDb: number;
+  raison: string;
+}
+
 export interface SegmentPlan {
   id: string;
   source: string;
@@ -50,6 +77,7 @@ export interface SegmentPlan {
   raison: string;
   decalageImage: number;
   cadrage: Cadrage | null;
+  transition: Transition;
 }
 
 export interface PlanDeCoupe {
@@ -82,6 +110,8 @@ export interface PropositionPlan {
   segments: SegmentPlan[];
   plansDeCoupe: PlanDeCoupe[];
   musiques: MusiquePlan[];
+  bruitages: Bruitage[];
+  textes: TexteEcran[];
   sousTitres: boolean;
   pointsAVerifier: string[];
   reponsesRetours: ReponseRetour[];
@@ -93,6 +123,8 @@ export interface PlanMontage extends PropositionPlan {
   creeLe: string;
   modifieLe: string | null;
 }
+
+export const TEXTE_PAR_DEFAUT: Omit<TexteEcran, "texte" | "debut" | "fin"> = { position: "haut", taillePourcent: 10, couleur: null, apparition: "pop" };
 
 export interface ProblemePlan {
   niveau: "erreur" | "avertissement";
@@ -245,6 +277,10 @@ export const schemaPropositionPlan = z.object({
         citation: texte(1000).describe("Ce qui est dit pendant le segment, tiré de la transcription (vide s'il n'y a pas de parole)."),
         raison: texte(1000).describe("Pourquoi ce passage est gardé à cet endroit."),
         cadrage: schemaCadrage,
+        transition: z
+          .enum(TRANSITIONS)
+          .default("coupe")
+          .describe("Entrée dans ce segment : coupe franche, flash blanc bref (pour souligner un changement, un moment fort) ou fondu depuis le noir."),
         decalageImage: z
           .number()
           .min(-5)
@@ -280,6 +316,32 @@ export const schemaPropositionPlan = z.object({
       raison: texte(500),
     }),
   ),
+  bruitages: z
+    .array(
+      z.object({
+        origine: z.enum(ORIGINES_MUSIQUE).describe("projet : fichier son du projet ; bibliotheque : asset de type son de la bibliothèque."),
+        reference: z.string().min(1).describe("Chemin relatif au projet ou identifiant de l'asset."),
+        position: z.number().min(0).describe("Instant de la vidéo finale où le son démarre, en secondes."),
+        volumeDb: z.number().min(-40).max(6).describe("Volume du son en dB (0 = volume d'origine)."),
+        raison: texte(300),
+      }),
+    )
+    .default([])
+    .describe("Sons ponctuels (whoosh, pop, impact…) posés sur la vidéo, chacun lié à un événement visible."),
+  textes: z
+    .array(
+      z.object({
+        texte: z.string().min(1).max(80).describe("Le texte affiché, court (un à cinq mots) : titre, chiffre, mot-clé."),
+        debut: z.number().min(0).describe("Apparition sur la vidéo finale, en secondes."),
+        fin: z.number().min(0).describe("Disparition sur la vidéo finale, en secondes."),
+        position: z.enum(POSITIONS_TEXTE).describe("haut, centre ou bas de l'image (le bas est aussi la zone des sous-titres)."),
+        taillePourcent: z.number().min(3).max(25).describe("Hauteur du texte en % de la hauteur de l'image (8 à 14 pour un titre)."),
+        couleur: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().describe("Couleur #RRVVBB, ou null pour la couleur d'accent des sous-titres."),
+        apparition: z.enum(APPARITIONS_TEXTE).describe("pop : grossit brièvement en apparaissant ; fondu ; aucune."),
+      }),
+    )
+    .default([])
+    .describe("Textes à l'écran, avec la police des sous-titres."),
   sousTitres: z
     .boolean()
     .default(false)

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   argumentsClipAudio,
+  argumentsClipVideo,
   cadenceExport,
   debitCibleKbps,
   decouper,
@@ -13,6 +14,7 @@ import {
   grapheVideo,
   lireMesureLoudnorm,
   fenetre,
+  filtreTransition,
   type ProfilImage,
   type SourceImage,
 } from "./graphe.ts";
@@ -112,7 +114,7 @@ describe("cadrage", () => {
   });
 
   it("ne met pas de fondu sonore entre deux segments qui se suivent dans le rush", () => {
-    const segment = (source: string, debut: number, fin: number) => ({ id: "s", source, debut, fin, role: "", citation: "", raison: "", decalageImage: 0, cadrage: null });
+    const segment = (source: string, debut: number, fin: number) => ({ id: "s", source, debut, fin, role: "", citation: "", raison: "", decalageImage: 0, cadrage: null, transition: "coupe" as const });
     expect(segmentsContigus(segment("a.mp4", 1, 3), segment("a.mp4", 3, 5))).toBe(true);
     expect(segmentsContigus(segment("a.mp4", 1, 3), segment("a.mp4", 3.5, 5))).toBe(false);
     expect(segmentsContigus(segment("a.mp4", 1, 3), segment("b.mp4", 3, 5))).toBe(false);
@@ -129,6 +131,21 @@ describe("graphes", () => {
     expect(graphe.filtre).toContain("[m0r][sc0]sidechaincompress");
     expect(graphe.filtre.endsWith("[voix][m0]amix=inputs=2:normalize=0:duration=first[a]")).toBe(true);
     expect(grapheAudio(10, []).filtre).toBe("[0:a]aformat=sample_rates=48000:channel_layouts=stereo[voix];[voix]anull[a]");
+  });
+
+  it("ajoute les bruitages à leur instant, sans fondu ni baisse sous la voix", () => {
+    const graphe = grapheAudio(20, [{ source: "lofi.mp3", dureeFichier: 174, debut: 0, fin: null, volumeDb: -20, baisseSousVoix: false }], [{ source: "whoosh.wav", position: 3.25, volumeDb: -6 }]);
+    expect(graphe.entrees).toEqual(["-i", "lofi.mp3", "-i", "whoosh.wav"]);
+    expect(graphe.filtre).toContain("[2:a]aformat=sample_rates=48000:channel_layouts=stereo,volume=-6dB,adelay=3250:all=1[b0]");
+    expect(graphe.filtre.endsWith("[voix][m0][b0]amix=inputs=3:normalize=0:duration=first[a]")).toBe(true);
+  });
+
+  it("entre dans un segment par un flash blanc ou un fondu du noir", () => {
+    expect(filtreTransition("coupe")).toBe("");
+    expect(filtreTransition("flash")).toBe(",setpts=PTS-STARTPTS,fade=t=in:st=0:d=0.15:color=white");
+    expect(filtreTransition("fondu")).toBe(",setpts=PTS-STARTPTS,fade=t=in:st=0:d=0.3");
+    const args = argumentsClipVideo(src(null), 2, 60, APERCU, [], "v001.mp4", null, "flash");
+    expect(args[args.indexOf("-vf") + 1]).toContain("fade=t=in:st=0:d=0.15:color=white,tpad=stop_mode=clone");
   });
 
   it("superpose les plans de coupe à leur place", () => {

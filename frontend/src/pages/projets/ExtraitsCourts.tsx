@@ -15,7 +15,7 @@ import { envoyerJson, lireJson, messageErreur, urlFichier } from "../../api.ts";
 import { Message } from "../../composants/Message.tsx";
 import { LigneTache } from "../../composants/Taches.tsx";
 import { resumeCadrage } from "./Cadrages.tsx";
-import { temps } from "./EditeurPlan.tsx";
+import { temps } from "./ChampsPlan.tsx";
 
 function ecart(valeur: number): string {
   return valeur === 0 ? "" : `${valeur > 0 ? "+" : ""}${valeur.toFixed(2).replace(".", ",")} s`;

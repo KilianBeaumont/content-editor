@@ -31,9 +31,11 @@ const VLOG: SaisieProjet = {
 const PROPOSITION: PropositionPlan = {
   resume: "Une journée racontée en trois temps.",
   hook: { segment: "s1", explication: "La blague du chat ouvre la vidéo." },
-  segments: [{ id: "s1", source: "rushes/matin.mp4", debut: 1, fin: 4, role: "accroche", citation: "Bonjour", raison: "Ça démarre fort.", decalageImage: 0, cadrage: null }],
+  segments: [{ id: "s1", source: "rushes/matin.mp4", debut: 1, fin: 4, role: "accroche", citation: "Bonjour", raison: "Ça démarre fort.", decalageImage: 0, cadrage: null, transition: "coupe" }],
   plansDeCoupe: [],
   musiques: [],
+  bruitages: [],
+  textes: [],
   sousTitres: false,
   pointsAVerifier: [],
   reponsesRetours: [],

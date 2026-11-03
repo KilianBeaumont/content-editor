@@ -15,7 +15,7 @@ import { envoyerJson, formaterTaille, lireJson, messageErreur, urlFichier } from
 import { Message } from "../../composants/Message.tsx";
 import { afficherExport, NOM_EXPLORATEUR } from "../../explorateur.ts";
 import { LigneTache } from "../../composants/Taches.tsx";
-import { temps } from "./EditeurPlan.tsx";
+import { temps } from "./ChampsPlan.tsx";
 
 const PHASES_A_VENIR: Partial<Record<Sortie, string>> = {
   "formats-courts": "les extraits courts arrivent en phase 5",

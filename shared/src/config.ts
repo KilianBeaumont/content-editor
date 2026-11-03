@@ -39,6 +39,9 @@ export interface ReglagesSousTitres {
   motsMax: number;
   positionPourcent: number;
   majuscules: boolean;
+  surlignage: boolean;
+  fond: boolean;
+  accrocheXxl: boolean;
 }
 
 export interface Parametres {
@@ -77,6 +80,9 @@ export const schemaReglagesSousTitres = z.object({
   motsMax: z.number().int().min(1).max(8),
   positionPourcent: z.number().min(10).max(95),
   majuscules: z.boolean(),
+  surlignage: z.boolean(),
+  fond: z.boolean(),
+  accrocheXxl: z.boolean(),
 }) satisfies z.ZodType<ReglagesSousTitres>;
 
 export const schemaParametres = z.object({
@@ -117,5 +123,8 @@ export const PARAMETRES_PAR_DEFAUT: Parametres = {
     motsMax: 3,
     positionPourcent: 70,
     majuscules: false,
+    surlignage: true,
+    fond: false,
+    accrocheXxl: false,
   },
 };

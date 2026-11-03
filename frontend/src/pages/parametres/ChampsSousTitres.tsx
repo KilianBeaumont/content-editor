@@ -73,6 +73,15 @@ export function ChampsSousTitres({ valeur, surChangement }: ProprietesChampsSous
         <label className="champ champ-case">
           <input type="checkbox" checked={valeur.majuscules} onChange={(evenement) => surChangement((reglages) => (reglages.majuscules = evenement.target.checked))} /> En majuscules
         </label>
+        <label className="champ champ-case" title="Le mot prononcé prend la couleur d'accent">
+          <input type="checkbox" checked={valeur.surlignage} onChange={(evenement) => surChangement((reglages) => (reglages.surlignage = evenement.target.checked))} /> Surligner le mot prononcé
+        </label>
+        <label className="champ champ-case" title="Bandeau sombre semi-transparent derrière le texte">
+          <input type="checkbox" checked={valeur.fond} onChange={(evenement) => surChangement((reglages) => (reglages.fond = evenement.target.checked))} /> Bandeau sombre
+        </label>
+        <label className="champ champ-case" title="Pendant les 2,5 premières secondes : un mot à la fois, en très grand, au centre">
+          <input type="checkbox" checked={valeur.accrocheXxl} onChange={(evenement) => surChangement((reglages) => (reglages.accrocheXxl = evenement.target.checked))} /> Accroche XXL
+        </label>
       </div>
       <p className="note">
         Position conseillée pour un format court : entre 60 et 75 % depuis le haut, loin des boutons et des légendes de TikTok, Reels et Shorts.

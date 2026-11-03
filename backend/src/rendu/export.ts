@@ -35,7 +35,7 @@ import type { OutilsTache } from "../taches/file.ts";
 import { cadenceExport, encodageFinal, encodageIntermediaire, estTransfertHdr, estVertical, type ProfilImage, type SourceImage } from "./graphe.ts";
 import { mesurerVolume, rendre, type ProfilRendu } from "./moteur.ts";
 import { descriptionProjet } from "./description.ts";
-import { resoudreMusiques, verifierPlanSansErreur } from "./ressources.ts";
+import { resoudreBruitages, resoudreMusiques, verifierPlanSansErreur } from "./ressources.ts";
 import { preparerSousTitres } from "./sous-titres.ts";
 
 const ECART_DUREE_TOLERE = 0.1;
@@ -221,6 +221,7 @@ export async function exporterVideo(
     image: (chemin: string) => sources.get(chemin) ?? null,
     son: (chemin: string) => cheminSur(dossier, chemin),
     musiques,
+    bruitages: await resoudreBruitages(config.creations, dossier, plan),
   };
 
   const sousTitres = await preparerSousTitres(config.creations, projet, plan, format);

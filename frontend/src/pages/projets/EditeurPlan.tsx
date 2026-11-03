@@ -1,41 +1,23 @@
-import { dureePlan, estCategorieVerticale, type DetailProjet, type PlanMontage, type ProblemePlan, type SegmentPlan, type VersionPlan } from "@editeur/shared";
+import {
+  dureePlan,
+  estCategorieVerticale,
+  TRANSITIONS,
+  type DetailProjet,
+  type ElementBibliotheque,
+  type PlanMontage,
+  type ProblemePlan,
+  type SegmentPlan,
+  type Transition,
+  type VersionPlan,
+} from "@editeur/shared";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { envoyerJson, messageErreur, urlFichier } from "../../api.ts";
 import { Message } from "../../composants/Message.tsx";
 import { CadreSurVideo, ControlesCadrage, resumeCadrage } from "./Cadrages.tsx";
+import { ChampTemps, nomFichier, temps } from "./ChampsPlan.tsx";
+import { Habillage } from "./Habillage.tsx";
 
-export function temps(secondes: number): string {
-  const minutes = Math.floor(secondes / 60);
-  return `${minutes}:${(secondes - minutes * 60).toFixed(1).replace(".", ",").padStart(4, "0")}`;
-}
-
-function nomFichier(chemin: string): string {
-  return chemin.split("/").at(-1) ?? chemin;
-}
-
-function ChampTemps({ valeur, surChangement, actif, pas = 0.05 }: { valeur: number; surChangement: (valeur: number) => void; actif: boolean; pas?: number }) {
-  const [texte, setTexte] = useState(valeur.toFixed(2));
-  useEffect(() => setTexte(valeur.toFixed(2)), [valeur]);
-  const valider = () => {
-    const nombre = Number(texte.replace(",", "."));
-    if (Number.isFinite(nombre)) surChangement(Math.round(nombre * 100) / 100);
-    else setTexte(valeur.toFixed(2));
-  };
-  return (
-    <input
-      className="champ-temps"
-      type="number"
-      step={pas}
-      value={texte}
-      disabled={!actif}
-      onChange={(evenement) => setTexte(evenement.target.value)}
-      onBlur={valider}
-      onKeyDown={(evenement) => {
-        if (evenement.key === "Enter") valider();
-      }}
-    />
-  );
-}
+const LIBELLES_TRANSITION: Record<Transition, string> = { coupe: "coupe", flash: "flash blanc", fondu: "fondu du noir" };
 
 function Problemes({ problemes, perimes }: { problemes: ProblemePlan[]; perimes: boolean }) {
   const erreurs = problemes.filter((probleme) => probleme.niveau === "erreur");
@@ -72,10 +54,11 @@ interface ProprietesEditeur {
   version: VersionPlan;
   initial: PlanMontage;
   proxies: Map<string, string>;
+  bibliotheque: ElementBibliotheque[];
   surEnregistrement: (version: VersionPlan) => void;
 }
 
-export function EditeurPlan({ projet, version, initial, proxies, surEnregistrement }: ProprietesEditeur) {
+export function EditeurPlan({ projet, version, initial, proxies, bibliotheque, surEnregistrement }: ProprietesEditeur) {
   const [plan, setPlan] = useState<PlanMontage>(initial);
   const [problemes, setProblemes] = useState(version.problemes);
   const [modifie, setModifie] = useState(false);
@@ -154,6 +137,12 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
   }
 
   const position = () => lecteur.current?.currentTime ?? 0;
+  const positionVideo = () => {
+    const instant = position();
+    const index = plan.segments.findIndex((segment) => segment.source === passage?.source && instant >= segment.debut && instant <= segment.fin);
+    const segment = plan.segments[index];
+    return segment === undefined ? 0 : (debutsTimeline[index] ?? 0) + instant - segment.debut;
+  };
   const ratioSortie = estCategorieVerticale(projet.metadata.categorie) ? 9 / 16 : 16 / 9;
   const cadrageAffiche =
     cadrageOuvert === null
@@ -323,13 +312,24 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
                   </span>
                 </td>
                 <td>
-                  {index === 0 ? (
-                    <span className="note">—</span>
-                  ) : (
+                  <select
+                    className="choix-transition"
+                    title="Entrée dans ce segment"
+                    value={segment.transition}
+                    disabled={!editable}
+                    onChange={(evenement) => changerSegment(index, { transition: evenement.target.value as Transition })}
+                  >
+                    {TRANSITIONS.map((transition) => (
+                      <option key={transition} value={transition}>
+                        {LIBELLES_TRANSITION[transition]}
+                      </option>
+                    ))}
+                  </select>
+                  {index > 0 && (
                     <label className="note decalage" title="Négatif : l'image arrive en avance sous la fin du son précédent. Positif : l'image précédente reste.">
                       <ChampTemps actif={editable} pas={0.1} valeur={segment.decalageImage} surChangement={(decalageImage) => changerSegment(index, { decalageImage })} /> s
                       <br />
-                      {segment.decalageImage < 0 ? "en avance" : segment.decalageImage > 0 ? "en retard" : "coupe franche"}
+                      {segment.decalageImage < 0 ? "en avance" : segment.decalageImage > 0 ? "en retard" : "sans décalage"}
                     </label>
                   )}
                 </td>
@@ -463,6 +463,8 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
         <input type="checkbox" checked={plan.sousTitres} disabled={!editable} onChange={(evenement) => changer((copie) => ({ ...copie, sousTitres: evenement.target.checked }))} />{" "}
         <strong>Sous-titres incrustés</strong> <span className="note">mot à mot, avec le style des Paramètres → Sous-titres (police de ta bibliothèque)</span>
       </label>
+
+      <Habillage plan={plan} editable={editable} bibliotheque={bibliotheque} positionVideo={positionVideo} changer={changer} />
 
       {plan.musiques.length > 0 && (
         <>

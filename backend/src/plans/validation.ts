@@ -1,4 +1,4 @@
-import { dureePlan, plagesImage, type AssetBibliotheque, type Cadrage, type GenreFichier, type ProblemePlan, type PropositionPlan } from "@editeur/shared";
+import { dureePlan, plagesImage, type AssetBibliotheque, type Cadrage, type GenreFichier, type OrigineMusique, type ProblemePlan, type PropositionPlan } from "@editeur/shared";
 
 export interface MediaProjet {
   genre: GenreFichier;
@@ -25,6 +25,7 @@ const SEGMENT_COURT = 0.3;
 const ECART_DUREE = 0.25;
 const DOSSIERS_EXCLUS = ["travail/", "versions/", "exports/", "autorisation/"];
 const TYPES_MUSIQUE = new Set(["musique", "ambiance"]);
+const TYPES_BRUITAGE = new Set(["son", "ambiance"]);
 
 function temps(secondes: number): string {
   const minutes = Math.floor(secondes / 60);
@@ -133,24 +134,40 @@ export function validerPlan(plan: PropositionPlan, sources: SourcesPlan): Proble
       erreur(`${nom} : dépasse la fin de la vidéo finale (${temps(total)}).`);
     }
   });
+  const verifierAudio = (origine: OrigineMusique, nom: string, libelle: string, types: Set<string>) => {
+    if (origine === "projet") {
+      const media = utilisable(nom) ? sources.medias.get(nom) : undefined;
+      if (media === undefined || media.genre !== "audio") erreur(`${libelle} introuvable dans le projet : ${nom}.`);
+      return;
+    }
+    const disponible = sources.assets.get(nom);
+    if (disponible === undefined || !types.has(disponible.asset.type)) {
+      erreur(`${libelle} introuvable dans la bibliothèque : ${nom}.`);
+    } else if (!disponible.valide) {
+      erreur(`L'asset ${nom} est à vérifier dans la bibliothèque (fichier ou accord d'artiste).`);
+    } else if (!sources.assetsChoisis.includes(nom)) {
+      avertissement(`L'asset ${nom} n'est pas dans les assets choisis pour ce projet.`);
+    }
+  };
   for (const musique of plan.musiques) {
     const nom = musique.reference;
-    if (musique.origine === "projet") {
-      const media = utilisable(nom) ? sources.medias.get(nom) : undefined;
-      if (media === undefined || media.genre !== "audio") erreur(`Musique introuvable dans le projet : ${nom}.`);
-    } else {
-      const disponible = sources.assets.get(nom);
-      if (disponible === undefined || !TYPES_MUSIQUE.has(disponible.asset.type)) {
-        erreur(`Musique introuvable dans la bibliothèque : ${nom}.`);
-      } else if (!disponible.valide) {
-        erreur(`L'asset ${nom} est à vérifier dans la bibliothèque (fichier ou accord d'artiste).`);
-      } else if (!sources.assetsChoisis.includes(nom)) {
-        avertissement(`L'asset ${nom} n'est pas dans les assets choisis pour ce projet.`);
-      }
-    }
+    verifierAudio(musique.origine, nom, "Musique", TYPES_MUSIQUE);
     if (musique.fin !== null && musique.fin <= musique.debut) erreur(`La musique ${nom} finit avant de commencer.`);
     if (plan.segments.length > 0 && musique.debut >= total) erreur(`La musique ${nom} commence après la fin de la vidéo.`);
   }
+
+  for (const bruitage of plan.bruitages) {
+    verifierAudio(bruitage.origine, bruitage.reference, "Bruitage", TYPES_BRUITAGE);
+    if (plan.segments.length > 0 && bruitage.position >= total) erreur(`Le bruitage ${bruitage.reference} tombe après la fin de la vidéo.`);
+  }
+  plan.textes.forEach((texte, index) => {
+    const nom = `Texte ${index + 1} (« ${texte.texte} »)`;
+    if (texte.texte.trim() === "") erreur(`Texte ${index + 1} : le texte est vide.`);
+    if (texte.fin <= texte.debut) erreur(`${nom} : la fin doit venir après le début.`);
+    else if (plan.segments.length > 0 && texte.debut >= total) erreur(`${nom} : commence après la fin de la vidéo.`);
+    else if (plan.segments.length > 0 && texte.fin > total + TOLERANCE_FIN) avertissement(`${nom} : dépasse la fin de la vidéo, il sera coupé.`);
+    if (texte.position === "bas" && plan.sousTitres) avertissement(`${nom} : en bas, il risque de chevaucher les sous-titres.`);
+  });
 
   const visee = sources.dureeViseeSecondes;
   if (visee !== null && plan.segments.length > 0 && Math.abs(total - visee) > visee * ECART_DUREE) {

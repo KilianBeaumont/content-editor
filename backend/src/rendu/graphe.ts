@@ -1,4 +1,4 @@
-import { estCategorieVerticale, plagesImage, type Cadrage, type Categorie, type EtatCadre, type SegmentPlan } from "@editeur/shared";
+import { estCategorieVerticale, plagesImage, type Cadrage, type Categorie, type EtatCadre, type SegmentPlan, type Transition } from "@editeur/shared";
 import { z } from "zod";
 import type { Encodeur } from "../media/capacites.ts";
 
@@ -6,6 +6,8 @@ export const IMAGES_PAR_SECONDE_APERCU = 30;
 export const LOUDNESS_APERCU = -14;
 export const CRETE_MAX = -1;
 const FONDU_AUDIO = 0.03;
+const DUREE_FLASH = 0.15;
+const DUREE_FONDU = 0.3;
 const TRANSFERTS_HDR = new Set(["arib-std-b67", "smpte2084"]);
 
 export interface FormatRendu {
@@ -238,6 +240,12 @@ export function encodageFinal(encodeur: Encodeur, format: FormatRendu, ips: numb
   return ["-c:v", "libx264", "-preset", "medium", "-crf", "18", ...plafond, ...commun];
 }
 
+export function filtreTransition(transition: Transition): string {
+  if (transition === "flash") return `,setpts=PTS-STARTPTS,fade=t=in:st=0:d=${s(DUREE_FLASH)}:color=white`;
+  if (transition === "fondu") return `,setpts=PTS-STARTPTS,fade=t=in:st=0:d=${s(DUREE_FONDU)}`;
+  return "";
+}
+
 export function argumentsClipVideo(
   source: SourceImage | null,
   debut: number,
@@ -246,12 +254,13 @@ export function argumentsClipVideo(
   encodage: string[],
   cible: string,
   cadrage: Cadrage | null = null,
+  transition: Transition = "coupe",
 ): string[] {
   const { largeur, hauteur } = profil.format;
   const entree =
     source === null
       ? ["-f", "lavfi", "-i", `color=black:s=${largeur}x${hauteur}:r=${profil.ips}${profil.hdr ? ",format=yuv420p10le" : ""}`]
-      : [...peripheriqueImage(profil), ...optionsEntreeImage(profil), "-ss", s(debut), "-i", source.chemin, "-an", "-vf", `${filtreImage(profil, source, cadrage, images / profil.ips)},tpad=stop_mode=clone:stop_duration=5`];
+      : [...peripheriqueImage(profil), ...optionsEntreeImage(profil), "-ss", s(debut), "-i", source.chemin, "-an", "-vf", `${filtreImage(profil, source, cadrage, images / profil.ips)}${filtreTransition(transition)},tpad=stop_mode=clone:stop_duration=5`];
   return [...entree, "-frames:v", String(images), ...encodage, cible];
 }
 
@@ -295,6 +304,12 @@ export interface MusiqueRendu {
   baisseSousVoix: boolean;
 }
 
+export interface BruitageRendu {
+  source: string;
+  position: number;
+  volumeDb: number;
+}
+
 export interface Graphe {
   entrees: string[];
   filtre: string;
@@ -302,7 +317,7 @@ export interface Graphe {
 
 const STEREO = "aformat=sample_rates=48000:channel_layouts=stereo";
 
-export function grapheAudio(total: number, musiques: MusiqueRendu[]): Graphe {
+export function grapheAudio(total: number, musiques: MusiqueRendu[], bruitages: BruitageRendu[] = []): Graphe {
   const entrees: string[] = [];
   const filtres: string[] = [];
   const ducking = musiques.filter((musique) => musique.baisseSousVoix).length;
@@ -324,6 +339,11 @@ export function grapheAudio(total: number, musiques: MusiqueRendu[]): Graphe {
         : `[m${index}r]anull[m${index}]`,
     );
     pistes.push(`[m${index}]`);
+  });
+  bruitages.forEach((bruitage, index) => {
+    entrees.push("-i", bruitage.source);
+    filtres.push(`[${1 + musiques.length + index}:a]${STEREO},volume=${s(bruitage.volumeDb)}dB,adelay=${Math.round(bruitage.position * 1000)}:all=1[b${index}]`);
+    pistes.push(`[b${index}]`);
   });
   filtres.push(pistes.length > 1 ? `${pistes.join("")}amix=inputs=${pistes.length}:normalize=0:duration=first[a]` : "[voix]anull[a]");
   return { entrees, filtre: filtres.join(";") };

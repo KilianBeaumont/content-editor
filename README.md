@@ -68,7 +68,7 @@ Phase 4 (export final).
 | 4.4 | Rangement dans `exports/` et description prête à copier avec les crédits | ✅ |
 | 4.5 | Onglet Export du projet et écran Exports (fichiers prêts par plateforme, « publié ») | ✅ |
 
-Phase 5 (formats courts), en cours.
+Phase 5 (formats courts), terminée.
 
 | Étape | Contenu | État |
 | --- | --- | --- |
@@ -77,7 +77,7 @@ Phase 5 (formats courts), en cours.
 | 5.3 | Cadrage par segment (recadré, fond flou), zoom progressif, panoramique et zoom brusque « loupe » | ✅ |
 | 5.4 | Sous-titres mot à mot avec tes polices (style dans Paramètres, activés par plan) | ✅ |
 | 5.5 | Extraits d'une vidéo longue : proposés et notés par Claude, bornes recalées, chacun devient un projet format court lié | ✅ |
-| 5.6 | Export 1080x1920 et finitions | à venir |
+| 5.6 | Finitions : styles de sous-titres (surlignage, bandeau, accroche XXL), textes à l'écran, transitions flash et fondu, bruitages, fins en boucle | ✅ |
 
 Les phases suivantes (podcast, statistiques) viendront après.
 
@@ -338,13 +338,27 @@ La colonne **Cadre** de l'éditeur indique le cadrage de chaque segment (et de c
 ### Sous-titres incrustés
 
 Des sous-titres mot à mot, groupés par deux ou trois mots, avec le mot prononcé surligné.
-1. **Une fois** : ajoute ta police à la **Bibliothèque** (type **Police**, fichier TTF, OTF ou TTC), puis **Paramètres** → Réglages communs → **Sous-titres incrustés** : choisis la police, la taille (en % de la hauteur), le nombre de mots à la fois, la position (en % depuis le haut ; 60 à 75 % pour un format court, loin des boutons des applis), le contour, les couleurs du texte et du mot prononcé, majuscules ou non. **Enregistrer**.
+1. **Une fois** : ajoute ta police à la **Bibliothèque** (type **Police**, fichier TTF, OTF ou TTC), puis **Paramètres** → Réglages communs → **Sous-titres incrustés** : choisis la police, la taille (en % de la hauteur), le nombre de mots à la fois, la position (en % depuis le haut ; 60 à 75 % pour un format court, loin des boutons des applis), le contour, les couleurs du texte et du mot prononcé, majuscules ou non. Trois styles se combinent :
+   - **Surligner le mot prononcé** (coché par défaut) : le mot dit prend la couleur d'accent ; décoché, le groupe de mots s'affiche d'un bloc, plus sobre.
+   - **Bandeau sombre** : un fond noir semi-transparent derrière le texte, lisible sur n'importe quelle image.
+   - **Accroche XXL** : pendant les 2,5 premières secondes, un mot à la fois, en très grand au centre, avec un effet « pop » ; les sous-titres normaux prennent le relais ensuite.
+
+   **Enregistrer**.
 2. **Dans chaque plan** : case **Sous-titres incrustés** de l'éditeur. Claude la coche d'office pour les formats courts.
 3. L'aperçu et l'export incrustent les sous-titres.
 
 Le texte vient des transcriptions des rushes, **avec tes corrections** (onglet Analyse) : corrige une transcription avant de rendre si un mot est faux. Les hésitations (« euh », « hum ») sont retirées automatiquement, et les mots suivent exactement la ligne de temps du montage.
 
 L'aperçu et l'export appliquent le cadrage (à partir des proxys pour l'aperçu, des rushes d'origine en pleine qualité pour l'export).
+
+### Transitions, textes à l'écran et bruitages
+
+Claude les propose d'après le guide de style et les références d'inspiration (avec mesure) ; tu les ajustes dans l'éditeur du plan :
+- **Transition** (menu en haut de la colonne **Image** de chaque segment) : **coupe** (par défaut), **flash blanc** (0,15 s, pour un temps fort ou une révélation) ou **fondu du noir** (0,3 s, pour une ouverture ou un changement de lieu).
+- **Textes à l'écran** : un titre ou un mot fort, avec la police des sous-titres. Pour chacun : le texte, le début et la fin dans la vidéo finale (en secondes), la place (haut, centre, bas), la taille (en % de la hauteur), la couleur (décochée : couleur d'accent des sous-titres) et l'apparition (pop, fondu, sans effet). **+ Texte à la position du lecteur** en ajoute un à l'instant où le lecteur est arrêté (lis d'abord un segment avec ▶). En bas, un texte risque de chevaucher les sous-titres : l'outil le signale.
+- **Bruitages** : un son ponctuel de la bibliothèque (type **Son ponctuel**, ou **Ambiance**) posé à un instant de la vidéo finale, avec son volume. Choisis le son dans la liste, puis **+ Bruitage à la position du lecteur**. Il faut d'abord ajouter tes whoosh, pop et impacts à la Bibliothèque.
+
+Pour un format court, Claude cherche aussi une **fin en boucle** : une dernière phrase qui s'enchaîne avec la première, pour que la vidéo reparte sans qu'on le remarque. Il l'explique dans la stratégie du plan.
 
 Quand tout est bon : **Valider le plan** (impossible tant qu'il reste une erreur en rouge). Le plan validé ne se modifie plus ; **Repasser en brouillon** le rend modifiable tant que l'aperçu n'a pas été rendu. L'aperçu se lance depuis le plan validé (voir ci-dessous).
 
@@ -562,7 +576,10 @@ Pour une vidéo verticale pensée pour TikTok, Reels et Shorts dès le tournage 
 | « Consignes introuvables : .claude/skills/analyser-inspiration/SKILL.md » | Le dépôt est incomplet : le mettre à jour (`git pull`) |
 | « Valide d'abord une version de la vidéo longue » (extraits) | Les extraits sont tirés de la version validée : onglet **4. Aperçu**, valider une version |
 | « Cet extrait a déjà son projet » | Ouvre-le avec **Ouvrir le format court**, ou propose d'autres extraits |
-| « Choisis la police des sous-titres : Paramètres → Sous-titres » | Ajoute ta police à la Bibliothèque (type Police), puis choisis-la dans Paramètres → Sous-titres incrustés ; ou décoche **Sous-titres incrustés** dans le plan |
+| « Choisis la police des sous-titres et des textes à l'écran : Paramètres → Sous-titres » | Ajoute ta police à la Bibliothèque (type Police), puis choisis-la dans Paramètres → Sous-titres incrustés ; ou décoche **Sous-titres incrustés** et retire les textes à l'écran du plan |
+| « Bruitage introuvable dans la bibliothèque : … » | Le son n'existe plus ou n'est pas de type Son ponctuel ou Ambiance : le corriger dans la Bibliothèque, ou retirer le bruitage du plan |
+| « Le bruitage … tombe après la fin de la vidéo » ou « Texte … : commence après la fin de la vidéo » | Les instants sont comptés dans la vidéo finale : avancer le bruitage ou le texte, ou le retirer |
+| Le bouton **+ Bruitage à la position du lecteur** n'apparaît pas | Aucun son dans la Bibliothèque : ajouter un asset de type **Son ponctuel** (whoosh, pop, impact) |
 | « La police des sous-titres doit être un fichier .ttf, .otf, .ttc » ou « Impossible de lire le nom de la police » | Utilise une police TTF ou OTF classique (les WOFF des sites web ne conviennent pas) |
 | « Ce ffmpeg ne sait pas encoder en HEVC 10 bits » | Installer une version complète de ffmpeg (avec libx265), ou exporter en SDR |
 | « Le HDR n'est possible que pour YouTube, avec des rushes filmés en HDR » | Exporter en SDR : les rushes de la version validée ne sont pas en HDR |
