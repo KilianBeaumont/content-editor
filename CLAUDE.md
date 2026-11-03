@@ -511,3 +511,7 @@ Dépôts étudiés (clonés dans `../inspiration`). L'étude complète, avec ce 
 
 - **Ordre après la phase 1** : pour obtenir une première vidéo montée au plus vite, la phase 2 commence par la file de tâches, whisper.cpp et la transcription des rushes, puis on passe à la phase 3 (plan, aperçu, commentaires) pour un vlog. L'écran Guides et l'analyse des vidéos d'inspiration viennent ensuite ; d'ici là, `style.md` et `hooks.md` se modifient à la main.
 - **whisper.cpp sur le PC** : installé dans un dossier `outils/` hors du dépôt, version CUDA pour la RTX 5060 ; sur le Mac, via Homebrew (Metal).
+- **Phase 3, pour un vlog d'abord** (rendu ffmpeg seul) ; les textes à l'écran et les composants Remotion viennent après la première boucle complète plan → aperçu → commentaires → v2.
+- **Repérer les moments forts** : deux moyens complémentaires. L'utilisateur peut marquer lui-même des moments dans le lecteur, et l'outil propose aussi une détection automatique (pics sonores + planches d'images lues par Claude) pour monter vite une courte vidéo sans tout regarder.
+- **Guides de style** : `style.md` et `hooks.md` sont écrits par l'utilisateur, qui donne la direction ; l'outil ne les rédige pas.
+- **Vidéo de test de la phase 3** : un vlog court fourni par l'utilisateur (pas la partie Valorant de 38 min).

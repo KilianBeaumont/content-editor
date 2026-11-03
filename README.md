@@ -42,8 +42,21 @@ Phase 2 (analyse), en cours. Pour obtenir une première vidéo au plus vite, on 
 | 2.2 | whisper.cpp : modèle, téléchargement, essai | ✅ |
 | 2.3 | Transcription des rushes d'un projet | ✅ |
 | 2.3 bis | Fiabilité de la transcription : détection de la parole, vocabulaire, correction à la main | ✅ |
-| Phase 3 | Plan de montage par Claude, aperçu, commentaires | à venir |
-| 2.4 à 2.6 | Écran Guides et analyse des vidéos d'inspiration | à venir |
+| 2.4 à 2.6 | Écran Guides et analyse des vidéos d'inspiration | après la phase 3 |
+
+Phase 3 (plan de montage et aperçu), pour un vlog d'abord.
+
+| Étape | Contenu | État |
+| --- | --- | --- |
+| 3.1 | Préparation pour Claude : transcriptions compactes, pics sonores, planches d'images, repères posés à la main | à venir |
+| 3.2 | Contrat `plan.json` et validation | à venir |
+| 3.3 | Appel de Claude depuis le backend (`claude -p`, sessions, limites) | à venir |
+| 3.4 | Skill `proposer-plan` | à venir |
+| 3.5 | Écran Plan : relire, ajuster, valider | à venir |
+| 3.6 | Rendu de l'aperçu basse résolution | à venir |
+| 3.7 | Lecteur et commentaires horodatés | à venir |
+| 3.8 | Boucle de versions (`integrer-retours`) et validation | à venir |
+| 3.9 | Textes à l'écran et composants animés (Remotion) | après la première boucle |
 
 Les phases suivantes (exports, formats courts, podcast, statistiques) viendront après.
 
