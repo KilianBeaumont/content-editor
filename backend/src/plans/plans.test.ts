@@ -31,7 +31,7 @@ const VLOG: SaisieProjet = {
 const PROPOSITION: PropositionPlan = {
   resume: "Une journée racontée en trois temps.",
   hook: { segment: "s1", explication: "La blague du chat ouvre la vidéo." },
-  segments: [{ id: "s1", source: "rushes/matin.mp4", debut: 1, fin: 4, role: "accroche", citation: "Bonjour", raison: "Ça démarre fort.", decalageImage: 0 }],
+  segments: [{ id: "s1", source: "rushes/matin.mp4", debut: 1, fin: 4, role: "accroche", citation: "Bonjour", raison: "Ça démarre fort.", decalageImage: 0, cadrage: null }],
   plansDeCoupe: [],
   musiques: [],
   pointsAVerifier: [],
@@ -191,11 +191,11 @@ describe("plans de montage", () => {
   it("enregistre les modifications à la main, valide le plan et le repasse en brouillon", async () => {
     await enregistrerProposition(dossier, PROPOSITION, new Date("2026-11-03T10:00:00Z"));
     const url = `/api/projets/${id}/plans/v1`;
-    const segments = [{ ...PROPOSITION.segments[0], fin: 5 }, { ...PROPOSITION.segments[0], id: "s2", debut: 10, fin: 12, decalageImage: -0.5 }];
+    const segments = [{ ...PROPOSITION.segments[0], fin: 5 }, { ...PROPOSITION.segments[0], id: "s2", debut: 10, fin: 12, decalageImage: -0.5, cadrage: null }];
 
     const modifie = await env.app.inject({ method: "PUT", url, payload: { ...PROPOSITION, segments } });
     expect(modifie.statusCode).toBe(200);
-    expect(modifie.json<VersionPlan>().plan).toMatchObject({ statut: "propose", creeLe: "2026-11-03T10:00:00.000Z", segments: [{ fin: 5 }, { decalageImage: -0.5 }] });
+    expect(modifie.json<VersionPlan>().plan).toMatchObject({ statut: "propose", creeLe: "2026-11-03T10:00:00.000Z", segments: [{ fin: 5 }, { decalageImage: -0.5, cadrage: null }] });
     expect(modifie.json<VersionPlan>().plan?.modifieLe).not.toBeNull();
     expect((await env.app.inject({ method: "PUT", url, payload: { ...PROPOSITION, segments: [{ id: "x" }] } })).statusCode).toBe(400);
 

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { validerPlan, type SourcesPlan } from "./validation.ts";
 
 function segment(id: string, debut: number, fin: number, source = "rushes/a.mp4"): SegmentPlan {
-  return { id, source, debut, fin, role: "moment fort", citation: "", raison: "", decalageImage: 0 };
+  return { id, source, debut, fin, role: "moment fort", citation: "", raison: "", decalageImage: 0, cadrage: null };
 }
 
 function plan(changement: Partial<PropositionPlan> = {}): PropositionPlan {
@@ -132,7 +132,7 @@ describe("validerPlan", () => {
 
 describe("décalages d'image et plans de coupe", () => {
   it("calcule les plages d'image : en avance (négatif) ou en retard (positif) sur le son", () => {
-    const segments = [segment("s1", 10, 20), { ...segment("s2", 30, 40), decalageImage: -1.5 }, { ...segment("s3", 50, 55), decalageImage: 0.5 }];
+    const segments = [segment("s1", 10, 20), { ...segment("s2", 30, 40), decalageImage: -1.5, cadrage: null }, { ...segment("s3", 50, 55), decalageImage: 0.5, cadrage: null }];
     expect(plagesImage(segments)).toEqual([
       { debut: 10, fin: 18.5 },
       { debut: 28.5, fin: 40.5 },
@@ -141,15 +141,15 @@ describe("décalages d'image et plans de coupe", () => {
   });
 
   it("accepte des décalages possibles et refuse les autres", () => {
-    expect(validerPlan(plan({ segments: [segment("s1", 0, 10), { ...segment("s2", 20, 30), decalageImage: -2 }] }), sources())).toEqual([]);
+    expect(validerPlan(plan({ segments: [segment("s1", 0, 10), { ...segment("s2", 20, 30), decalageImage: -2, cadrage: null }] }), sources())).toEqual([]);
     const problemes = validerPlan(
       plan({
         segments: [
-          { ...segment("s1", 0, 10), decalageImage: 1 },
-          { ...segment("s2", 0.5, 5), decalageImage: -1 },
-          { ...segment("s3", 20, 21), decalageImage: 2 },
+          { ...segment("s1", 0, 10), decalageImage: 1, cadrage: null },
+          { ...segment("s2", 0.5, 5), decalageImage: -1, cadrage: null },
+          { ...segment("s3", 20, 21), decalageImage: 2, cadrage: null },
           { ...segment("s4", 50, 59.9) },
-          { ...segment("s5", 30, 31), decalageImage: 0.5 },
+          { ...segment("s5", 30, 31), decalageImage: 0.5, cadrage: null },
         ],
       }),
       sources(),
@@ -164,7 +164,7 @@ describe("décalages d'image et plans de coupe", () => {
   });
 
   it("vérifie les plans de coupe : vidéo du projet, bornes et place dans la vidéo finale", () => {
-    const coupe = { source: "rushes/a.mp4", debut: 40, fin: 42, position: 3, raison: "" };
+    const coupe = { source: "rushes/a.mp4", debut: 40, fin: 42, position: 3, raison: "", cadrage: null };
     expect(validerPlan(plan({ plansDeCoupe: [coupe] }), sources())).toEqual([]);
     const problemes = validerPlan(
       plan({
@@ -183,6 +183,19 @@ describe("décalages d'image et plans de coupe", () => {
       "erreur - Plan de coupe 3 : la fin dépasse la durée de la vidéo (1:00,0).",
       "erreur - Plan de coupe 4 : dépasse la fin de la vidéo finale (0:20,0).",
     ]);
+  });
+});
+
+describe("cadrage et orientation", () => {
+  it("prévient des bandes noires quand l'orientation change sans cadrage", () => {
+    const medias = new Map([["rushes/a.mp4", { genre: "video" as const, duree: 60, largeur: 1920, hauteur: 1080 }]]);
+    const vertical = sources({ medias, formatVertical: true });
+    expect(messages(validerPlan(plan({ segments: [segment("s1", 0, 10)] }), vertical))).toEqual([
+      "avertissement s1 Image horizontale dans une vidéo verticale, sans cadrage : bandes noires en haut et en bas. Ajoute un cadrage (recadré ou fond flou).",
+    ]);
+    const recadre = { ...segment("s1", 0, 10), cadrage: { mode: "recadre" as const, debut: { x: 0.5, y: 0.5, zoom: 1 }, fin: null } };
+    expect(validerPlan(plan({ segments: [recadre] }), vertical)).toEqual([]);
+    expect(validerPlan(plan({ segments: [segment("s1", 0, 10)] }), sources({ medias, formatVertical: false }))).toEqual([]);
   });
 });
 

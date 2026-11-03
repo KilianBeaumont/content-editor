@@ -1434,3 +1434,60 @@ input[type="file"] {
   font-size: 0.9rem;
   margin-top: 8px;
 }
+
+.video-cadree {
+  position: relative;
+}
+
+.video-cadree video {
+  display: block;
+  width: 100%;
+  border-radius: 6px;
+  background: #000;
+}
+
+.cadre-video {
+  position: absolute;
+  border: 2px solid #ffd43b;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.cadre-video-fin {
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.lecteur-plan .video-cadree {
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.ligne-cadrage td {
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+
+.controles-cadrage {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.etats-cadre {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.etat-cadre {
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+.curseur-cadrage {
+  display: grid;
+  grid-template-columns: 7.5em 160px 3em;
+  align-items: center;
+  gap: 8px;
+}

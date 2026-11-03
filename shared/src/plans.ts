@@ -6,6 +6,40 @@ export type OrigineMusique = (typeof ORIGINES_MUSIQUE)[number];
 export const STATUTS_PLAN = ["propose", "valide"] as const;
 export type StatutPlan = (typeof STATUTS_PLAN)[number];
 
+export const MODES_CADRAGE = ["recadre", "fond-flou"] as const;
+export type ModeCadrage = (typeof MODES_CADRAGE)[number];
+
+export interface EtatCadre {
+  x: number;
+  y: number;
+  zoom: number;
+}
+
+export interface Cadrage {
+  mode: ModeCadrage;
+  debut: EtatCadre;
+  fin: EtatCadre | null;
+}
+
+export interface Rectangle {
+  gauche: number;
+  haut: number;
+  largeur: number;
+  hauteur: number;
+}
+
+export function rectangleCadre(ratioSource: number, ratioSortie: number, etat: EtatCadre): Rectangle {
+  const base = ratioSource > ratioSortie ? { largeur: ratioSortie / ratioSource, hauteur: 1 } : { largeur: 1, hauteur: ratioSource / ratioSortie };
+  const largeur = base.largeur / etat.zoom;
+  const hauteur = base.hauteur / etat.zoom;
+  return {
+    gauche: Math.min(1 - largeur, Math.max(0, etat.x - largeur / 2)),
+    haut: Math.min(1 - hauteur, Math.max(0, etat.y - hauteur / 2)),
+    largeur,
+    hauteur,
+  };
+}
+
 export interface SegmentPlan {
   id: string;
   source: string;
@@ -15,6 +49,7 @@ export interface SegmentPlan {
   citation: string;
   raison: string;
   decalageImage: number;
+  cadrage: Cadrage | null;
 }
 
 export interface PlanDeCoupe {
@@ -23,6 +58,7 @@ export interface PlanDeCoupe {
   fin: number;
   position: number;
   raison: string;
+  cadrage: Cadrage | null;
 }
 
 export interface MusiquePlan {
@@ -175,6 +211,22 @@ export function dureePlan(plan: Pick<PropositionPlan, "segments">): number {
 
 const texte = (max: number) => z.string().max(max);
 
+const schemaEtatCadre = z.object({
+  x: z.number().min(0).max(1).describe("Centre horizontal de la fenêtre dans l'image source : 0 bord gauche, 0,5 milieu, 1 bord droit."),
+  y: z.number().min(0).max(1).describe("Centre vertical de la fenêtre : 0 haut, 0,5 milieu, 1 bas."),
+  zoom: z.number().min(1).max(4).describe("1 : la plus grande fenêtre aux proportions de la vidéo finale ; 1,5 : 1,5 fois plus près ; jusqu'à 4."),
+});
+
+export const schemaCadrage = z
+  .object({
+    mode: z.enum(MODES_CADRAGE).describe("recadre : une fenêtre de l'image remplit l'écran ; fond-flou : l'image entière sur un fond flou (debut et fin ignorés)."),
+    debut: schemaEtatCadre.describe("La fenêtre au début du segment."),
+    fin: schemaEtatCadre.nullable().describe("La fenêtre à la fin du segment pour un mouvement progressif (zoom, panoramique), ou null pour un cadre fixe."),
+  })
+  .nullable()
+  .default(null)
+  .describe("Cadrage de l'image. null : l'image entière, avec des bandes noires si ses proportions diffèrent de la vidéo finale.");
+
 export const schemaPropositionPlan = z.object({
   resume: texte(3000).describe("La stratégie de montage en quelques phrases, lisible par l'utilisateur."),
   hook: z.object({
@@ -191,6 +243,7 @@ export const schemaPropositionPlan = z.object({
         role: texte(60).describe("Rôle dans la structure : accroche, mise en place, moment fort, transition, conclusion…"),
         citation: texte(1000).describe("Ce qui est dit pendant le segment, tiré de la transcription (vide s'il n'y a pas de parole)."),
         raison: texte(1000).describe("Pourquoi ce passage est gardé à cet endroit."),
+        cadrage: schemaCadrage,
         decalageImage: z
           .number()
           .min(-5)
@@ -210,6 +263,7 @@ export const schemaPropositionPlan = z.object({
         fin: z.number().min(0).describe("Fin de l'image empruntée, en secondes dans cette vidéo."),
         position: z.number().min(0).describe("Instant de la vidéo finale où l'image apparaît, en secondes."),
         raison: texte(500),
+        cadrage: schemaCadrage,
       }),
     )
     .default([])

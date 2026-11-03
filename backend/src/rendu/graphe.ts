@@ -1,4 +1,4 @@
-import { estCategorieVerticale, plagesImage, type Categorie, type SegmentPlan } from "@editeur/shared";
+import { estCategorieVerticale, plagesImage, type Cadrage, type Categorie, type EtatCadre, type SegmentPlan } from "@editeur/shared";
 import { z } from "zod";
 import type { Encodeur } from "../media/capacites.ts";
 
@@ -64,6 +64,8 @@ export interface ProfilImage {
 export interface SourceImage {
   chemin: string;
   transfert: string | null;
+  largeur: number | null;
+  hauteur: number | null;
 }
 
 export function estTransfertHdr(transfert: string | null): boolean {
@@ -76,7 +78,7 @@ function filtreHlgClassique(transfert: string | null): string[] {
   return [`zscale=${entree}:t=linear:npl=203`, "format=gbrpf32le", "zscale=p=bt2020:t=arib-std-b67:m=bt2020nc:r=tv"];
 }
 
-export function filtreImage(profil: ProfilImage, transfert: string | null): string {
+function filtreAjuste(profil: ProfilImage, transfert: string | null): string {
   const { largeur: l, hauteur: h } = profil.format;
   const hdr = estTransfertHdr(transfert);
   if (profil.placebo) {
@@ -102,6 +104,74 @@ export function filtreImage(profil: ProfilImage, transfert: string | null): stri
   }
   etapes.push("format=yuv420p", `pad=${l}:${h}:(ow-iw)/2:(oh-ih)/2`, "setsar=1", `fps=${profil.ips}`);
   return etapes.join(",");
+}
+
+function filtresCouleurs(profil: ProfilImage, transfert: string | null): string[] {
+  const hdr = estTransfertHdr(transfert);
+  if (profil.placebo) {
+    const options = profil.hdr
+      ? ["colorspace=bt2020nc", "color_primaries=bt2020", "color_trc=arib-std-b67", "range=tv", "format=yuv420p10le"]
+      : ["colorspace=bt709", "color_primaries=bt709", "color_trc=bt709", "range=tv", "format=yuv420p", ...(hdr ? ["tonemapping=bt.2390"] : [])];
+    return [`libplacebo=${options.join(":")}`];
+  }
+  if (profil.hdr) return [...filtreHlgClassique(transfert), "format=yuv420p10le"];
+  if (!hdr) return ["format=yuv420p"];
+  return [
+    `zscale=tin=${transfert ?? "arib-std-b67"}:min=bt2020nc:pin=bt2020:t=linear:npl=203`,
+    "format=gbrpf32le",
+    "zscale=p=bt709",
+    "tonemap=hable:desat=0",
+    "zscale=t=bt709:m=bt709:r=tv",
+    "format=yuv420p",
+  ];
+}
+
+const pair = (valeur: number) => Math.max(2, Math.round(valeur / 2) * 2);
+
+export function fenetre(source: { largeur: number; hauteur: number }, format: FormatRendu, zoom: number): { largeur: number; hauteur: number } {
+  const ratio = format.largeur / format.hauteur;
+  const base = source.largeur / source.hauteur > ratio ? { largeur: source.hauteur * ratio, hauteur: source.hauteur } : { largeur: source.largeur, hauteur: source.largeur / ratio };
+  return { largeur: Math.min(source.largeur, pair(base.largeur / zoom)), hauteur: Math.min(source.hauteur, pair(base.hauteur / zoom)) };
+}
+
+function progression(variable: string, duree: number): string {
+  const p = `min(1,max(0,${variable}/${s(Math.max(0.04, duree))}))`;
+  return `(3*pow(${p},2)-2*pow(${p},3))`;
+}
+
+function interpole(debut: number, fin: number, variable: string, duree: number): string {
+  return Math.abs(fin - debut) < 0.0005 ? s(debut) : `(${s(debut)}+${s(fin - debut)}*${progression(variable, duree)})`;
+}
+
+function filtresRecadrage(source: { largeur: number; hauteur: number }, profil: ProfilImage, debut: EtatCadre, fin: EtatCadre, duree: number): string[] {
+  const { largeur: l, hauteur: h } = profil.format;
+  const zoomMin = Math.min(debut.zoom, fin.zoom);
+  const cadre = fenetre(source, profil.format, zoomMin);
+  const x = `max(0,min(iw-${cadre.largeur},${interpole(debut.x, fin.x, "t", duree)}*iw-${cadre.largeur / 2}))`;
+  const y = `max(0,min(ih-${cadre.hauteur},${interpole(debut.y, fin.y, "t", duree)}*ih-${cadre.hauteur / 2}))`;
+  const filtres = [`crop=w=${cadre.largeur}:h=${cadre.hauteur}:x='${x}':y='${y}'`];
+  if (Math.abs(debut.zoom - fin.zoom) < 0.0005) return [...filtres, `scale=${l}:${h}:flags=bicubic`];
+  const zoom = interpole(debut.zoom / zoomMin, fin.zoom / zoomMin, "it", duree);
+  return [...filtres, `scale=${l * 2}:${h * 2}:flags=bicubic`, `zoompan=z='${zoom}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${l}x${h}:fps=${profil.ips}`];
+}
+
+function fondFlou(profil: ProfilImage, suffixe: string): string {
+  const { largeur: l, hauteur: h } = profil.format;
+  const [a, b, fond, avant] = ["a", "b", "fond", "avant"].map((nom) => `${nom}${suffixe}`);
+  return [
+    `split[${a}][${b}];[${a}]scale=${l}:${h}:force_original_aspect_ratio=increase,crop=${l}:${h},boxblur=20:2,eq=brightness=-0.08[${fond}]`,
+    `[${b}]scale=${l}:${h}:force_original_aspect_ratio=decrease[${avant}]`,
+    `[${fond}][${avant}]overlay=(W-w)/2:(H-h)/2${profil.hdr ? ":format=yuv420p10" : ""}`,
+  ].join(";");
+}
+
+export function filtreImage(profil: ProfilImage, source: SourceImage, cadrage: Cadrage | null = null, duree = 0, suffixe = ""): string {
+  if (cadrage === null || source.largeur === null || source.hauteur === null) return filtreAjuste(profil, source.transfert);
+  const debut = [...filtresCouleurs(profil, source.transfert), `fps=${profil.ips}`];
+  const format = profil.hdr ? "format=yuv420p10le" : "format=yuv420p";
+  if (cadrage.mode === "fond-flou") return `${debut.join(",")},${fondFlou(profil, suffixe)},setsar=1,${format}`;
+  const dimensions = { largeur: source.largeur, hauteur: source.hauteur };
+  return [...debut, ...filtresRecadrage(dimensions, profil, cadrage.debut, cadrage.fin ?? cadrage.debut, duree), "setsar=1", format].join(",");
 }
 
 export function peripheriqueImage(profil: ProfilImage): string[] {
@@ -175,17 +245,19 @@ export function argumentsClipVideo(
   profil: ProfilImage,
   encodage: string[],
   cible: string,
+  cadrage: Cadrage | null = null,
 ): string[] {
   const { largeur, hauteur } = profil.format;
   const entree =
     source === null
       ? ["-f", "lavfi", "-i", `color=black:s=${largeur}x${hauteur}:r=${profil.ips}${profil.hdr ? ",format=yuv420p10le" : ""}`]
-      : [...peripheriqueImage(profil), ...optionsEntreeImage(profil), "-ss", s(debut), "-i", source.chemin, "-an", "-vf", `${filtreImage(profil, source.transfert)},tpad=stop_mode=clone:stop_duration=5`];
+      : [...peripheriqueImage(profil), ...optionsEntreeImage(profil), "-ss", s(debut), "-i", source.chemin, "-an", "-vf", `${filtreImage(profil, source, cadrage, images / profil.ips)},tpad=stop_mode=clone:stop_duration=5`];
   return [...entree, "-frames:v", String(images), ...encodage, cible];
 }
 
-export function argumentsClipAudio(source: string, debut: number, duree: number, cible: string): string[] {
+export function argumentsClipAudio(source: string, debut: number, duree: number, cible: string, fondus = { entree: true, sortie: true }): string[] {
   const fondu = Math.min(FONDU_AUDIO, duree / 4);
+  const filtres = [`apad=whole_dur=${s(duree)}`, ...(fondus.entree ? [`afade=t=in:d=${s(fondu)}`] : []), ...(fondus.sortie ? [`afade=t=out:st=${s(duree - fondu)}:d=${s(fondu)}`] : [])];
   return [
     "-ss",
     s(debut),
@@ -195,7 +267,7 @@ export function argumentsClipAudio(source: string, debut: number, duree: number,
     source,
     "-vn",
     "-af",
-    `apad=whole_dur=${s(duree)},afade=t=in:d=${s(fondu)},afade=t=out:st=${s(duree - fondu)}:d=${s(fondu)}`,
+    filtres.join(","),
     "-ac",
     "2",
     "-ar",
@@ -211,6 +283,7 @@ export interface CoupeRendu {
   debut: number;
   duree: number;
   position: number;
+  cadrage: Cadrage | null;
 }
 
 export interface MusiqueRendu {
@@ -263,7 +336,7 @@ export function grapheVideo(profil: ProfilImage, coupes: CoupeRendu[], premiereE
   coupes.forEach((coupe, index) => {
     entrees.push(...optionsEntreeImage(profil), "-ss", s(coupe.debut), "-t", s(coupe.duree), "-i", coupe.source.chemin);
     filtres.push(`${video}[v${index}]`);
-    filtres.push(`[${premiereEntree + index}:v]${filtreImage(profil, coupe.source.transfert)},setpts=PTS-STARTPTS+${s(coupe.position)}/TB[c${index}]`);
+    filtres.push(`[${premiereEntree + index}:v]${filtreImage(profil, coupe.source, coupe.cadrage, coupe.duree, `c${index}`)},setpts=PTS-STARTPTS+${s(coupe.position)}/TB[c${index}]`);
     video = `[v${index}][c${index}]overlay=eof_action=pass${profil.hdr ? ":format=yuv420p10" : ""}:enable='between(t,${s(coupe.position)},${s(coupe.position + coupe.duree)})'`;
   });
   filtres.push(`${video}[v]`);

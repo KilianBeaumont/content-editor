@@ -1,8 +1,10 @@
-import { dureePlan, plagesImage, type AssetBibliotheque, type GenreFichier, type ProblemePlan, type PropositionPlan } from "@editeur/shared";
+import { dureePlan, plagesImage, type AssetBibliotheque, type Cadrage, type GenreFichier, type ProblemePlan, type PropositionPlan } from "@editeur/shared";
 
 export interface MediaProjet {
   genre: GenreFichier;
   duree: number | null;
+  largeur?: number | null;
+  hauteur?: number | null;
 }
 
 export interface AssetDisponible {
@@ -15,6 +17,7 @@ export interface SourcesPlan {
   assets: Map<string, AssetDisponible>;
   assetsChoisis: string[];
   dureeViseeSecondes: number | null;
+  formatVertical?: boolean;
 }
 
 const TOLERANCE_FIN = 0.05;
@@ -89,6 +92,24 @@ export function validerPlan(plan: PropositionPlan, sources: SourcesPlan): Proble
     if (media.duree !== null && segment.fin <= media.duree + TOLERANCE_FIN && plage.fin > media.duree + TOLERANCE_FIN) {
       erreur("Avec le décalage du segment suivant, l'image dépasse la fin du rush.", segment.id);
     }
+  });
+
+  const sansCadrage = (source: string, cadrage: Cadrage | null): string | null => {
+    const media = sources.medias.get(source);
+    if (cadrage !== null || media?.genre !== "video" || !media.largeur || !media.hauteur || sources.formatVertical === undefined) return null;
+    const vertical = media.hauteur > media.largeur;
+    if (vertical === sources.formatVertical) return null;
+    return vertical
+      ? "Image verticale dans une vidéo horizontale, sans cadrage : bandes noires sur les côtés."
+      : "Image horizontale dans une vidéo verticale, sans cadrage : bandes noires en haut et en bas. Ajoute un cadrage (recadré ou fond flou).";
+  };
+  for (const segment of plan.segments) {
+    const message = sansCadrage(segment.source, segment.cadrage);
+    if (message !== null) avertissement(message, segment.id);
+  }
+  plan.plansDeCoupe.forEach((coupe, index) => {
+    const message = sansCadrage(coupe.source, coupe.cadrage);
+    if (message !== null) avertissement(`Plan de coupe ${index + 1} : ${message}`);
   });
 
   if (plan.segments.length > 0 && !vus.has(plan.hook.segment)) {

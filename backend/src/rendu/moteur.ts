@@ -1,6 +1,6 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { dureePlan, type PlanMontage } from "@editeur/shared";
+import { dureePlan, type PlanMontage, type SegmentPlan } from "@editeur/shared";
 import { executerFfmpeg } from "../media/ffmpeg.ts";
 import type { OutilsTache } from "../taches/file.ts";
 import {
@@ -35,6 +35,11 @@ export interface EntreesRendu {
 }
 
 const PARTS = { clips: 0.55, melange: 0.6, mesure: 0.65 };
+const CONTIGU = 0.02;
+
+export function segmentsContigus(avant: SegmentPlan | undefined, apres: SegmentPlan | undefined): boolean {
+  return avant !== undefined && apres !== undefined && avant.source === apres.source && Math.abs(apres.debut - avant.fin) <= CONTIGU;
+}
 
 function nomClip(prefixe: string, index: number, extension: string): string {
   return `${prefixe}${String(index + 1).padStart(3, "0")}.${extension}`;
@@ -70,12 +75,13 @@ export async function rendre(
     outils.progression((index / decoupes.length) * PARTS.clips, `Découpe du segment ${segment.id} (${index + 1}/${decoupes.length})`);
     if (decoupe.image.images > 0) {
       const clip = nomClip("v", index, "mp4");
-      const args = argumentsClipVideo(entrees.image(segment.source), decoupe.image.debut, decoupe.image.images, profil.image, profil.encodageClip, join(temporaire, clip));
+      const args = argumentsClipVideo(entrees.image(segment.source), decoupe.image.debut, decoupe.image.images, profil.image, profil.encodageClip, join(temporaire, clip), segment.cadrage);
       await executerFfmpeg(ffmpeg, args, { duree: null, action: "Découpe de l'image" }, outils);
       videos.push(clip);
     }
     const clip = nomClip("a", index, "wav");
-    await executerFfmpeg(ffmpeg, argumentsClipAudio(entrees.son(segment.source), decoupe.audio.debut, decoupe.audio.duree, join(temporaire, clip)), { duree: null, action: "Découpe du son" }, outils);
+    const fondus = { entree: !segmentsContigus(plan.segments[index - 1], segment), sortie: !segmentsContigus(segment, plan.segments[index + 1]) };
+    await executerFfmpeg(ffmpeg, argumentsClipAudio(entrees.son(segment.source), decoupe.audio.debut, decoupe.audio.duree, join(temporaire, clip), fondus), { duree: null, action: "Découpe du son" }, outils);
     audios.push(clip);
   }
   await writeFile(join(temporaire, "videos.txt"), videos.map((nom) => `file '${nom}'`).join("\n"), "utf8");
@@ -101,7 +107,7 @@ export async function rendre(
   outils.progression(PARTS.mesure, "Assemblage final");
   const coupes = plan.plansDeCoupe.flatMap((coupe) => {
     const source = entrees.image(coupe.source);
-    return source === null ? [] : [{ source, debut: coupe.debut, duree: coupe.fin - coupe.debut, position: coupe.position }];
+    return source === null ? [] : [{ source, debut: coupe.debut, duree: coupe.fin - coupe.debut, position: coupe.position, cadrage: coupe.cadrage }];
   });
   const video = grapheVideo(profil.image, coupes, 2);
   await executerFfmpeg(

@@ -125,6 +125,10 @@ export class FileDeTaches {
     this.changer();
   }
 
+  enregistrementsTermines(): Promise<void> {
+    return this.ecriture;
+  }
+
   async attendre(id: string): Promise<Tache> {
     for (;;) {
       const tache = this.trouver(id);

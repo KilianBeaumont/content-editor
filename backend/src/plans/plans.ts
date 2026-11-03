@@ -2,6 +2,7 @@ import { copyFile, mkdir, readdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import {
   cheminPlan,
+  estCategorieVerticale,
   cheminRendu,
   MOTIF_VERSION,
   numeroVersion,
@@ -51,7 +52,13 @@ export async function sourcesPlan(creations: string, projet: Projet, ffprobe: st
   const [{ fichiers }, bibliotheque] = await Promise.all([decrireDossier(dossier, ffprobe), listerBibliotheque(creations)]);
   const minutes = projet.metadata.consignes.dureeViseeMinutes;
   return {
-    medias: new Map(fichiers.map((fichier) => [fichier.chemin, { genre: fichier.genre, duree: fichier.infos?.duree ?? null }])),
+    medias: new Map(
+      fichiers.map((fichier) => [
+        fichier.chemin,
+        { genre: fichier.genre, duree: fichier.infos?.duree ?? null, largeur: fichier.infos?.video?.largeur ?? null, hauteur: fichier.infos?.video?.hauteur ?? null },
+      ]),
+    ),
+    formatVertical: estCategorieVerticale(projet.metadata.categorie),
     assets: new Map(bibliotheque.elements.map(({ asset, statut }) => [asset.id, { asset, valide: statut.valide }])),
     assetsChoisis: projet.metadata.assetsBibliotheque,
     dureeViseeSecondes: minutes === null ? null : minutes * 60,

@@ -102,7 +102,7 @@ async function rushesDuPlan(dossier: string, plan: PlanMontage, ffprobe: string)
     const absolu = cheminSur(dossier, chemin);
     const infos = await sonderMedia(ffprobe, absolu);
     if (infos.video === null) continue;
-    sources.set(chemin, { chemin: absolu, transfert: infos.video.transfert });
+    sources.set(chemin, { chemin: absolu, transfert: infos.video.transfert, largeur: infos.video.largeur, hauteur: infos.video.hauteur });
     cadences.push(infos.video.imagesParSeconde);
     hdr ||= estTransfertHdr(infos.video.transfert);
     if (dimensions === null || infos.video.largeur * infos.video.hauteur > dimensions.largeur * dimensions.hauteur) {

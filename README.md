@@ -73,8 +73,8 @@ Phase 5 (formats courts), en cours.
 | Étape | Contenu | État |
 | --- | --- | --- |
 | 5.1 | Écran Guides : style, accroches, vidéos d'inspiration analysées (coupes, rythme, débit, techniques) et transmises aux propositions de plan | ✅ |
-| 5.2 | Catégorie « Format court » tournée directement (cycle complet en 9:16) | ✅ (sans recadrage pour l'instant) |
-| 5.3 | Cadrage 9:16 et zooms (progressif, « loupe »), fond flou | à venir |
+| 5.2 | Catégorie « Format court » tournée directement (cycle complet en 9:16) | ✅ |
+| 5.3 | Cadrage par segment (recadré, fond flou), zoom progressif, panoramique et zoom brusque « loupe » | ✅ |
 | 5.4 | Sous-titres mot à mot avec tes polices | à venir |
 | 5.5 | Extraits d'une vidéo longue | à venir |
 | 5.6 | Export 1080x1920 et finitions | à venir |
@@ -321,9 +321,21 @@ La section **Plan de montage** est un éditeur. Tant que le plan est **Proposé*
 - **Ordre** : ▲ et ▼ ; **✕** retire le segment. **accroche** choisit le segment d'ouverture.
 - **Image** (coupe décalée) : 0 pour une coupe franche ; **négatif** (par exemple -1,5) : l'image du segment arrive en avance pendant que la fin de la phrase précédente se termine, la transition « on entend encore mon visage mais on voit déjà la suite » ; **positif** : l'image précédente reste un instant.
 - **Plans de coupe** : une image sans son, prise dans un rush, posée par-dessus la voix à un instant de la vidéo finale. Règle le passage emprunté et l'instant (« à … s dans la vidéo »). Pour en ajouter un : lis un passage, mets le lecteur sur l'image voulue, puis **+ Plan de coupe depuis la position du lecteur**.
+- **Cadre** : voir « Cadrer et zoomer » ci-dessous.
 - **Musique** : volume en dB, baisse sous la voix, **✕** pour la retirer.
 
 Puis **Enregistrer les modifications** (ou **Annuler les modifications**). L'outil revérifie le plan à chaque enregistrement et affiche ce qui ne va pas. Le plan passe en « Modifié à la main » : si tu redemandes une proposition, Claude part de ta version.
+
+### Cadrer et zoomer
+
+La colonne **Cadre** de l'éditeur indique le cadrage de chaque segment (et de chaque plan de coupe) : « image entière », « recadré ×1,0 », « ×1,0 → ×1,4 » (mouvement) ou « fond flou ». Un clic dessus ouvre les réglages et place le lecteur au début du segment, avec le cadre dessiné par-dessus l'image (en jaune ; en pointillés, la position de fin d'un mouvement) :
+- **Image entière** : l'image telle quelle. Si son orientation n'est pas celle de la vidéo (rush horizontal dans un format court), elle aura des bandes noires : l'outil le signale en orange.
+- **Recadré** : une fenêtre aux proportions de la vidéo finale. Règle **Gauche ↔ droite**, **Haut ↕ bas** et **Zoom** (1 = la plus grande fenêtre possible). Coche **Mouvement progressif** pour régler une position de fin : zoom avant lent, panoramique pour suivre le sujet (le mouvement démarre et s'arrête en douceur).
+- **Fond flou** : l'image entière, posée sur un fond flou d'elle-même. Pratique pour un écran ou un plan large qu'on ne veut pas couper.
+
+**Zoom brusque (« loupe »)** : coupe un passage en deux segments qui se suivent exactement dans le rush (la fin du premier = le début du second), puis donne au second un zoom plus fort (×1,5 à ×2) centré sur le détail. Le son reste continu : l'outil ne met pas de fondu entre deux segments qui se suivent. Claude propose lui-même ces cadrages et ces effets (il repère sur les planches où se trouve le sujet), surtout pour les formats courts tirés de rushes horizontaux ; tu les ajustes ensuite.
+
+L'aperçu et l'export appliquent le cadrage (à partir des proxys pour l'aperçu, des rushes d'origine en pleine qualité pour l'export).
 
 Quand tout est bon : **Valider le plan** (impossible tant qu'il reste une erreur en rouge). Le plan validé ne se modifie plus ; **Repasser en brouillon** le rend modifiable tant que l'aperçu n'a pas été rendu. L'aperçu se lance depuis le plan validé (voir ci-dessous).
 
@@ -481,7 +493,7 @@ Ensuite, à chaque proposition de plan d'un projet de cette catégorie, Claude r
 
 ### Créer un format court tourné directement
 
-Pour une vidéo verticale pensée pour TikTok, Reels et Shorts dès le tournage : **Nouveau projet**, catégorie **format court** (sur les deux chaînes). Tout le cycle fonctionne comme pour un vlog, en 9:16 : analyse des rushes, plan, aperçu en 360x640, commentaires, export en 1080x1920 dans `exports/formats-courts/`. Pense à remplir le guide **format court** et à y déposer des vidéos d'inspiration. Le recadrage d'un rush horizontal, les zooms et les sous-titres arrivent dans les prochaines étapes (pour l'instant, filme directement en vertical).
+Pour une vidéo verticale pensée pour TikTok, Reels et Shorts dès le tournage : **Nouveau projet**, catégorie **format court** (sur les deux chaînes). Tout le cycle fonctionne comme pour un vlog, en 9:16 : analyse des rushes, plan, aperçu en 360x640, commentaires, export en 1080x1920 dans `exports/formats-courts/`. Pense à remplir le guide **format court** et à y déposer des vidéos d'inspiration. Tu peux filmer en vertical ou en horizontal : un rush horizontal se recadre en 9:16 segment par segment (voir « Cadrer et zoomer »). Les sous-titres arrivent à l'étape suivante.
 
 ### Changer de dossier creations ou passer d'une machine à l'autre
 

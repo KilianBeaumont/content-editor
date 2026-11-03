@@ -9,7 +9,7 @@ import { listerVersions, lirePlan } from "../plans/plans.ts";
 import { lireProjet } from "../projets/projets.ts";
 import { etatPreparation, lirePreparation } from "../rushes/etat.ts";
 import type { OutilsTache } from "../taches/file.ts";
-import { encodageIntermediaire, formatApercu, IMAGES_PAR_SECONDE_APERCU, LOUDNESS_APERCU, type ProfilImage } from "./graphe.ts";
+import { encodageIntermediaire, formatApercu, IMAGES_PAR_SECONDE_APERCU, LOUDNESS_APERCU, type ProfilImage, type SourceImage } from "./graphe.ts";
 import { rendre } from "./moteur.ts";
 import { resoudreMusiques, verifierPlanSansErreur } from "./ressources.ts";
 
@@ -38,14 +38,16 @@ export async function rendreApercu(contexte: Contexte, id: string, version: stri
   if (plan === null) throw new Error(`Plan introuvable : ${version}.`);
   await verifierPlanSansErreur(config.creations, projet, plan, ffprobe);
 
-  const proxies = new Map<string, string>();
+  const proxies = new Map<string, SourceImage>();
   for (const chemin of new Set([...plan.segments.map((segment) => segment.source), ...plan.plansDeCoupe.map((coupe) => coupe.source)])) {
     if (genreFichier(chemin) !== "video") continue;
     const preparation = await lirePreparation(dossier, chemin);
     if (preparation?.proxy === null || preparation?.proxy === undefined || (await etatPreparation(dossier, chemin, preparation)) !== "a-jour") {
       throw new Error(`Prépare d'abord ${chemin} (section Analyse des rushes) : l'aperçu est rendu à partir des proxys.`);
     }
-    proxies.set(chemin, cheminSur(dossier, preparation.proxy));
+    const proxy = cheminSur(dossier, preparation.proxy);
+    const video = (await sonderMedia(ffprobe, proxy)).video;
+    proxies.set(chemin, { chemin: proxy, transfert: null, largeur: video?.largeur ?? null, hauteur: video?.hauteur ?? null });
   }
 
   const format = formatApercu(projet.metadata.categorie);
@@ -60,11 +62,8 @@ export async function rendreApercu(contexte: Contexte, id: string, version: stri
       ffmpeg,
       {
         plan,
-        image: (chemin) => {
-          const proxy = proxies.get(chemin);
-          return proxy === undefined ? null : { chemin: proxy, transfert: null };
-        },
-        son: (chemin) => proxies.get(chemin) ?? cheminSur(dossier, chemin),
+        image: (chemin) => proxies.get(chemin) ?? null,
+        son: (chemin) => proxies.get(chemin)?.chemin ?? cheminSur(dossier, chemin),
         musiques: await resoudreMusiques(config.creations, dossier, plan, ffprobe),
       },
       { image, encodageClip: encodage, encodageSortie: encodage, loudness: LOUDNESS_APERCU, deuxPasses: false, debitAudio: "128k" },

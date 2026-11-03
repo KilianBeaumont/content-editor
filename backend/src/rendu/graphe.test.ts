@@ -12,8 +12,13 @@ import {
   grapheAudio,
   grapheVideo,
   lireMesureLoudnorm,
+  fenetre,
   type ProfilImage,
+  type SourceImage,
 } from "./graphe.ts";
+import { segmentsContigus } from "./moteur.ts";
+
+const src = (transfert: string | null, largeur: number | null = null, hauteur: number | null = null): SourceImage => ({ chemin: "rush.mp4", transfert, largeur, hauteur });
 
 const APERCU: ProfilImage = { format: formatApercu("vlog"), ips: 30, placebo: false, acceleration: false, hdr: false };
 
@@ -44,10 +49,10 @@ describe("découpage du plan", () => {
 describe("filtres d'image", () => {
   it("convertit le HDR en SDR avec libplacebo ou zscale", () => {
     const placebo = { ...APERCU, format: { largeur: 1920, hauteur: 1080 }, ips: 60, placebo: true };
-    expect(filtreImage(placebo, "arib-std-b67")).toContain("tonemapping=bt.2390");
-    expect(filtreImage(placebo, null)).not.toContain("tonemapping");
-    expect(filtreImage(APERCU, "arib-std-b67")).toContain("zscale=tin=arib-std-b67");
-    expect(filtreImage(APERCU, null)).toBe(
+    expect(filtreImage(placebo, src("arib-std-b67"))).toContain("tonemapping=bt.2390");
+    expect(filtreImage(placebo, src(null))).not.toContain("tonemapping");
+    expect(filtreImage(APERCU, src("arib-std-b67"))).toContain("zscale=tin=arib-std-b67");
+    expect(filtreImage(APERCU, src(null))).toBe(
       "scale=640:360:force_original_aspect_ratio=decrease:flags=bicubic,format=yuv420p,pad=640:360:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30",
     );
   });
@@ -62,13 +67,13 @@ describe("export HDR (HLG)", () => {
   const HDR: ProfilImage = { format: { largeur: 3840, hauteur: 2160 }, ips: 60, placebo: true, acceleration: true, hdr: true };
 
   it("garde le HDR en HLG 10 bits et y place les sources SDR", () => {
-    expect(filtreImage(HDR, "arib-std-b67")).toContain("color_trc=arib-std-b67:range=tv:format=yuv420p10le");
-    expect(filtreImage(HDR, null)).not.toContain("tonemapping");
+    expect(filtreImage(HDR, src("arib-std-b67"))).toContain("color_trc=arib-std-b67:range=tv:format=yuv420p10le");
+    expect(filtreImage(HDR, src(null))).not.toContain("tonemapping");
     const classique = { ...HDR, placebo: false };
-    expect(filtreImage(classique, "arib-std-b67")).toBe(
+    expect(filtreImage(classique, src("arib-std-b67"))).toBe(
       "scale=3840:2160:force_original_aspect_ratio=decrease:flags=bicubic,format=yuv420p10le,pad=3840:2160:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=60",
     );
-    expect(filtreImage(classique, null)).toContain("zscale=tin=bt709:min=bt709:pin=bt709:t=linear:npl=203,format=gbrpf32le,zscale=p=bt2020:t=arib-std-b67");
+    expect(filtreImage(classique, src(null))).toContain("zscale=tin=bt709:min=bt709:pin=bt709:t=linear:npl=203,format=gbrpf32le,zscale=p=bt2020:t=arib-std-b67");
   });
 
   it("encode en HEVC Main 10 marqué BT.2020 / HLG, avec un débit HDR", () => {
@@ -79,8 +84,41 @@ describe("export HDR (HLG)", () => {
   });
 
   it("superpose les plans de coupe en 10 bits", () => {
-    const graphe = grapheVideo(HDR, [{ source: { chemin: "rush.MOV", transfert: "arib-std-b67" }, debut: 1, duree: 2, position: 3 }], 2);
+    const graphe = grapheVideo(HDR, [{ source: src("arib-std-b67"), debut: 1, duree: 2, position: 3, cadrage: null }], 2);
     expect(graphe.filtre).toContain("overlay=eof_action=pass:format=yuv420p10:enable=");
+  });
+});
+
+describe("cadrage", () => {
+  const VERTICAL: ProfilImage = { format: { largeur: 360, hauteur: 640 }, ips: 30, placebo: false, acceleration: false, hdr: false };
+  const cadre = (x: number, zoom: number) => ({ x, y: 0.5, zoom });
+
+  it("calcule la plus grande fenêtre aux proportions de la sortie, puis la resserre", () => {
+    expect(fenetre({ largeur: 640, hauteur: 360 }, VERTICAL.format, 1)).toEqual({ largeur: 202, hauteur: 360 });
+    expect(fenetre({ largeur: 640, hauteur: 360 }, VERTICAL.format, 2)).toEqual({ largeur: 102, hauteur: 180 });
+    expect(fenetre({ largeur: 1080, hauteur: 1920 }, { largeur: 1920, hauteur: 1080 }, 1)).toEqual({ largeur: 1080, hauteur: 608 });
+  });
+
+  it("recadre en fixe ou avec un mouvement adouci, et pose l'image entière sur un fond flou", () => {
+    const fixe = filtreImage(VERTICAL, src(null, 640, 360), { mode: "recadre", debut: cadre(0.3, 1), fin: null }, 4);
+    expect(fixe).toBe("format=yuv420p,fps=30,crop=w=202:h=360:x='max(0,min(iw-202,0.3*iw-101))':y='max(0,min(ih-360,0.5*ih-180))',scale=360:640:flags=bicubic,setsar=1,format=yuv420p");
+    const mouvement = filtreImage(VERTICAL, src(null, 640, 360), { mode: "recadre", debut: cadre(0.3, 1), fin: cadre(0.7, 1.6) }, 4);
+    expect(mouvement).toContain("x='max(0,min(iw-202,(0.3+0.4*(3*pow(min(1,max(0,t/4)),2)-2*pow(min(1,max(0,t/4)),3)))*iw-101))'");
+    expect(mouvement).toContain("zoompan=z='(1+0.6*(3*pow(min(1,max(0,it/4)),2)-2*pow(min(1,max(0,it/4)),3)))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=360x640:fps=30");
+    const flou = filtreImage(VERTICAL, src(null, 640, 360), { mode: "fond-flou", debut: cadre(0.5, 1), fin: null }, 4, "c0");
+    expect(flou).toContain("split[ac0][bc0]");
+    expect(flou).toContain("[fondc0][avantc0]overlay=(W-w)/2:(H-h)/2");
+    expect(filtreImage(VERTICAL, src(null), { mode: "recadre", debut: cadre(0.5, 1), fin: null }, 4)).toContain("pad=360:640");
+  });
+
+  it("ne met pas de fondu sonore entre deux segments qui se suivent dans le rush", () => {
+    const segment = (source: string, debut: number, fin: number) => ({ id: "s", source, debut, fin, role: "", citation: "", raison: "", decalageImage: 0, cadrage: null });
+    expect(segmentsContigus(segment("a.mp4", 1, 3), segment("a.mp4", 3, 5))).toBe(true);
+    expect(segmentsContigus(segment("a.mp4", 1, 3), segment("a.mp4", 3.5, 5))).toBe(false);
+    expect(segmentsContigus(segment("a.mp4", 1, 3), segment("b.mp4", 3, 5))).toBe(false);
+    expect(segmentsContigus(undefined, segment("a.mp4", 3, 5))).toBe(false);
+    const args = argumentsClipAudio("a.mp4", 1, 2, "a.wav", { entree: false, sortie: true });
+    expect(args[args.indexOf("-af") + 1]).toBe("apad=whole_dur=2,afade=t=out:st=1.97:d=0.03");
   });
 });
 
@@ -94,8 +132,8 @@ describe("graphes", () => {
   });
 
   it("superpose les plans de coupe à leur place", () => {
-    const graphe = grapheVideo(APERCU, [{ source: { chemin: "proxy.mp4", transfert: null }, debut: 57.7, duree: 2, position: 1 }], 2);
-    expect(graphe.entrees).toEqual(["-ss", "57.7", "-t", "2", "-i", "proxy.mp4"]);
+    const graphe = grapheVideo(APERCU, [{ source: src(null), debut: 57.7, duree: 2, position: 1, cadrage: null }], 2);
+    expect(graphe.entrees).toEqual(["-ss", "57.7", "-t", "2", "-i", "rush.mp4"]);
     expect(graphe.filtre).toContain("[v0][c0]overlay=eof_action=pass:enable='between(t,1,3)'[v]");
   });
 

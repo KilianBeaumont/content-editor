@@ -34,10 +34,10 @@ const PLAN: PlanMontage = {
   resume: "",
   hook: { segment: "s1", explication: "" },
   segments: [
-    { ...segment, id: "s1", debut: 3, fin: 4.5, decalageImage: 0 },
-    { ...segment, id: "s2", debut: 0.5, fin: 2.5, decalageImage: -0.3 },
+    { ...segment, id: "s1", debut: 3, fin: 4.5, decalageImage: 0, cadrage: null },
+    { ...segment, id: "s2", debut: 0.5, fin: 2.5, decalageImage: -0.3, cadrage: null },
   ],
-  plansDeCoupe: [{ source: "rushes/rush.mp4", debut: 5, fin: 5.5, position: 2, raison: "" }],
+  plansDeCoupe: [{ source: "rushes/rush.mp4", debut: 5, fin: 5.5, position: 2, raison: "", cadrage: null }],
   musiques: [],
   pointsAVerifier: [],
   reponsesRetours: [],

@@ -1,7 +1,8 @@
-import { dureePlan, type DetailProjet, type PlanMontage, type ProblemePlan, type SegmentPlan, type VersionPlan } from "@editeur/shared";
-import { useEffect, useRef, useState } from "react";
+import { dureePlan, estCategorieVerticale, type DetailProjet, type PlanMontage, type ProblemePlan, type SegmentPlan, type VersionPlan } from "@editeur/shared";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { envoyerJson, messageErreur, urlFichier } from "../../api.ts";
 import { Message } from "../../composants/Message.tsx";
+import { CadreSurVideo, ControlesCadrage, resumeCadrage } from "./Cadrages.tsx";
 
 export function temps(secondes: number): string {
   const minutes = Math.floor(secondes / 60);
@@ -61,7 +62,10 @@ interface Passage {
   source: string;
   debut: number;
   fin: number;
+  jouer?: boolean;
 }
+
+type CadrageOuvert = { type: "segment" | "coupe"; index: number } | null;
 
 interface ProprietesEditeur {
   projet: DetailProjet;
@@ -79,6 +83,8 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
   const [erreur, setErreur] = useState<string | null>(null);
   const [passage, setPassage] = useState<Passage | null>(null);
   const [enLecture, setEnLecture] = useState<number | null>(null);
+  const [cadrageOuvert, setCadrageOuvert] = useState<CadrageOuvert>(null);
+  const [dimensionsVideo, setDimensionsVideo] = useState<{ largeur: number; hauteur: number } | null>(null);
   const lecteur = useRef<HTMLVideoElement>(null);
   const suite = useRef<Passage[]>([]);
 
@@ -122,7 +128,8 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
     const source = urlFichier(`${projet.chemin}/${proxies.get(passage.source) ?? passage.source}`);
     const demarrer = () => {
       element.currentTime = passage.debut;
-      void element.play();
+      if (passage.jouer === false) element.pause();
+      else void element.play();
     };
     if (element.getAttribute("src") !== source) {
       element.src = source;
@@ -147,6 +154,23 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
   }
 
   const position = () => lecteur.current?.currentTime ?? 0;
+  const ratioSortie = estCategorieVerticale(projet.metadata.categorie) ? 9 / 16 : 16 / 9;
+  const cadrageAffiche =
+    cadrageOuvert === null
+      ? null
+      : cadrageOuvert.type === "segment"
+        ? (plan.segments[cadrageOuvert.index]?.cadrage ?? null)
+        : (plan.plansDeCoupe[cadrageOuvert.index]?.cadrage ?? null);
+
+  function basculerCadrage(ouvert: NonNullable<CadrageOuvert>, element: Passage) {
+    const memeElement = cadrageOuvert?.type === ouvert.type && cadrageOuvert.index === ouvert.index;
+    setCadrageOuvert(memeElement ? null : ouvert);
+    if (!memeElement) {
+      suite.current = [];
+      setEnLecture(null);
+      setPassage({ source: element.source, debut: element.debut, fin: element.fin, jouer: false });
+    }
+  }
 
   function changer(transformation: (copie: PlanMontage) => PlanMontage) {
     setPlan((actuel) => transformation(structuredClone(actuel)));
@@ -223,7 +247,16 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
       )}
 
       <div className="lecteur-plan">
-        <video ref={lecteur} controls preload="none" onPause={() => setEnLecture(null)} />
+        <div className="video-cadree">
+          <video
+            ref={lecteur}
+            controls
+            preload="none"
+            onPause={() => setEnLecture(null)}
+            onLoadedMetadata={(evenement) => setDimensionsVideo({ largeur: evenement.currentTarget.videoWidth, hauteur: evenement.currentTarget.videoHeight })}
+          />
+          <CadreSurVideo video={lecteur.current} dimensions={dimensionsVideo} ratioSortie={ratioSortie} cadrage={cadrageAffiche} />
+        </div>
         <div>
           <button type="button" className="bouton" onClick={lireTout} disabled={plan.segments.length === 0}>
             ▶ Enchaîner tout le plan
@@ -242,6 +275,7 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
             <th>#</th>
             <th>Passage dans le rush</th>
             <th>Image</th>
+            <th>Cadre</th>
             <th>Ce qui est dit · pourquoi</th>
             <th />
           </tr>
@@ -249,8 +283,10 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
         <tbody>
           {plan.segments.map((segment, index) => {
             const enErreur = problemes.some((probleme) => probleme.segment === segment.id && probleme.niveau === "erreur");
+            const ouvert = cadrageOuvert?.type === "segment" && cadrageOuvert.index === index;
             return (
-              <tr key={`${segment.id}-${index}`} className={[enErreur ? "ligne-erreur" : "", enLecture === index ? "ligne-selectionnee" : ""].join(" ")}>
+              <Fragment key={`${segment.id}-${index}`}>
+              <tr className={[enErreur ? "ligne-erreur" : "", enLecture === index || ouvert ? "ligne-selectionnee" : ""].join(" ")}>
                 <td>
                   <strong>{segment.id}</strong>
                   <br />
@@ -297,6 +333,11 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
                     </label>
                   )}
                 </td>
+                <td>
+                  <button type="button" className="bouton bouton-discret" onClick={() => basculerCadrage({ type: "segment", index }, segment)}>
+                    {resumeCadrage(segment.cadrage)}
+                  </button>
+                </td>
                 <td className="cellule-citation">
                   {segment.citation === "" ? <span className="note">—</span> : `« ${segment.citation} »`}
                   <br />
@@ -326,6 +367,14 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
                   )}
                 </td>
               </tr>
+              {ouvert && (
+                <tr className="ligne-cadrage">
+                  <td colSpan={6}>
+                    <ControlesCadrage cadrage={segment.cadrage} editable={editable} surChangement={(cadrage) => changerSegment(index, { cadrage })} />
+                  </td>
+                </tr>
+              )}
+              </Fragment>
             );
           })}
         </tbody>
@@ -341,8 +390,10 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
                 {plan.plansDeCoupe.map((coupe, index) => {
                   const changerCoupe = (changement: Partial<typeof coupe>) =>
                     changer((copie) => ({ ...copie, plansDeCoupe: copie.plansDeCoupe.map((element, i) => (i === index ? { ...element, ...changement } : element)) }));
+                  const ouvert = cadrageOuvert?.type === "coupe" && cadrageOuvert.index === index;
                   return (
-                    <tr key={`${coupe.source}-${index}`}>
+                    <Fragment key={`${coupe.source}-${index}`}>
+                    <tr className={ouvert ? "ligne-selectionnee" : undefined}>
                       <td className="cellule-passage">
                         <span className="note">{nomFichier(coupe.source)}</span>
                         <span className="bornes">
@@ -354,6 +405,11 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
                         <label className="note">
                           à <ChampTemps actif={editable} pas={0.1} valeur={coupe.position} surChangement={(valeur) => changerCoupe({ position: valeur })} /> s dans la vidéo
                         </label>
+                      </td>
+                      <td>
+                        <button type="button" className="bouton bouton-discret" onClick={() => basculerCadrage({ type: "coupe", index }, coupe)}>
+                          {resumeCadrage(coupe.cadrage)}
+                        </button>
                       </td>
                       <td className="note">{coupe.raison}</td>
                       <td className="cellule-action">
@@ -372,6 +428,14 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
                         )}
                       </td>
                     </tr>
+                    {ouvert && (
+                      <tr className="ligne-cadrage">
+                        <td colSpan={5}>
+                          <ControlesCadrage cadrage={coupe.cadrage} editable={editable} surChangement={(cadrage) => changerCoupe({ cadrage })} />
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   );
                 })}
               </tbody>
@@ -386,7 +450,7 @@ export function EditeurPlan({ projet, version, initial, proxies, surEnregistreme
               onClick={() => {
                 if (passage === null) return;
                 const debut = Math.round(position() * 100) / 100;
-                changer((copie) => ({ ...copie, plansDeCoupe: [...copie.plansDeCoupe, { source: passage.source, debut, fin: debut + 2, position: 0, raison: "Ajouté à la main" }] }));
+                changer((copie) => ({ ...copie, plansDeCoupe: [...copie.plansDeCoupe, { source: passage.source, debut, fin: debut + 2, position: 0, raison: "Ajouté à la main", cadrage: null }] }));
               }}
             >
               + Plan de coupe depuis la position du lecteur

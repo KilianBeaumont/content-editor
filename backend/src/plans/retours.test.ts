@@ -24,7 +24,7 @@ const VLOG: SaisieProjet = {
   vocabulaire: "",
 };
 
-const segment = { source: "rushes/rush.mp4", role: "", citation: "", raison: "", decalageImage: 0 };
+const segment = { source: "rushes/rush.mp4", role: "", citation: "", raison: "", decalageImage: 0, cadrage: null };
 const PLAN: PlanMontage = {
   version: "v1",
   statut: "valide",
