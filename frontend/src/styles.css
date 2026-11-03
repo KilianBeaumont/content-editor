@@ -1037,3 +1037,73 @@ input[type="file"] {
   margin-top: 8px;
   border-radius: 4px;
 }
+
+.lecteur-plan {
+  display: grid;
+  grid-template-columns: minmax(0, 420px) 1fr;
+  gap: 16px;
+  align-items: start;
+  margin: 16px 0;
+}
+
+.lecteur-plan video {
+  width: 100%;
+  border-radius: 6px;
+  background: #000;
+}
+
+@media (max-width: 720px) {
+  .lecteur-plan {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cellule-passage {
+  white-space: nowrap;
+}
+
+.cellule-passage .note {
+  display: block;
+  white-space: normal;
+  margin-bottom: 4px;
+}
+
+.bornes {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.champ-temps {
+  width: 5.5em;
+  font-variant-numeric: tabular-nums;
+}
+
+.bornes .bouton,
+.cellule-action .bouton {
+  padding: 1px 7px;
+}
+
+.decalage {
+  white-space: nowrap;
+}
+
+.points-claude {
+  margin: 10px 0;
+}
+
+.points-claude summary {
+  cursor: pointer;
+  color: var(--alerte);
+}
+
+.liste-musiques li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.actions-plan {
+  margin-top: 16px;
+}

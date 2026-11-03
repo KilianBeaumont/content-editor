@@ -1,6 +1,6 @@
 import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { PropositionPlan, ReponseCreationProjet, ReponsePlans, ReponseTaches, SaisieProjet, Tache, Transcription } from "@editeur/shared";
+import type { PropositionPlan, ReponseCreationProjet, ReponsePlans, ReponseTaches, SaisieProjet, Tache, Transcription, VersionPlan } from "@editeur/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { lireProjet } from "../projets/projets.ts";
 import { preparerEnvironnementTest, type EnvironnementTest } from "../test-outils.ts";
@@ -31,7 +31,8 @@ const VLOG: SaisieProjet = {
 const PROPOSITION: PropositionPlan = {
   resume: "Une journée racontée en trois temps.",
   hook: { segment: "s1", explication: "La blague du chat ouvre la vidéo." },
-  segments: [{ id: "s1", source: "rushes/matin.mp4", debut: 1, fin: 4, role: "accroche", citation: "Bonjour", raison: "Ça démarre fort." }],
+  segments: [{ id: "s1", source: "rushes/matin.mp4", debut: 1, fin: 4, role: "accroche", citation: "Bonjour", raison: "Ça démarre fort.", decalageImage: 0 }],
+  plansDeCoupe: [],
   musiques: [],
   pointsAVerifier: [],
   reponsesRetours: [],
@@ -185,6 +186,34 @@ describe("plans de montage", () => {
       "L'accroche renvoie à un segment inconnu : s7.",
       "Durée du plan : 0:03,0, pour 3:00,0 visées.",
     ]);
+  });
+
+  it("enregistre les modifications à la main, valide le plan et le repasse en brouillon", async () => {
+    await enregistrerProposition(dossier, PROPOSITION, new Date("2026-11-03T10:00:00Z"));
+    const url = `/api/projets/${id}/plans/v1`;
+    const segments = [{ ...PROPOSITION.segments[0], fin: 5 }, { ...PROPOSITION.segments[0], id: "s2", debut: 10, fin: 12, decalageImage: -0.5 }];
+
+    const modifie = await env.app.inject({ method: "PUT", url, payload: { ...PROPOSITION, segments } });
+    expect(modifie.statusCode).toBe(200);
+    expect(modifie.json<VersionPlan>().plan).toMatchObject({ statut: "propose", creeLe: "2026-11-03T10:00:00.000Z", segments: [{ fin: 5 }, { decalageImage: -0.5 }] });
+    expect(modifie.json<VersionPlan>().plan?.modifieLe).not.toBeNull();
+    expect((await env.app.inject({ method: "PUT", url, payload: { ...PROPOSITION, segments: [{ id: "x" }] } })).statusCode).toBe(400);
+
+    const valide = await env.app.inject({ method: "POST", url: `${url}/statut`, payload: { statut: "valide" } });
+    expect(valide.json<VersionPlan>().plan?.statut).toBe("valide");
+    expect((await env.app.inject({ method: "PUT", url, payload: PROPOSITION })).json()).toEqual({
+      erreur: "Ce plan est validé : repasse-le en brouillon pour le modifier.",
+    });
+    expect((await env.app.inject({ method: "POST", url: `${url}/statut`, payload: { statut: "propose" } })).json<VersionPlan>().plan?.statut).toBe("propose");
+
+    await env.app.inject({ method: "PUT", url, payload: { ...PROPOSITION, hook: { segment: "s9", explication: "" } } });
+    const refus = await env.app.inject({ method: "POST", url: `${url}/statut`, payload: { statut: "valide" } });
+    expect(refus.statusCode).toBe(409);
+    expect(refus.json<{ erreur: string }>().erreur).toMatch(/^Corrige d'abord le plan : L'accroche renvoie à un segment inconnu : s9\./);
+
+    await writeFile(join(dossier, "versions/v1/apercu.mp4"), "vidéo");
+    expect((await env.app.inject({ method: "PUT", url, payload: PROPOSITION })).statusCode).toBe(409);
+    expect((await env.app.inject({ method: "PUT", url: `/api/projets/${id}/plans/v7`, payload: PROPOSITION })).statusCode).toBe(404);
   });
 
   it("met la proposition en file et signale clairement l'échec", async () => {

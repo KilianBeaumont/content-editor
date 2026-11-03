@@ -1,4 +1,4 @@
-import { dureePlan, type AssetBibliotheque, type GenreFichier, type ProblemePlan, type PropositionPlan } from "@editeur/shared";
+import { dureePlan, plagesImage, type AssetBibliotheque, type GenreFichier, type ProblemePlan, type PropositionPlan } from "@editeur/shared";
 
 export interface MediaProjet {
   genre: GenreFichier;
@@ -67,11 +67,51 @@ export function validerPlan(plan: PropositionPlan, sources: SourcesPlan): Proble
     if (chevauche !== undefined) avertissement(`Reprend un passage déjà utilisé par ${chevauche.id}.`, segment.id);
   });
 
+  const plages = plagesImage(plan.segments);
+  plan.segments.forEach((segment, index) => {
+    const precedent = plan.segments[index - 1];
+    if (segment.decalageImage !== 0) {
+      if (precedent === undefined) {
+        erreur("Le premier segment ne peut pas avoir de décalage d'image.", segment.id);
+        return;
+      }
+      if (-segment.decalageImage >= precedent.fin - precedent.debut) {
+        erreur(`L'image arrive en avance de plus que toute la durée de ${precedent.id}.`, segment.id);
+      }
+      if (segment.decalageImage >= segment.fin - segment.debut) {
+        erreur(`L'image de ${precedent.id} reste plus longtemps que tout ce segment.`, segment.id);
+      }
+    }
+    const plage = plages[index];
+    const media = sources.medias.get(segment.source);
+    if (plage === undefined || media === undefined || segment.fin <= segment.debut) return;
+    if (plage.debut < -TOLERANCE_FIN) erreur("Avec le décalage, l'image commence avant le début du rush.", segment.id);
+    if (media.duree !== null && segment.fin <= media.duree + TOLERANCE_FIN && plage.fin > media.duree + TOLERANCE_FIN) {
+      erreur("Avec le décalage du segment suivant, l'image dépasse la fin du rush.", segment.id);
+    }
+  });
+
   if (plan.segments.length > 0 && !vus.has(plan.hook.segment)) {
     erreur(`L'accroche renvoie à un segment inconnu : ${plan.hook.segment}.`);
   }
 
   const total = dureePlan(plan);
+  plan.plansDeCoupe.forEach((coupe, index) => {
+    const nom = `Plan de coupe ${index + 1}`;
+    const media = utilisable(coupe.source) ? sources.medias.get(coupe.source) : undefined;
+    if (media === undefined || media.genre !== "video") {
+      erreur(`${nom} : vidéo introuvable ou inutilisable : ${coupe.source}.`);
+      return;
+    }
+    if (coupe.fin <= coupe.debut) {
+      erreur(`${nom} : la fin doit venir après le début.`);
+      return;
+    }
+    if (media.duree !== null && coupe.fin > media.duree + TOLERANCE_FIN) erreur(`${nom} : la fin dépasse la durée de la vidéo (${temps(media.duree)}).`);
+    if (plan.segments.length > 0 && coupe.position + (coupe.fin - coupe.debut) > total + TOLERANCE_FIN) {
+      erreur(`${nom} : dépasse la fin de la vidéo finale (${temps(total)}).`);
+    }
+  });
   for (const musique of plan.musiques) {
     const nom = musique.reference;
     if (musique.origine === "projet") {

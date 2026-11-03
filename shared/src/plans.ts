@@ -14,6 +14,15 @@ export interface SegmentPlan {
   role: string;
   citation: string;
   raison: string;
+  decalageImage: number;
+}
+
+export interface PlanDeCoupe {
+  source: string;
+  debut: number;
+  fin: number;
+  position: number;
+  raison: string;
 }
 
 export interface MusiquePlan {
@@ -35,6 +44,7 @@ export interface PropositionPlan {
   resume: string;
   hook: { segment: string; explication: string };
   segments: SegmentPlan[];
+  plansDeCoupe: PlanDeCoupe[];
   musiques: MusiquePlan[];
   pointsAVerifier: string[];
   reponsesRetours: ReponseRetour[];
@@ -63,6 +73,18 @@ export interface VersionPlan {
 
 export interface ReponsePlans {
   versions: VersionPlan[];
+}
+
+export interface PlageImage {
+  debut: number;
+  fin: number;
+}
+
+export function plagesImage(segments: Pick<SegmentPlan, "debut" | "fin" | "decalageImage">[]): PlageImage[] {
+  return segments.map((segment, index) => ({
+    debut: segment.debut + (index === 0 ? 0 : segment.decalageImage),
+    fin: segment.fin + (segments[index + 1]?.decalageImage ?? 0),
+  }));
 }
 
 export interface SaisiePropositionPlan {
@@ -101,9 +123,29 @@ export const schemaPropositionPlan = z.object({
         role: texte(60).describe("Rôle dans la structure : accroche, mise en place, moment fort, transition, conclusion…"),
         citation: texte(1000).describe("Ce qui est dit pendant le segment, tiré de la transcription (vide s'il n'y a pas de parole)."),
         raison: texte(1000).describe("Pourquoi ce passage est gardé à cet endroit."),
+        decalageImage: z
+          .number()
+          .min(-5)
+          .max(5)
+          .default(0)
+          .describe(
+            "Décalage de la coupe image par rapport à la coupe son au début de ce segment, en secondes. 0 : coupe franche. Négatif : l'image de ce segment apparaît en avance, pendant que le son du segment précédent continue. Positif : l'image du segment précédent reste un moment sur le son de ce segment. Toujours 0 pour le premier segment.",
+          ),
       }),
     )
     .describe("Les segments dans l'ordre de la vidéo finale."),
+  plansDeCoupe: z
+    .array(
+      z.object({
+        source: z.string().min(1).describe("Chemin d'une vidéo du projet, relatif au dossier du projet."),
+        debut: z.number().min(0).describe("Début de l'image empruntée, en secondes dans cette vidéo."),
+        fin: z.number().min(0).describe("Fin de l'image empruntée, en secondes dans cette vidéo."),
+        position: z.number().min(0).describe("Instant de la vidéo finale où l'image apparaît, en secondes."),
+        raison: texte(500),
+      }),
+    )
+    .default([])
+    .describe("Images seules (sans leur son) posées par-dessus le son des segments, par exemple pour montrer ce dont on parle."),
   musiques: z.array(
     z.object({
       origine: z.enum(ORIGINES_MUSIQUE).describe("projet : fichier du dossier du projet ; bibliotheque : asset de la bibliothèque."),
@@ -126,14 +168,14 @@ export const schemaPropositionPlan = z.object({
       }),
     )
     .describe("Vide pour une première proposition."),
-}) satisfies z.ZodType<PropositionPlan>;
+}) satisfies z.ZodType<PropositionPlan, unknown>;
 
 export const schemaPlanMontage = schemaPropositionPlan.extend({
   version: z.string().regex(MOTIF_VERSION),
   statut: z.enum(STATUTS_PLAN),
   creeLe: z.string(),
   modifieLe: z.string().nullable(),
-}) satisfies z.ZodType<PlanMontage>;
+}) satisfies z.ZodType<PlanMontage, unknown>;
 
 export const schemaSaisiePropositionPlan = z.object({
   consigne: z.string().trim().max(4000),

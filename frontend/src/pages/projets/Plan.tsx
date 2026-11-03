@@ -1,127 +1,13 @@
-import { dureePlan, tacheActive, type DetailProjet, type ProblemePlan, type ReponsePlans, type VersionPlan } from "@editeur/shared";
+import { tacheActive, type DetailProjet, type ReponsePlans, type ReponseTranscriptions, type VersionPlan } from "@editeur/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { envoyerJson, lireJson, messageErreur } from "../../api.ts";
 import { Message } from "../../composants/Message.tsx";
 import { LigneTache, useTaches } from "../../composants/Taches.tsx";
-
-function temps(secondes: number): string {
-  const minutes = Math.floor(secondes / 60);
-  return `${minutes}:${(secondes - minutes * 60).toFixed(1).replace(".", ",").padStart(4, "0")}`;
-}
-
-function nomFichier(chemin: string): string {
-  return chemin.split("/").at(-1) ?? chemin;
-}
-
-function Problemes({ problemes }: { problemes: ProblemePlan[] }) {
-  const erreurs = problemes.filter((probleme) => probleme.niveau === "erreur");
-  const avertissements = problemes.filter((probleme) => probleme.niveau === "avertissement");
-  const liste = (elements: ProblemePlan[]) => (
-    <ul>
-      {elements.map((probleme, index) => (
-        <li key={`${probleme.segment ?? "-"}-${index}`}>
-          {probleme.segment !== null && <strong>{probleme.segment} : </strong>}
-          {probleme.message}
-        </li>
-      ))}
-    </ul>
-  );
-  return (
-    <>
-      {erreurs.length > 0 && <Message type="erreur">À corriger avant l'aperçu :{liste(erreurs)}</Message>}
-      {avertissements.length > 0 && <Message type="alerte">{liste(avertissements)}</Message>}
-    </>
-  );
-}
-
-function DetailPlan({ version, dureeVisee }: { version: VersionPlan; dureeVisee: number | null }) {
-  const { plan } = version;
-  if (plan === null) return <Message type="erreur">{version.erreur}</Message>;
-  const total = dureePlan(plan);
-  const parSegment = new Map(version.problemes.filter((probleme) => probleme.segment !== null).map((probleme) => [probleme.segment, probleme]));
-
-  return (
-    <>
-      <p className="carte-badges">
-        <span className="badge">{plan.version}</span>
-        <span className={plan.statut === "valide" ? "badge badge-ok" : "badge"}>{plan.statut === "valide" ? "Validé" : "Proposé"}</span>
-        {plan.modifieLe !== null && <span className="badge">Modifié à la main</span>}
-        <span className="note">
-          {plan.segments.length} segment{plan.segments.length > 1 ? "s" : ""} · {temps(total)}
-          {dureeVisee !== null && ` pour ${temps(dureeVisee * 60)} visées`} · proposé le{" "}
-          {new Date(plan.creeLe).toLocaleString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
-        </span>
-      </p>
-      <Problemes problemes={version.problemes} />
-      <div className="bloc-texte">
-        <span className="champ-libelle">Stratégie</span>
-        <p>{plan.resume}</p>
-      </div>
-      <div className="bloc-texte">
-        <span className="champ-libelle">Accroche ({plan.hook.segment})</span>
-        <p>{plan.hook.explication}</p>
-      </div>
-      {plan.pointsAVerifier.length > 0 && (
-        <Message type="alerte">
-          Claude signale :
-          <ul>
-            {plan.pointsAVerifier.map((point) => (
-              <li key={point}>{point}</li>
-            ))}
-          </ul>
-        </Message>
-      )}
-      <table className="tableau tableau-plan">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Source</th>
-            <th>Passage</th>
-            <th>Rôle</th>
-            <th>Ce qui est dit</th>
-            <th>Pourquoi</th>
-          </tr>
-        </thead>
-        <tbody>
-          {plan.segments.map((segment) => (
-            <tr key={segment.id} className={parSegment.get(segment.id)?.niveau === "erreur" ? "ligne-erreur" : undefined}>
-              <td>{segment.id}</td>
-              <td className="cellule-nom" title={segment.source}>
-                {nomFichier(segment.source)}
-              </td>
-              <td className="cellule-temps">
-                {temps(segment.debut)} → {temps(segment.fin)}
-                <br />
-                <span className="note">{(segment.fin - segment.debut).toFixed(1).replace(".", ",")} s</span>
-              </td>
-              <td>{segment.role}</td>
-              <td className="cellule-citation">{segment.citation === "" ? <span className="note">—</span> : `« ${segment.citation} »`}</td>
-              <td>{segment.raison}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {plan.musiques.length > 0 && (
-        <>
-          <h3>Musique</h3>
-          <ul>
-            {plan.musiques.map((musique, index) => (
-              <li key={`${musique.reference}-${index}`}>
-                <strong>{musique.origine === "projet" ? nomFichier(musique.reference) : musique.reference}</strong> de {temps(musique.debut)} à{" "}
-                {musique.fin === null ? "la fin" : temps(musique.fin)}, {musique.volumeDb} dB
-                {musique.baisseSousVoix && ", baissée sous la voix"}
-                {musique.raison && <span className="note"> · {musique.raison}</span>}
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </>
-  );
-}
+import { EditeurPlan } from "./EditeurPlan.tsx";
 
 export function Plan({ projet, surChangement }: { projet: DetailProjet; surChangement: () => void }) {
   const [plans, setPlans] = useState<ReponsePlans | null>(null);
+  const [proxies, setProxies] = useState<Map<string, string>>(new Map());
   const [consigne, setConsigne] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
   const { taches } = useTaches();
@@ -134,6 +20,11 @@ export function Plan({ projet, surChangement }: { projet: DetailProjet; surChang
     lireJson<ReponsePlans>(`/api/projets/${projet.id}/plans`)
       .then(setPlans)
       .catch((e: unknown) => setErreur(messageErreur(e)));
+    lireJson<ReponseTranscriptions>(`/api/projets/${projet.id}/transcriptions`)
+      .then(({ fichiers }) =>
+        setProxies(new Map(fichiers.flatMap((fichier) => (fichier.preparation === "a-jour" && fichier.proxy !== null ? [[fichier.chemin, fichier.proxy]] : [])))),
+      )
+      .catch(() => setProxies(new Map()));
   }, [projet.id]);
 
   useEffect(charger, [charger]);
@@ -156,6 +47,11 @@ export function Plan({ projet, surChangement }: { projet: DetailProjet; surChang
     }
   }
 
+  function remplacer(version: VersionPlan) {
+    setPlans((actuel) => actuel && { versions: actuel.versions.map((element) => (element.version === version.version ? version : element)) });
+    surChangement();
+  }
+
   const courante = plans?.versions[0] ?? null;
   const sansTranscription = projet.etape === "fichiers";
 
@@ -165,11 +61,14 @@ export function Plan({ projet, surChangement }: { projet: DetailProjet; surChang
       {erreur && <Message type="erreur">{erreur}</Message>}
       {courante === null ? (
         <p className="section-intro">
-          Claude lit les transcriptions, tes consignes, tes notes et le guide de style <code>guides/{projet.metadata.categorie}/style.md</code>, puis
-          propose un plan : les passages gardés, dans l'ordre, avec la raison de chaque choix. Rien n'est rendu tant que tu ne l'as pas validé.
+          Claude lit les transcriptions, les planches d'images, tes moments marqués, tes consignes et le guide de style{" "}
+          <code>guides/{projet.metadata.categorie}/style.md</code>, puis propose un plan : les passages gardés, dans l'ordre, avec la raison de
+          chaque choix. Tu peux ensuite tout ajuster ici. Rien n'est rendu tant que tu ne l'as pas validé.
         </p>
+      ) : courante.plan === null ? (
+        <Message type="erreur">{courante.erreur}</Message>
       ) : (
-        <DetailPlan version={courante} dureeVisee={projet.metadata.consignes.dureeViseeMinutes} />
+        <EditeurPlan projet={projet} version={courante} initial={courante.plan} proxies={proxies} surEnregistrement={remplacer} />
       )}
 
       {active !== null ? (
@@ -184,7 +83,7 @@ export function Plan({ projet, surChangement }: { projet: DetailProjet; surChang
             </ul>
           )}
           {sansTranscription ? (
-            <p className="note">Transcris d'abord les rushes (section Transcriptions) : Claude s'en sert pour proposer le plan.</p>
+            <p className="note">Analyse d'abord les rushes (section Analyse des rushes) : Claude s'en sert pour proposer le plan.</p>
           ) : (
             <div className="formulaire-plan">
               <label className="champ">
@@ -197,8 +96,8 @@ export function Plan({ projet, surChangement }: { projet: DetailProjet; surChang
                   onChange={(evenement) => setConsigne(evenement.target.value)}
                 />
               </label>
-              <button type="button" className="bouton bouton-principal" onClick={() => void proposer()}>
-                {courante === null ? "Proposer un plan" : courante.apercu ? "Proposer la version suivante" : "Autre proposition"}
+              <button type="button" className="bouton" onClick={() => void proposer()}>
+                {courante === null ? "Proposer un plan" : courante.apercu ? "Proposer la version suivante" : "Demander une autre proposition à Claude"}
               </button>
             </div>
           )}

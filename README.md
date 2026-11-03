@@ -52,7 +52,7 @@ Phase 3 (plan de montage et aperçu), pour un vlog d'abord.
 | 3.2 | Contrat `plan.json` et validation | ✅ |
 | 3.3 | Appel de Claude depuis le backend (`claude -p`, sessions, limites) et proposition d'un plan | ✅ |
 | 3.4 | Skill `proposer-plan` (première version en place, à affiner sur la vidéo de test) | en cours |
-| 3.5 | Écran Plan : relire, ajuster, valider | à venir |
+| 3.5 | Écran Plan : écouter, ajuster et valider le plan ; coupes décalées et plans de coupe | ✅ |
 | 3.6 | Rendu de l'aperçu basse résolution | à venir |
 | 3.7 | Lecteur et commentaires horodatés | à venir |
 | 3.8 | Boucle de versions (`integrer-retours`) et validation | à venir |
@@ -274,7 +274,7 @@ Sur l'écran Projet, section **Plan de montage** :
    - chaque **segment** dans l'ordre : le rush, le passage (début → fin, durée), son rôle, ce qui est dit et pourquoi il est gardé ;
    - la musique, son volume et si elle baisse sous la voix ;
    - les **problèmes** repérés par l'outil : en rouge ce qui empêchera l'aperçu (rush introuvable, passage au-delà de la fin du rush…), en orange les avertissements (durée loin de la durée visée, passage repris deux fois…).
-4. Pas convaincu : écris ce que tu veux de différent, puis **Autre proposition**. Claude garde le fil de vos échanges ; la proposition précédente est archivée dans `travail/propositions/`.
+4. Pas convaincu : écris ce que tu veux de différent, puis **Demander une autre proposition à Claude**. Claude garde le fil de vos échanges ; la proposition précédente est archivée dans `travail/propositions/`.
 
 Ce que l'outil range dans le projet :
 - `travail/plan/contexte.md` : tout ce que Claude a lu (consignes, fichiers, assets utilisables, guide de style) ;
@@ -283,7 +283,21 @@ Ce que l'outil range dans le projet :
 
 Claude ne peut que lire les fichiers du projet : il n'écrit rien lui-même, ne lance aucune commande et ne touche jamais aux rushes. Le réglage du modèle Claude utilisé est dans **Paramètres** → Réglages communs.
 
-La modification du plan à la main, l'aperçu et les commentaires arrivent dans les étapes suivantes de la phase 3.
+Pour ajuster le plan toi-même et le valider, voir la tâche suivante.
+
+### Ajuster le plan et le valider
+
+La section **Plan de montage** est un éditeur. Tant que le plan est **Proposé** et qu'aucun aperçu n'existe, tout se modifie :
+- **Écouter** : ▶ sur une ligne joue ce segment dans le lecteur (sur le proxy) et s'arrête à sa fin ; **Enchaîner tout le plan** joue les segments à la suite, sans les décalages ni les plans de coupe (l'aperçu rendu les montrera).
+- **Bornes** : tape le début et la fin en secondes (Entrée pour valider), ou mets le lecteur au bon endroit puis **⇤** (début ici) ou **⇥** (fin ici). La ligne indique aussi où le segment tombe dans la vidéo finale.
+- **Ordre** : ▲ et ▼ ; **✕** retire le segment. **accroche** choisit le segment d'ouverture.
+- **Image** (coupe décalée) : 0 pour une coupe franche ; **négatif** (par exemple -1,5) : l'image du segment arrive en avance pendant que la fin de la phrase précédente se termine, la transition « on entend encore mon visage mais on voit déjà la suite » ; **positif** : l'image précédente reste un instant.
+- **Plans de coupe** : une image sans son, prise dans un rush, posée par-dessus la voix à un instant de la vidéo finale. Règle le passage emprunté et l'instant (« à … s dans la vidéo »). Pour en ajouter un : lis un passage, mets le lecteur sur l'image voulue, puis **+ Plan de coupe depuis la position du lecteur**.
+- **Musique** : volume en dB, baisse sous la voix, **✕** pour la retirer.
+
+Puis **Enregistrer les modifications** (ou **Annuler les modifications**). L'outil revérifie le plan à chaque enregistrement et affiche ce qui ne va pas. Le plan passe en « Modifié à la main » : si tu redemandes une proposition, Claude part de ta version.
+
+Quand tout est bon : **Valider le plan** (impossible tant qu'il reste une erreur en rouge). Le plan validé ne se modifie plus ; **Repasser en brouillon** le rend modifiable tant que l'aperçu n'a pas été rendu. L'aperçu se lance depuis le plan validé (étape suivante de la phase 3).
 
 ### Modifier un projet, ajouter des fichiers, le mettre à la corbeille
 
@@ -403,6 +417,9 @@ Pas encore d'écran dédié. En attendant, ouvrir `creations/guides/<catégorie>
 | « Limite d'usage Claude atteinte : réessaie à … » | Ton quota d'abonnement est épuisé pour le moment : attendre l'heure indiquée, puis **Relancer** la tâche |
 | « Claude utilise une clé API … au lieu de l'abonnement » | Retirer la variable `ANTHROPIC_API_KEY` de l'environnement, se reconnecter à Claude Code avec l'abonnement, puis **Relancer** |
 | « Aucune transcription : transcris d'abord les rushes » | Section **Analyse des rushes** de l'écran Projet, puis relancer la proposition |
+| « Corrige d'abord le plan : … » en validant | Une erreur en rouge reste dans le plan : la corriger, **Enregistrer les modifications**, puis **Valider le plan** |
+| « Ce plan est validé : repasse-le en brouillon pour le modifier » | **Repasser en brouillon**, modifier, puis valider de nouveau |
+| « Un aperçu existe déjà pour cette version » ou « Seule la dernière version du plan peut changer » | Une version rendue est conservée telle quelle : demander la version suivante |
 | « ffmpeg a échoué (création du proxy) : … » | Le rush est peut-être abîmé ou dans un format inconnu : vérifier qu'il se lit dans un lecteur vidéo, puis **Refaire la préparation** |
 | Les planches n'ont pas d'horaire écrit sur les vignettes | Aucune police trouvée sur la machine (Arial sous Windows et Mac) : Claude calcule alors les horaires, la préparation reste utilisable |
 | Une vidéo de téléphone apparaît délavée ou grise dans le lecteur | Elle est en HDR et n'a pas encore de proxy : **Préparer** le fichier |

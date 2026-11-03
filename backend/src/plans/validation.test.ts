@@ -1,9 +1,9 @@
-import { schemaPropositionPlan, type AssetBibliotheque, type PropositionPlan, type SegmentPlan } from "@editeur/shared";
+import { plagesImage, schemaPropositionPlan, type AssetBibliotheque, type PropositionPlan, type SegmentPlan } from "@editeur/shared";
 import { describe, expect, it } from "vitest";
 import { validerPlan, type SourcesPlan } from "./validation.ts";
 
 function segment(id: string, debut: number, fin: number, source = "rushes/a.mp4"): SegmentPlan {
-  return { id, source, debut, fin, role: "moment fort", citation: "", raison: "" };
+  return { id, source, debut, fin, role: "moment fort", citation: "", raison: "", decalageImage: 0 };
 }
 
 function plan(changement: Partial<PropositionPlan> = {}): PropositionPlan {
@@ -11,6 +11,7 @@ function plan(changement: Partial<PropositionPlan> = {}): PropositionPlan {
     resume: "",
     hook: { segment: "s1", explication: "" },
     segments: [segment("s1", 0, 10), segment("s2", 20, 30)],
+    plansDeCoupe: [],
     musiques: [],
     pointsAVerifier: [],
     reponsesRetours: [],
@@ -126,6 +127,62 @@ describe("validerPlan", () => {
     expect(validerPlan(plan(), sources({ dureeViseeSecondes: 22 }))).toEqual([]);
     expect(messages(validerPlan(plan(), sources({ dureeViseeSecondes: 60 })))).toEqual(["avertissement - Durée du plan : 0:20,0, pour 1:00,0 visées."]);
     expect(messages(validerPlan(plan({ segments: [] }), sources()))).toEqual(["erreur - Le plan ne contient aucun segment."]);
+  });
+});
+
+describe("décalages d'image et plans de coupe", () => {
+  it("calcule les plages d'image : en avance (négatif) ou en retard (positif) sur le son", () => {
+    const segments = [segment("s1", 10, 20), { ...segment("s2", 30, 40), decalageImage: -1.5 }, { ...segment("s3", 50, 55), decalageImage: 0.5 }];
+    expect(plagesImage(segments)).toEqual([
+      { debut: 10, fin: 18.5 },
+      { debut: 28.5, fin: 40.5 },
+      { debut: 50.5, fin: 55 },
+    ]);
+  });
+
+  it("accepte des décalages possibles et refuse les autres", () => {
+    expect(validerPlan(plan({ segments: [segment("s1", 0, 10), { ...segment("s2", 20, 30), decalageImage: -2 }] }), sources())).toEqual([]);
+    const problemes = validerPlan(
+      plan({
+        segments: [
+          { ...segment("s1", 0, 10), decalageImage: 1 },
+          { ...segment("s2", 0.5, 5), decalageImage: -1 },
+          { ...segment("s3", 20, 21), decalageImage: 2 },
+          { ...segment("s4", 50, 59.9) },
+          { ...segment("s5", 30, 31), decalageImage: 0.5 },
+        ],
+      }),
+      sources(),
+    );
+    expect(messages(problemes)).toEqual([
+      "avertissement s2 Reprend un passage déjà utilisé par s1.",
+      "erreur s1 Le premier segment ne peut pas avoir de décalage d'image.",
+      "erreur s2 Avec le décalage, l'image commence avant le début du rush.",
+      "erreur s3 L'image de s2 reste plus longtemps que tout ce segment.",
+      "erreur s4 Avec le décalage du segment suivant, l'image dépasse la fin du rush.",
+    ]);
+  });
+
+  it("vérifie les plans de coupe : vidéo du projet, bornes et place dans la vidéo finale", () => {
+    const coupe = { source: "rushes/a.mp4", debut: 40, fin: 42, position: 3, raison: "" };
+    expect(validerPlan(plan({ plansDeCoupe: [coupe] }), sources())).toEqual([]);
+    const problemes = validerPlan(
+      plan({
+        plansDeCoupe: [
+          { ...coupe, source: "assets/musique.mp3" },
+          { ...coupe, fin: 39 },
+          { ...coupe, debut: 58, fin: 62 },
+          { ...coupe, position: 19 },
+        ],
+      }),
+      sources(),
+    );
+    expect(messages(problemes)).toEqual([
+      "erreur - Plan de coupe 1 : vidéo introuvable ou inutilisable : assets/musique.mp3.",
+      "erreur - Plan de coupe 2 : la fin doit venir après le début.",
+      "erreur - Plan de coupe 3 : la fin dépasse la durée de la vidéo (1:00,0).",
+      "erreur - Plan de coupe 4 : dépasse la fin de la vidéo finale (0:20,0).",
+    ]);
   });
 });
 
