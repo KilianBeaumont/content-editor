@@ -39,3 +39,23 @@ Un créateur de contenu te montre une vidéo qu'il trouve réussie. Tu ne la reg
 - Les généralités (« vidéo dynamique », « bonne énergie ») : dis ce qui la rend dynamique, avec des chiffres et des horaires.
 - Décrire une image que tu n'as pas vue sur une vignette.
 - Recopier de longs passages de la transcription : cite seulement les phrases clés.
+
+## Cas particulier : guide « Animations (Remotion) »
+
+Quand le prompt indique le guide `animations`, la vidéo est une référence de **motion design** : ce qui compte, c'est la manière dont les textes et les éléments graphiques bougent, pas le montage ni le récit. Ton analyse servira à créer ou améliorer les composants animés de l'outil (écrits avec Remotion) et à choisir les animations des textes dans les plans.
+
+Un dossier de plus : `mouvement/mouvement-XX.jpg`, les 24 premières secondes décomposées à six images par seconde (horaire en secondes et dixièmes sur chaque vignette). Regarde-les **toutes**, dans l'ordre : c'est là que tu vois les animations image par image.
+
+Repère, avec les horaires et en nombre d'images à 30 images par seconde quand c'est possible :
+- **les entrées** : quelles propriétés bougent ensemble (opacité, montée, échelle, rotation, flou, masque), leur durée, s'il y a un dépassement puis un retour (rebond, ressort) ou une décélération douce ;
+- **les décalages** : les mots, lettres ou éléments arrivent-ils les uns après les autres, avec quel écart ;
+- **les sorties** : leur durée par rapport aux entrées, leur direction ;
+- **les maintiens** : les moments d'immobilité entre deux mouvements, et le micro-mouvement éventuel (respiration, flottement) ;
+- **la typographie** : graisse, casse, taille par rapport à l'image, interlettrage, contour, ombre, lueur, étiquette ou surlignage derrière un mot ;
+- **les couleurs** : base, couleur héroïne (combien d'éléments la portent à la fois), contraste avec la vidéo dessous ;
+- **la place** : zones de l'image utilisées, marges, zone sûre des formats verticaux ;
+- **le lien avec le son** : animations calées sur la voix, un temps de la musique ou un bruitage.
+
+Dans `techniques`, écris des recettes reproductibles en code, par exemple : « Entrée mot par mot : chaque mot monte de 30 % de sa hauteur avec un ressort sans dépassement, 3 images d'écart », « Mot-clé : étiquette jaune qui grandit derrière le mot 5 images après son arrivée », « Sortie en 8 images, deux fois plus rapide que l'entrée, vers le haut ».
+
+Dans `analyse`, utilise les sections **Entrées**, **Décalages et rythme**, **Sorties et maintiens**, **Typographie**, **Couleurs et place**, **Son**, **Ce qu'on retient pour nos animations**.

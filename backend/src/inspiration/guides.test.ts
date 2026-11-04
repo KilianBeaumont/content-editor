@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type { GuideCategorie, ReponseGuides, ReponseTaches, VideoInspiration } from "@editeur/shared";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { corpsAvecFichier, preparerEnvironnementTest, type EnvironnementTest } from "../test-outils.ts";
-import { referencesInspiration } from "./inspiration.ts";
+import { referencesInspiration, sectionAnimations } from "./inspiration.ts";
 
 describe("guides et vidéos d'inspiration", () => {
   let env: EnvironnementTest;
@@ -27,6 +27,24 @@ describe("guides et vidéos d'inspiration", () => {
     expect(modifie.json<GuideCategorie>().style).toBe("# Style\n\nTrès rythmé.");
     expect(await readFile(join(creations, "guides/court/style.md"), "utf8")).toBe("# Style\n\nTrès rythmé.");
     expect((await env.app.inject({ method: "GET", url: "/api/guides/inconnue" })).statusCode).toBe(404);
+  });
+
+  it("propose un guide des animations, transmis aux plans une fois écrit", async () => {
+    const resume = (await env.app.inject({ method: "GET", url: "/api/guides" })).json<ReponseGuides>().guides.at(-1);
+    expect(resume).toEqual({ categorie: "animations", videos: 0, analysees: 0 });
+    const guide = (await env.app.inject({ method: "GET", url: "/api/guides/animations" })).json<GuideCategorie>();
+    expect(guide.style).toContain("# Style : animations");
+    expect(await sectionAnimations(creations)).toEqual([]);
+
+    await env.app.inject({ method: "PUT", url: "/api/guides/animations", payload: { style: "Rebonds vifs, sorties rapides.", hooks: "" } });
+    expect(await sectionAnimations(creations)).toEqual([
+      "## Style des animations (guides/animations/style.md)",
+      "",
+      "Pour choisir l'animation, le fond et la taille des textes à l'écran.",
+      "",
+      "Rebonds vifs, sorties rapides.",
+      "",
+    ]);
   });
 
   it("reçoit une vidéo, la met en file d'analyse puis à la corbeille", async () => {

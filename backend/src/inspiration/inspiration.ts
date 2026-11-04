@@ -2,12 +2,13 @@ import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import type { Readable } from "node:stream";
 import {
-  CATEGORIES,
   EXTENSIONS_INSPIRATION,
+  GUIDE_ANIMATIONS,
+  SUJETS_GUIDE,
   schemaAnalyseInspiration,
   slug,
   tacheActive,
-  type Categorie,
+  type SujetGuide,
   type EtatAnalyse,
   type GuideCategorie,
   type ProfilInspiration,
@@ -21,16 +22,17 @@ import { codeErreur, ErreurHttp } from "../erreurs.ts";
 import { cheminSur, ecrireJsonAtomique, existe, FichierInvalideError, lireJsonComplete, lireTexte } from "../fichiers.ts";
 import type { FileDeTaches } from "../taches/file.ts";
 import { enregistrerFlux, nomLibre, verifierExtension } from "../televersement.ts";
+import { MODELE_STYLE_ANIMATIONS } from "../creations/modeles.ts";
 import { resumerProfil } from "./profil.ts";
 
-export const dossierVideos = (categorie: Categorie) => `guides/${categorie}/inspiration/videos`;
-export const dossierAnalyses = (categorie: Categorie) => `guides/${categorie}/inspiration/analyses`;
+export const dossierVideos = (categorie: SujetGuide) => `guides/${categorie}/inspiration/videos`;
+export const dossierAnalyses = (categorie: SujetGuide) => `guides/${categorie}/inspiration/analyses`;
 
 export function nomAnalyse(nomVideo: string): string {
   return slug(nomVideo.slice(0, nomVideo.length - extname(nomVideo).length)) || "video";
 }
 
-export function dossierAnalyse(categorie: Categorie, nomVideo: string): string {
+export function dossierAnalyse(categorie: SujetGuide, nomVideo: string): string {
   return `${dossierAnalyses(categorie)}/${nomAnalyse(nomVideo)}`;
 }
 
@@ -73,7 +75,7 @@ async function lireTexteSiPresent(chemin: string, defaut: string): Promise<strin
   }
 }
 
-async function listerVideos(creations: string, categorie: Categorie): Promise<string[]> {
+async function listerVideos(creations: string, categorie: SujetGuide): Promise<string[]> {
   try {
     const entrees = await readdir(cheminSur(creations, dossierVideos(categorie)), { withFileTypes: true });
     return entrees
@@ -95,7 +97,7 @@ async function planchesAnalyse(dossier: string, sousDossier: string): Promise<st
   }
 }
 
-async function decrireVideo(creations: string, categorie: Categorie, nom: string): Promise<VideoInspiration> {
+async function decrireVideo(creations: string, categorie: SujetGuide, nom: string): Promise<VideoInspiration> {
   const chemin = `${dossierVideos(categorie)}/${nom}`;
   const relatifAnalyse = dossierAnalyse(categorie, nom);
   const analyse = cheminSur(creations, relatifAnalyse);
@@ -103,7 +105,7 @@ async function decrireVideo(creations: string, categorie: Categorie, nom: string
   const etat = await lireSiPossible(join(analyse, "etat.json"), schemaEtat);
   const valeur: EtatAnalyse =
     etat === null ? "absente" : etat.tailleSource === infos.size && etat.modifieSource === infos.mtime.toISOString() ? "a-jour" : "perimee";
-  const planches = [...(await planchesAnalyse(analyse, "coupes")), ...(await planchesAnalyse(analyse, "planches"))].map((fichier) => `${relatifAnalyse}/${fichier}`);
+  const planches = [...(await planchesAnalyse(analyse, "coupes")), ...(await planchesAnalyse(analyse, "mouvement")), ...(await planchesAnalyse(analyse, "planches"))].map((fichier) => `${relatifAnalyse}/${fichier}`);
   return {
     nom,
     chemin,
@@ -116,22 +118,22 @@ async function decrireVideo(creations: string, categorie: Categorie, nom: string
   };
 }
 
-export function categorieValide(valeur: string): Categorie {
-  const categorie = CATEGORIES.find((element) => element === valeur);
+export function categorieValide(valeur: string): SujetGuide {
+  const categorie = SUJETS_GUIDE.find((element) => element === valeur);
   if (categorie === undefined) throw new ErreurHttp(404, `Catégorie inconnue : ${valeur}`);
   return categorie;
 }
 
 export async function listerGuides(creations: string): Promise<ReponseGuides> {
   const guides = [];
-  for (const categorie of CATEGORIES) {
+  for (const categorie of SUJETS_GUIDE) {
     const videos = await Promise.all((await listerVideos(creations, categorie)).map((nom) => decrireVideo(creations, categorie, nom)));
     guides.push({ categorie, videos: videos.length, analysees: videos.filter((video) => video.etat === "a-jour" && video.claude !== null).length });
   }
   return { guides };
 }
 
-export async function lireGuide(creations: string, categorie: Categorie): Promise<GuideCategorie> {
+export async function lireGuide(creations: string, categorie: SujetGuide): Promise<GuideCategorie> {
   const racine = `guides/${categorie}`;
   return {
     categorie,
@@ -141,7 +143,7 @@ export async function lireGuide(creations: string, categorie: Categorie): Promis
   };
 }
 
-export async function ecrireGuide(creations: string, categorie: Categorie, saisie: SaisieGuide): Promise<GuideCategorie> {
+export async function ecrireGuide(creations: string, categorie: SujetGuide, saisie: SaisieGuide): Promise<GuideCategorie> {
   const racine = cheminSur(creations, `guides/${categorie}`);
   await mkdir(racine, { recursive: true });
   await writeFile(join(racine, "style.md"), saisie.style, "utf8");
@@ -149,7 +151,7 @@ export async function ecrireGuide(creations: string, categorie: Categorie, saisi
   return lireGuide(creations, categorie);
 }
 
-export async function televerserInspiration(creations: string, categorie: Categorie, nomFichier: string, flux: Readable): Promise<VideoInspiration> {
+export async function televerserInspiration(creations: string, categorie: SujetGuide, nomFichier: string, flux: Readable): Promise<VideoInspiration> {
   verifierExtension(nomFichier, EXTENSIONS_INSPIRATION);
   const dossier = cheminSur(creations, dossierVideos(categorie));
   await mkdir(dossier, { recursive: true });
@@ -158,7 +160,7 @@ export async function televerserInspiration(creations: string, categorie: Catego
   return decrireVideo(creations, categorie, nom);
 }
 
-export async function supprimerInspiration(creations: string, categorie: Categorie, nom: string): Promise<{ corbeille: string }> {
+export async function supprimerInspiration(creations: string, categorie: SujetGuide, nom: string): Promise<{ corbeille: string }> {
   const chemin = `${dossierVideos(categorie)}/${nom}`;
   if (nom.includes("/") || nom.includes("\\") || !(await existe(cheminSur(creations, chemin)))) throw new ErreurHttp(404, `Vidéo introuvable : ${nom}`);
   const corbeille = await mettreALaCorbeille(creations, chemin, `guides/${categorie}`);
@@ -167,7 +169,7 @@ export async function supprimerInspiration(creations: string, categorie: Categor
   return { corbeille };
 }
 
-export async function lancerAnalyses(creations: string, file: FileDeTaches, categorie: Categorie, demandes: string[] | null): Promise<number> {
+export async function lancerAnalyses(creations: string, file: FileDeTaches, categorie: SujetGuide, demandes: string[] | null): Promise<number> {
   const videos = await lireGuide(creations, categorie).then((guide) => guide.videos);
   for (const nom of demandes ?? []) {
     if (!videos.some((video) => video.nom === nom)) throw new ErreurHttp(400, `Vidéo introuvable : ${nom}`);
@@ -185,7 +187,7 @@ export async function lancerAnalyses(creations: string, file: FileDeTaches, cate
   return choisies.length;
 }
 
-export async function referencesInspiration(creations: string, categorie: Categorie): Promise<string[]> {
+export async function referencesInspiration(creations: string, categorie: SujetGuide): Promise<string[]> {
   const videos = (await lireGuide(creations, categorie)).videos.filter((video) => video.profil !== null && video.claude !== null);
   if (videos.length === 0) return [];
   const lignes = [
@@ -201,6 +203,22 @@ export async function referencesInspiration(creations: string, categorie: Catego
     lignes.push("");
   }
   return lignes;
+}
+
+export async function sectionAnimations(creations: string): Promise<string[]> {
+  const guide = await lireGuide(creations, GUIDE_ANIMATIONS);
+  const references = await referencesInspiration(creations, GUIDE_ANIMATIONS);
+  const styleEcrit = guide.style.trim() !== "" && guide.style !== MODELE_STYLE_ANIMATIONS;
+  if (!styleEcrit && references.length === 0) return [];
+  return [
+    "## Style des animations (guides/animations/style.md)",
+    "",
+    "Pour choisir l'animation, le fond et la taille des textes à l'écran.",
+    "",
+    styleEcrit ? guide.style.trim() : "(pas encore écrit)",
+    "",
+    ...references,
+  ];
 }
 
 export async function ecrireEtatAnalyse(dossier: string, etat: EtatFichierAnalyse): Promise<void> {

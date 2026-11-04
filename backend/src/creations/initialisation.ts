@@ -1,13 +1,13 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { CATEGORIES, CHAINES_BIBLIOTHEQUE, PARAMETRES_PAR_DEFAUT, TYPES, TYPES_ASSET } from "@editeur/shared";
+import { CATEGORIES, CHAINES_BIBLIOTHEQUE, GUIDE_ANIMATIONS, PARAMETRES_PAR_DEFAUT, SUJETS_GUIDE, TYPES, TYPES_ASSET } from "@editeur/shared";
 import { codeErreur } from "../erreurs.ts";
-import { modeleHooks, modeleStyle } from "./modeles.ts";
+import { MODELE_STYLE_ANIMATIONS, modeleHooks, modeleStyle } from "./modeles.ts";
 
 function dossiers(): string[] {
   const liste = ["inbox", "artistes", "auteurs", "chaine-creation", "chaine-recits", "corbeille"];
-  for (const categorie of CATEGORIES) {
-    liste.push(`guides/${categorie}/inspiration/videos`, `guides/${categorie}/inspiration/analyses`);
+  for (const sujet of SUJETS_GUIDE) {
+    liste.push(`guides/${sujet}/inspiration/videos`, `guides/${sujet}/inspiration/analyses`);
   }
   for (const chaine of CHAINES_BIBLIOTHEQUE) {
     liste.push(...TYPES_ASSET.map((type) => `bibliotheque/${chaine}/${TYPES[type].dossier}`));
@@ -26,6 +26,7 @@ function fichiers(): Array<{ chemin: string; contenu: string }> {
       { chemin: `guides/${categorie}/hooks.md`, contenu: modeleHooks(categorie) },
     );
   }
+  liste.push({ chemin: `guides/${GUIDE_ANIMATIONS}/style.md`, contenu: MODELE_STYLE_ANIMATIONS });
   return liste;
 }
 

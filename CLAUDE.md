@@ -88,6 +88,9 @@ creations/
     extrait-recit/
     timelapse/
     podcast/
+    animations/                       motion design des textes et composants animés (Remotion) :
+      style.md                        style.md + inspiration/, analyses image par image
+      inspiration/
 
   bibliotheque/                       assets réutilisables dans plusieurs vidéos
     catalogue.json                    inventaire de tous les assets réutilisables
@@ -409,6 +412,7 @@ Les consignes de montage ne sont pas réécrites à chaque appel. Elles vivent d
     proposer-plan/SKILL.md            lire le guide de style, les rushes transcrits, et écrire plan.json
     integrer-retours/SKILL.md         lire retours.json, produire le plan de la version suivante
     proposer-extraits/SKILL.md        choisir les extraits courts d'une vidéo longue validée
+    creer-animation/SKILL.md          créer ou améliorer une animation Remotion, vérifiée sur planche d'images
 ```
 
 Chaque skill décrit les étapes dans l'ordre, les fichiers à lire, le format de sortie attendu et ce qui est interdit. Le backend l'appelle par son nom, par exemple `claude -p "/proposer-plan 2026-11-06_le-dernier-dragon"`, et Claude Code charge les consignes automatiquement. Les mêmes skills restent utilisables à la main dans une session Claude Code classique, ce qui permet de les tester et de les améliorer avant de les brancher sur l'interface.
@@ -537,3 +541,4 @@ Dépôts étudiés (clonés dans `../inspiration`). L'étude complète, avec ce 
 - **Textes à l'écran avec Remotion** : les composants animés vivent dans le workspace `animations/` (React + Remotion), utilisés à la fois par l'aperçu en direct de l'éditeur (`@remotion/player`) et par le rendu. Chaque texte est rendu en clip transparent (ProRes 4444) aux dimensions et à la cadence de la sortie, puis incrusté par ffmpeg à son instant ; le reste du montage reste en ffmpeg. En HDR, les clips sont placés dans l'espace HLG comme les sources SDR.
 - **Sous-titres** : restent en ASS (libass) pour l'instant ; ils pourront passer à Remotion plus tard avec le même mécanisme.
 - **Remotion** : version fixée pour tous les paquets `remotion` et `@remotion/*`, licence gratuite (usage personnel), sans clé de licence ni télémétrie.
+- **Guide « Animations »** : un guide à part dans l'écran Guides (`guides/animations/`, sans `hooks.md`) pour les références de motion design, analysées image par image ; son style et ses techniques sont transmis aux propositions de plan et lus par la skill `creer-animation`. Règles de mouvement inspirées de `haidrrrry/claude-remotion-skill` (MIT, aucune copie), valeurs centralisées dans `animations/src/theme.ts`, vérification obligatoire sur planche d'images (`scripts/controle-animations.ts`).

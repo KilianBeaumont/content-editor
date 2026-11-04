@@ -58,10 +58,10 @@ export const LIBELLES_APPARITION: Record<ApparitionTexte, string> = {
   aucune: "sans effet",
 };
 
-export const FONDS_TEXTE = ["aucun", "sombre", "accent"] as const;
+export const FONDS_TEXTE = ["aucun", "sombre", "accent", "surligne"] as const;
 export type FondTexte = (typeof FONDS_TEXTE)[number];
 
-export const LIBELLES_FOND: Record<FondTexte, string> = { aucun: "sans fond", sombre: "étiquette sombre", accent: "étiquette couleur" };
+export const LIBELLES_FOND: Record<FondTexte, string> = { aucun: "sans fond", sombre: "étiquette sombre", accent: "étiquette couleur", surligne: "mot surligné" };
 
 export interface StyleTextes {
   couleur: string;
@@ -373,7 +373,7 @@ export const schemaPropositionPlan = z.object({
         apparition: z
           .enum(APPARITIONS_TEXTE)
           .describe("pop : jaillit avec un léger rebond ; mot-a-mot : les mots arrivent un par un ; glisse : monte en douceur ; machine : lettre par lettre ; fondu ; aucune."),
-        fond: z.enum(FONDS_TEXTE).default("aucun").describe("aucun ; sombre : étiquette sombre arrondie derrière le texte (lisible partout) ; accent : étiquette de la couleur d'accent."),
+        fond: z.enum(FONDS_TEXTE).default("aucun").describe("aucun ; sombre : étiquette sombre arrondie derrière le texte (lisible partout) ; accent : étiquette de la couleur d'accent ; surligne : une étiquette de la couleur d'accent grandit derrière les mots entre astérisques juste après leur arrivée."),
       }),
     )
     .default([])

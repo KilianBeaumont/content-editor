@@ -38,6 +38,32 @@ Liste des vidéos d'inspiration et ce qu'on en retient pour chacune.
 `;
 }
 
+export const MODELE_STYLE_ANIMATIONS = `# Style : animations
+
+## Énergie
+Vif et rebondi, ou doux et posé ? Différent selon la chaîne ?
+
+## Entrées
+- Mouvement préféré (pop, mot à mot, glisse, machine à écrire, fondu) :
+- Vitesse :
+
+## Sorties et maintiens
+- Durée d'affichage d'un titre :
+- Sortie :
+
+## Typographie
+- Police (dans la bibliothèque) :
+- Majuscules, graisse, contour, étiquette :
+
+## Couleurs
+- Couleur d'accent et mots mis en valeur :
+
+## À éviter
+
+## Références
+Liste des vidéos d'inspiration et ce qu'on en retient pour chacune.
+`;
+
 export function modeleHooks(categorie: Categorie): string {
   return `# Hooks : ${LIBELLES_CATEGORIES[categorie]}
 

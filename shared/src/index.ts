@@ -253,6 +253,10 @@ export {
   type ReponseExportsGlobaux, type SaisieExport, type SaisiePublication } from "./exports.ts";
 export {
   EXTENSIONS_INSPIRATION,
+  GUIDE_ANIMATIONS,
+  LIBELLES_SUJETS_GUIDE,
+  SUJETS_GUIDE,
+  type SujetGuide,
   schemaAnalyseInspiration,
   schemaSaisieGuide,
   type AnalyseInspiration,

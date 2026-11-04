@@ -360,7 +360,7 @@ Claude les propose d'après le guide de style et les références d'inspiration 
   - le début et la fin dans la vidéo finale (en secondes), la place (haut, centre, bas) et la taille (en % de la hauteur ; elle est réduite d'office si un mot ne tient pas dans la largeur) ;
   - la couleur (décochée : couleur du texte des sous-titres) ;
   - l'animation : **pop** (jaillit avec un léger rebond), **mot à mot**, **glisse** (monte en douceur), **machine à écrire**, **fondu** ou **sans effet** ; le texte disparaît en douceur à la fin ;
-  - le fond : **sans fond** (contour et ombre), **étiquette sombre** (lisible sur une image chargée) ou **étiquette couleur** (couleur d'accent).
+  - le fond : **sans fond** (contour et ombre), **étiquette sombre** (lisible sur une image chargée), **étiquette couleur** (couleur d'accent) ou **mot surligné** (une étiquette de la couleur d'accent grandit derrière les mots entre astérisques, juste après leur arrivée). Une étiquette se découvre au rythme des mots.
 
   👁 montre l'animation en boucle juste sous la liste, avec ta police, pendant que tu règles. **+ Texte à la position du lecteur** en ajoute un à l'instant où le lecteur est arrêté (lis d'abord un segment avec ▶). En bas, un texte risque de chevaucher les sous-titres : l'outil le signale. Chaque texte ajoute quelques secondes au rendu de l'aperçu et de l'export.
 - **Bruitages** : un son ponctuel de la bibliothèque (type **Son ponctuel**, ou **Ambiance**) posé à un instant de la vidéo finale, avec son volume. Choisis le son dans la liste, puis **+ Bruitage à la position du lecteur**. Il faut d'abord ajouter tes whoosh, pop et impacts à la Bibliothèque.
@@ -520,6 +520,17 @@ Menu **Guides** : une carte par catégorie (vlog, format court, récit…), avec
 Ce que l'outil range dans `guides/<catégorie>/inspiration/analyses/<vidéo>/` : `profil.json`, `coupes.json`, `audio.json`, `transcription.json` et `.md`, les images (`coupes/`, `planches/`), `analyse.json` et `analyse.md`.
 
 Ensuite, à chaque proposition de plan d'un projet de cette catégorie, Claude reçoit tes **références d'inspiration** (profil, résumé, techniques) et s'en inspire sans les copier ; ton guide de style et tes consignes passent avant. **Corbeille** met la vidéo et son analyse dans `corbeille/guides/`.
+
+### Guide des animations (Remotion)
+
+En bas de l'écran **Guides**, la section **Animations** a sa propre carte, **Animations (Remotion)**, pour le motion design des textes à l'écran (et plus tard des cartouches, du bouton abonnement, du logo animé) :
+1. **Style des animations** : écris dans `style.md` ce que tu veux (énergie, rebonds ou douceur, vitesse des entrées et des sorties, typographie, couleurs, ce qu'il faut éviter). Un modèle est proposé.
+2. **Vidéos d'inspiration** : glisse des vidéos de motion design que tu aimes, de préférence courtes. Elles restent privées, comme les autres références.
+3. **Analyser** : en plus des coupes et des images habituelles, les 24 premières secondes sont décomposées à six images par seconde (dossier `mouvement/`). Claude y lit chaque mouvement : propriétés animées, durées en images, rebonds, décalages entre mots, sorties, typographie, couleurs, et en tire des recettes reproductibles.
+
+Ce que ça change :
+- à chaque proposition de plan, Claude reçoit ton style des animations et les techniques de ces références (une fois le style écrit ou une vidéo analysée) pour choisir l'animation, le fond et la taille de chaque texte ;
+- pour créer une nouvelle animation ou en corriger une, ouvre une session Claude Code dans le dépôt et demande-la : la skill `creer-animation` lit ton guide et tes analyses, applique les règles du mouvement (aucune interpolation linéaire, entrées sur plusieurs propriétés, décalages, sorties plus rapides, thème unique dans `animations/src/theme.ts`) et vérifie le résultat sur une planche d'images avant de te le livrer (`node scripts/controle-animations.ts <image.png>`).
 
 ### Tirer des formats courts d'une vidéo longue
 

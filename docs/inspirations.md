@@ -2,7 +2,7 @@
 
 Étude menée le 2026-11-02 sur les dépôts présents dans `../inspiration`, au regard de `CLAUDE.md`. Objectif : savoir quoi reprendre (idées, méthode, architecture) et quoi écarter, avant d'écrire la moindre ligne de code.
 
-Sept dépôts étudiés : les quatre déposés au départ dans `../inspiration` (`video-use`, `editor`, `yt-short-clipper`, `awesome-opus5-5-videos`), puis les trois autres cités dans `CLAUDE.md` §11, clonés ensuite (`remotion-dev/skills` dans `remotion-skills/`, `jperrello/shorts`, `AgriciDaniel/claude-shorts`).
+Huit dépôts étudiés : les quatre déposés au départ dans `../inspiration` (`video-use`, `editor`, `yt-short-clipper`, `awesome-opus5-5-videos`), puis les trois autres cités dans `CLAUDE.md` §11, clonés ensuite (`remotion-dev/skills` dans `remotion-skills/`, `jperrello/shorts`, `AgriciDaniel/claude-shorts`), et `haidrrrry/claude-remotion-skill` ajouté le 2026-11-04 pour le motion design Remotion.
 
 ## Vue d'ensemble
 
@@ -14,6 +14,7 @@ Sept dépôts étudiés : les quatre déposés au départ dans `../inspiration` 
 | `yihui-dev/awesome-opus5-5-videos` | MIT pour la liste ; prompts et vidéos aux auteurs | Liste de 703 prompts (Markdown + JSON) | Vidéos en code générées par Claude Opus 5.5 | Faible pour l'architecture, utile pour les composants animés et les visuels des récits |
 | `remotion-dev/skills` | Aucun fichier de licence ; contenu issu du monorepo Remotion (licence Remotion) | Skills Markdown + exemples TSX | Bonnes pratiques officielles Remotion pour agents | Forte pour le rendu Remotion : player, rendu programmatique, sous-titres, polices, paramètres |
 | `jperrello/shorts` | **Aucune licence**, et l'auteur demande explicitement de ne pas l'utiliser | 52 skills Claude Code + Bash/Python, macOS | Usine automatique de Shorts depuis des podcasts | Forte sur la méthode : skills atomiques, `claude -p` par abonnement, analyse de style des vidéos de référence, boucle des statistiques |
+| `haidrrrry/claude-remotion-skill` | MIT | Skill Claude Code (Markdown) + projet d'exemples Remotion | Règles de motion design et boucle « rendre, regarder les images, corriger » | Forte pour la qualité des animations Remotion et la manière de les vérifier |
 | `AgriciDaniel/claude-shorts` | MIT | Skill Claude Code + Python (faster-whisper) + Remotion | Vidéo longue vers formats courts, sous-titres animés Remotion | Moyenne : grille de notation des extraits, recalage des bornes, rendu Remotion depuis Node, specs d'export |
 
 ### Règle de licence appliquée
@@ -28,6 +29,7 @@ On s'inspire, on ne copie pas : aucun fichier, aucun extrait de code ni aucun pr
 - **`remotion-dev/skills`** : pas de fichier de licence dans le dépôt. On ne copie rien. On peut en revanche **installer** ces skills comme prévu par Remotion (`npx skills add remotion-dev/skills`) pour aider Claude quand il écrit nos compositions pendant le développement.
 - **Remotion lui-même** : licence spécifique, gratuite pour un particulier, payante pour certaines entreprises. À relire au moment de l'installation (la skill `remotion-license` renvoie vers les conditions officielles).
 - **`claude-shorts`** : MIT ; on réécrit quand même au lieu de copier.
+- **`claude-remotion-skill`** : MIT ; aucune copie, on reformule les principes dans nos propres skills et on réécrit les composants.
 
 ---
 
@@ -474,6 +476,41 @@ remotion/                projet Remotion : render.mjs, ShortVideo.tsx,
 
 ---
 
+## 8. `haidrrrry/claude-remotion-skill`
+
+### Ce qu'il fait
+
+Une skill Claude Code (`remotion-motion-graphics`) qui apprend à Claude à produire des animations Remotion « de monteur » plutôt que des fondus plats : dix règles non négociables, deux fiches de référence (motifs de mouvement, règles de design) et un modèle de thème. Un dossier `examples/` contient quatre compositions finies (promos, sous-titres, montage calé sur le tempo) et deux scripts qui synthétisent des bruitages et une musique en WAV, sans aucun fichier externe.
+
+### Organisation
+
+- `remotion-motion-graphics/SKILL.md` : règles, déroulé (cadrage, mise en place, construction, rendu, **vérification obligatoire**), pièges fréquents.
+- `references/motion-patterns.md` : entrée « premium » (opacité + montée + échelle), décalages, révélation mot à mot, fond en dégradé mouvant, étalonnage par calque, grain procédural, vignette, Ken Burns, compteur, sorties, respiration, parallaxe, transitions, flou de mouvement, synchronisation des bruitages, sous-titres mot à mot.
+- `references/design-rules.md` : couleur héroïne unique, typographie, structure d'un format court, zone sûre 9:16, sons, liste de contrôle avant livraison.
+- `assets/theme.ts` : une seule source pour les couleurs, courbes d'accélération et ressorts.
+
+### Ce qu'on reprend
+
+- **Aucune interpolation linéaire** : courbes de Bézier et ressorts uniquement, toujours bornés. Appliqué à `TexteAnime` (fondu, sortie, respiration).
+- **Entrées sur deux ou trois propriétés à la fois** : le « fondu » monte et grandit légèrement en plus de l'opacité.
+- **Sorties plus rapides que les entrées**, avec un léger mouvement vers le haut.
+- **Un seul fichier de thème** : `animations/src/theme.ts` (courbes, ressorts, durées) ; plus aucune valeur de mouvement en dur dans les composants.
+- **Mot mis en valeur par une étiquette qui grandit derrière lui juste après son arrivée** : nouveau fond « mot surligné ».
+- **Boucle de vérification** : rendre des images fixes, les regarder, corriger, recommencer. Script `scripts/controle-animations.ts` (planche de toutes les animations à cinq instants) et skill `creer-animation` qui l'impose.
+- **Bruitage 2 à 3 images avant l'effet visuel** (en avance, il paraît synchronisé ; en retard, il paraît raté) : ajouté à la skill `proposer-plan`.
+- **Une seule couleur héroïne par instant** : ajouté aux consignes des textes.
+- Pour plus tard : étalonnage par calque, grain et vignette (phase étalonnage, récits), Ken Burns sur les visuels fixes (récits), `@remotion/transitions` et flou de mouvement (récits), `@remotion/captions` pour passer les sous-titres à Remotion, synthèse d'un kit de bruitages de départ.
+
+### Ce qu'on écarte
+
+- Le fond en dégradé mouvant, le grain et la vignette **sur nos textes** : nos animations sont transparentes et posées sur la vidéo ; ces calques n'ont de sens que pour une scène entière.
+- Le rendu par la ligne de commande Remotion et `@remotion/google-fonts` : nous rendons depuis Node et n'utilisons que les polices de la bibliothèque.
+- Les palettes et polices proposées : l'identité graphique vient de l'utilisateur.
+
+### Où ça sert dans notre outil
+
+`animations/` (thème et composants), skill `creer-animation`, script de contrôle, guide « Animations (Remotion) » de l'écran Guides (vidéos de motion design analysées image par image), skill `proposer-plan` (bruitages, couleur héroïne).
+
 ## Synthèse : qui inspire quoi
 
 | Partie de l'outil | Inspiration principale | Idée retenue |
@@ -486,6 +523,7 @@ remotion/                projet Remotion : render.mjs, ShortVideo.tsx,
 | Plan de montage | `video-use` | EDL avec `quote` et `reason` par segment, validation stricte avant rendu |
 | Rendu ffmpeg | `video-use` | Segments réencodés + concat sans réencodage, fondus 30 ms, sous-titres en dernier, loudnorm deux passes |
 | Rendu Remotion | `remotion-skills`, `claude-shorts` | Rendu depuis Node (bundle unique, navigateur partagé), compositions paramétrées par schéma, durée calée sur l'audio |
+| Qualité des animations | `claude-remotion-skill` | Courbes et ressorts uniquement, entrées sur plusieurs propriétés, sorties plus rapides, thème unique, vérification sur images avant livraison |
 | Vérification de l'aperçu | `video-use`, `editor`, `shorts` | Contrôles déterministes (durée, LUFS, true peak) + revue de Claude sur planche d'images → suggestions, jamais de correction imposée |
 | Bibliothèque et identité | `editor`, `awesome`, `remotion-skills` | Catalogue tolérant, jetons de design, composants paramétrables écrits une fois, aperçu par `@remotion/player` |
 | Extraits courts | `yt-short-clipper`, `claude-shorts`, `editor` | Proposer → sélectionner, grille de notation, autonomie, consigne utilisateur, recalage des bornes au mot, recadrage par type de contenu |

@@ -1,8 +1,10 @@
 import {
   EXTENSIONS_INSPIRATION,
-  LIBELLES_CATEGORIES,
+  GUIDE_ANIMATIONS,
+  LIBELLES_SUJETS_GUIDE,
+  SUJETS_GUIDE,
   tacheActive,
-  type Categorie,
+  type SujetGuide,
   type EtatAnalyse,
   type GuideCategorie,
   type ProfilInspiration,
@@ -163,7 +165,8 @@ export function PageGuide() {
   const aAnalyser = (guide?.videos ?? []).filter(
     (video) => (video.etat !== "a-jour" || video.claude === null) && !actives.some((tache) => tache.parametres.nom === video.nom),
   );
-  const libelle = LIBELLES_CATEGORIES[categorie as Categorie] ?? categorie;
+  const animations = categorie === GUIDE_ANIMATIONS;
+  const libelle = SUJETS_GUIDE.includes(categorie as SujetGuide) ? LIBELLES_SUJETS_GUIDE[categorie as SujetGuide] : categorie;
 
   return (
     <>
@@ -178,14 +181,15 @@ export function PageGuide() {
         <>
           <section className="section">
             <div className="entete-section">
-              <h2>Style et accroches</h2>
+              <h2>{animations ? "Style des animations" : "Style et accroches"}</h2>
               <button type="button" className="bouton bouton-principal" disabled={!modifie} onClick={() => void enregistrer()}>
                 Enregistrer
               </button>
             </div>
             <p className="section-intro">
-              Claude lit ces deux textes avant chaque proposition de plan. Écris-y la direction que tu veux : structure, rythme, visuels, son, ce
-              qu'il faut éviter, et les accroches qui marchent.
+              {animations
+                ? "Écris ici ce que tu veux pour les textes et éléments animés : énergie, rebonds ou douceur, vitesse des entrées et des sorties, typographie, couleurs, ce qu'il faut éviter. Claude le lit pour choisir les animations des textes dans tes plans et pour créer de nouvelles animations."
+                : "Claude lit ces deux textes avant chaque proposition de plan. Écris-y la direction que tu veux : structure, rythme, visuels, son, ce qu'il faut éviter, et les accroches qui marchent."}
             </p>
             <div className="editeurs-guide">
               <label className="champ">
@@ -194,12 +198,14 @@ export function PageGuide() {
                 </span>
                 <textarea rows={22} value={style} onChange={(evenement) => { setStyle(evenement.target.value); setModifie(true); }} />
               </label>
-              <label className="champ">
-                <span className="champ-libelle">
-                  <code>hooks.md</code>
-                </span>
-                <textarea rows={22} value={hooks} onChange={(evenement) => { setHooks(evenement.target.value); setModifie(true); }} />
-              </label>
+              {!animations && (
+                <label className="champ">
+                  <span className="champ-libelle">
+                    <code>hooks.md</code>
+                  </span>
+                  <textarea rows={22} value={hooks} onChange={(evenement) => { setHooks(evenement.target.value); setModifie(true); }} />
+                </label>
+              )}
             </div>
           </section>
 
@@ -213,9 +219,9 @@ export function PageGuide() {
               )}
             </div>
             <p className="section-intro">
-              Dépose des vidéos que tu trouves réussies (formats courts téléchargés, extraits de vlogs…). Elles restent privées et ne servent que de
-              référence : rien n'en sera jamais repris dans un export. L'analyse mesure le rythme et repère les coupes sur cette machine, puis Claude
-              en tire les techniques (accroche, zooms, sous-titres, boucle…).
+              {animations
+                ? "Dépose des vidéos de motion design que tu trouves réussies, de préférence courtes (les 24 premières secondes sont décomposées image par image, six images par seconde). Elles restent privées et ne servent que de référence : rien n'en sera jamais repris dans un export. Claude en tire les techniques d'animation (entrées, sorties, rebonds, décalages, typographie, couleurs)."
+                : "Dépose des vidéos que tu trouves réussies (formats courts téléchargés, extraits de vlogs…). Elles restent privées et ne servent que de référence : rien n'en sera jamais repris dans un export. L'analyse mesure le rythme et repère les coupes sur cette machine, puis Claude en tire les techniques (accroche, zooms, sous-titres, boucle…)."}
             </p>
             {progression !== null ? <BarreEnvoi progression={progression} surAnnulation={annuler} /> : <ZoneDepot surFichiers={(fichiers) => void deposer(fichiers)} texte="Glisse ici des vidéos d'inspiration (MP4, MOV, WebM)" />}
             {actives.length > 0 && (

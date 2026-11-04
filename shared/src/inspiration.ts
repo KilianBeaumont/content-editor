@@ -1,5 +1,10 @@
 import { z } from "zod";
-import type { Categorie } from "./categories.ts";
+import { CATEGORIES, LIBELLES_CATEGORIES, type Categorie } from "./categories.ts";
+
+export const GUIDE_ANIMATIONS = "animations";
+export type SujetGuide = Categorie | typeof GUIDE_ANIMATIONS;
+export const SUJETS_GUIDE: readonly SujetGuide[] = [...CATEGORIES, GUIDE_ANIMATIONS];
+export const LIBELLES_SUJETS_GUIDE: Record<SujetGuide, string> = { ...LIBELLES_CATEGORIES, animations: "Animations (Remotion)" };
 
 export interface ProfilInspiration {
   duree: number | null;
@@ -39,14 +44,14 @@ export interface VideoInspiration {
 }
 
 export interface GuideCategorie {
-  categorie: Categorie;
+  categorie: SujetGuide;
   style: string;
   hooks: string;
   videos: VideoInspiration[];
 }
 
 export interface ResumeGuide {
-  categorie: Categorie;
+  categorie: SujetGuide;
   videos: number;
   analysees: number;
 }

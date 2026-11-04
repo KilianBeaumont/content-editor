@@ -1,10 +1,10 @@
 import { morceauxTexte, type StyleTextes, type TexteEcran } from "@editeur/shared";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { AbsoluteFill, cancelRender, continueRender, delayRender, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { COURBES, DUREES, LIMITE, RESSORTS } from "./theme.ts";
 
 const HAUTEUR: Record<TexteEcran["position"], number> = { haut: 0.2, centre: 0.5, bas: 0.8 };
 const LETTRES_PAR_SECONDE = 28;
-const SORTIE = 0.2;
 
 interface Mot {
   texte: string;
@@ -64,31 +64,41 @@ export function TexteAnime({ texte, style }: { texte: TexteEcran; style: StyleTe
   const { famille, prete } = usePolice(style.police);
   const liste = mots(texte.texte);
   const tailleVoulue = (texte.taillePourcent / 100) * height;
-  const marges = texte.fond === "aucun" ? 0.14 : 0.76;
+  const sansEtiquette = texte.fond === "aucun" || texte.fond === "surligne";
+  const marges = texte.fond === "aucun" ? 0.14 : texte.fond === "surligne" ? 0.5 : 0.76;
   const taille = useMemo(() => tailleAjustee(liste, famille, tailleVoulue, width * 0.86 - tailleVoulue * marges, prete), [texte.texte, famille, tailleVoulue, width, marges, prete]);
   const anime = texte.apparition !== "aucune";
 
-  const sortie = Math.max(1, Math.round(SORTIE * fps));
-  const finale = anime ? interpolate(image, [durationInFrames - sortie, durationInFrames], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) : 1;
-  const respiration = anime ? interpolate(image, [0, durationInFrames], [1, 1.04]) : 1;
-  const ressort = spring({ frame: image, fps, config: { damping: 11, stiffness: 170, mass: 0.6 } });
+  const sortie = Math.max(1, Math.round(DUREES.sortie * fps));
+  const finale = anime ? interpolate(image, [durationInFrames - sortie, durationInFrames], [1, 0], { ...LIMITE, easing: COURBES.acceleration }) : 1;
+  const respiration = anime ? interpolate(image, [0, durationInFrames], [1, 1.04], { ...LIMITE, easing: COURBES.allerRetour }) : 1;
+  const ressort = spring({ frame: image, fps, config: RESSORTS.rebond });
+  const douceurEntree = interpolate(image, [0, DUREES.entreeDouce * fps], [0, 1], { ...LIMITE, easing: COURBES.deceleration });
+  const progressive = texte.apparition === "mot-a-mot" || texte.apparition === "glisse" || texte.apparition === "machine";
+  const pasMot = Math.max(2, Math.round(fps * DUREES.decalageMot));
+  const lettresTotales = liste.reduce((somme, mot) => somme + [...mot.texte].length + 1, 0);
+  const dernierMot =
+    texte.apparition === "mot-a-mot" ? (liste.length - 1) * pasMot : texte.apparition === "glisse" ? (liste.length - 1) * 2 : texte.apparition === "machine" ? (lettresTotales / LETTRES_PAR_SECONDE) * fps : 0;
+  const dureeOuverture = progressive ? dernierMot + DUREES.ouvertureEtiquette * fps * 0.5 : DUREES.ouvertureEtiquette * fps;
+  const ouvertureEtiquette = sansEtiquette || !anime ? 1 : interpolate(image, [0, dureeOuverture], [0, 1], { ...LIMITE, easing: progressive ? COURBES.allerRetour : COURBES.deceleration });
+  const decoupe = progressive ? `inset(-20% ${(1 - ouvertureEtiquette) * 100}% -20% 0)` : `inset(-20% ${(1 - ouvertureEtiquette) * 50}% -20% ${(1 - ouvertureEtiquette) * 50}%)`;
   const entree =
     texte.apparition === "pop"
-      ? { echelle: interpolate(ressort, [0, 1], [0.4, 1]), rotation: interpolate(ressort, [0, 1], [-4, 0]), opacite: Math.min(1, image / 3) }
+      ? { echelle: interpolate(ressort, [0, 1], [0.4, 1]), rotation: interpolate(ressort, [0, 1], [-4, 0]), montee: 0, opacite: Math.min(1, image / 3) }
       : texte.apparition === "fondu"
-        ? { echelle: 1, rotation: 0, opacite: interpolate(image, [0, 0.3 * fps], [0, 1], { extrapolateRight: "clamp" }) }
-        : { echelle: 1, rotation: 0, opacite: texte.apparition === "aucune" ? 1 : Math.min(1, image / 2) };
+        ? { echelle: interpolate(douceurEntree, [0, 1], [0.96, 1]), rotation: 0, montee: interpolate(douceurEntree, [0, 1], [0.25, 0]), opacite: douceurEntree }
+        : { echelle: 1, rotation: 0, montee: 0, opacite: texte.apparition === "aucune" ? 1 : Math.min(1, image / 2) };
 
   const fondCouleur = texte.fond === "accent" ? style.couleurAccent : "rgba(0, 0, 0, 0.62)";
   const couleurBase = texte.fond === "accent" ? (clair(style.couleurAccent) ? "#111111" : "#FFFFFF") : (texte.couleur ?? style.couleur);
   const couleurAccent = texte.fond === "accent" ? couleurBase : style.couleurAccent;
-  const contour = texte.fond === "aucun" ? { WebkitTextStroke: `${taille * 0.07}px #000000`, paintOrder: "stroke fill" } : {};
+  const contour = sansEtiquette ? { WebkitTextStroke: `${taille * 0.07}px #000000`, paintOrder: "stroke fill" } : {};
 
   const boite: CSSProperties = {
     display: "inline",
-    padding: texte.fond === "aucun" ? 0 : "0.12em 0.38em",
+    padding: sansEtiquette ? 0 : "0.12em 0.38em",
     borderRadius: "0.22em",
-    background: texte.fond === "aucun" ? "transparent" : fondCouleur,
+    background: sansEtiquette ? "transparent" : fondCouleur,
     boxDecorationBreak: "clone",
     WebkitBoxDecorationBreak: "clone",
     lineHeight: texte.fond === "aucun" ? 1.08 : 1.35,
@@ -97,9 +107,12 @@ export function TexteAnime({ texte, style }: { texte: TexteEcran; style: StyleTe
   let lettresAvant = 0;
   const lettresVisibles = Math.floor((image / fps) * LETTRES_PAR_SECONDE);
   const contenu = liste.map((mot, index) => {
-    const delai = index * Math.max(2, Math.round(fps * 0.1));
-    const ressortMot = spring({ frame: image - delai, fps, config: { damping: 12, stiffness: 190, mass: 0.5 } });
-    const douceur = spring({ frame: image - index * 2, fps, config: { damping: 200 }, durationInFrames: Math.round(0.45 * fps) });
+    const delai = index * pasMot;
+    const ressortMot = spring({ frame: image - delai, fps, config: RESSORTS.vif });
+    const douceur = spring({ frame: image - index * 2, fps, config: RESSORTS.doux, durationInFrames: Math.round(0.45 * fps) });
+    const arrivee =
+      texte.apparition === "mot-a-mot" ? delai : texte.apparition === "glisse" ? index * 2 : texte.apparition === "machine" ? ((lettresAvant + [...mot.texte].length) / LETTRES_PAR_SECONDE) * fps : 0;
+    const surlignage = texte.fond === "surligne" && mot.accent ? spring({ frame: image - arrivee - DUREES.retardSurlignage * fps, fps, config: RESSORTS.vif }) : null;
     let transformation = "";
     let opacite = 1;
     let flou = 0;
@@ -128,9 +141,24 @@ export function TexteAnime({ texte, style }: { texte: TexteEcran; style: StyleTe
             transform: transformation,
             opacity: opacite,
             filter: flou > 0.1 ? `blur(${flou}px)` : undefined,
-            color: mot.accent ? couleurAccent : couleurBase,
+            color: surlignage !== null ? (clair(style.couleurAccent) ? "#111111" : "#FFFFFF") : mot.accent ? couleurAccent : couleurBase,
+            position: surlignage === null ? undefined : "relative",
+            ...(surlignage === null ? {} : { WebkitTextStroke: "0px transparent", textShadow: "none" }),
           }}
         >
+          {surlignage !== null && (
+            <span
+              style={{
+                position: "absolute",
+                inset: "0.02em -0.18em",
+                borderRadius: "0.18em",
+                background: style.couleurAccent,
+                transform: `scaleX(${surlignage})`,
+                transformOrigin: "left center",
+                zIndex: -1,
+              }}
+            />
+          )}
           {lettres}
         </span>
         {index < liste.length - 1 ? " " : ""}
@@ -146,13 +174,15 @@ export function TexteAnime({ texte, style }: { texte: TexteEcran; style: StyleTe
           left: "7%",
           right: "7%",
           top: `${HAUTEUR[texte.position] * 100}%`,
-          transform: `translateY(-50%) scale(${entree.echelle * respiration * (0.94 + 0.06 * finale)}) rotate(${entree.rotation}deg)`,
+          transform: `translateY(calc(-50% + ${entree.montee - 0.15 * (1 - finale)}em)) scale(${entree.echelle * respiration * (0.94 + 0.06 * finale)}) rotate(${entree.rotation}deg)`,
           opacity: entree.opacite * finale,
           textAlign: "center",
           fontFamily: famille,
           fontSize: taille,
-          textShadow: texte.fond === "aucun" ? `0 ${taille * 0.05}px ${taille * 0.14}px rgba(0, 0, 0, 0.55)` : undefined,
+          textShadow: sansEtiquette ? `0 ${taille * 0.05}px ${taille * 0.14}px rgba(0, 0, 0, 0.55)` : undefined,
           overflowWrap: "break-word",
+          isolation: "isolate",
+          clipPath: ouvertureEtiquette < 1 ? decoupe : undefined,
           ...contour,
         }}
       >
