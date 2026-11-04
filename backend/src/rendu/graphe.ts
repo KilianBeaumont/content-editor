@@ -310,6 +310,34 @@ export interface BruitageRendu {
   volumeDb: number;
 }
 
+export interface IncrustationRendu {
+  chemin: string;
+  position: number;
+  duree: number;
+}
+
+const HLG_DEPUIS_SDR =
+  "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv,zscale=t=linear:npl=203,format=gbrpf32le,zscale=p=bt2020:t=arib-std-b67:m=bt2020nc:r=tv,format=yuv420p10le";
+
+function alphaVersHlg(entree: string, suffixe: string): string {
+  return `${entree}split[tc${suffixe}][ta${suffixe}];[ta${suffixe}]alphaextract[tm${suffixe}];[tc${suffixe}]${HLG_DEPUIS_SDR}[th${suffixe}];[th${suffixe}][tm${suffixe}]alphamerge,format=yuva420p10le`;
+}
+
+export function grapheIncrustations(profil: ProfilImage, incrustations: IncrustationRendu[], premiereEntree: number, entree: string): Graphe & { sortie: string } {
+  const entrees: string[] = [];
+  const filtres: string[] = [];
+  let courant = entree;
+  incrustations.forEach((incrustation, index) => {
+    entrees.push("-i", incrustation.chemin);
+    const fin = incrustation.position + incrustation.duree;
+    const source = `[${premiereEntree + index}:v]`;
+    filtres.push(`${profil.hdr ? alphaVersHlg(source, String(index)) : `${source}format=yuva420p`},setpts=PTS-STARTPTS+${s(incrustation.position)}/TB[t${index}]`);
+    filtres.push(`${courant}[t${index}]overlay=eof_action=pass${profil.hdr ? ":format=yuv420p10" : ""}:enable='between(t,${s(incrustation.position)},${s(fin)})'[vt${index}]`);
+    courant = `[vt${index}]`;
+  });
+  return { entrees, filtre: filtres.join(";"), sortie: courant };
+}
+
 export interface Graphe {
   entrees: string[];
   filtre: string;

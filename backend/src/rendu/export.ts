@@ -37,6 +37,7 @@ import { mesurerVolume, rendre, type ProfilRendu } from "./moteur.ts";
 import { descriptionProjet } from "./description.ts";
 import { resoudreBruitages, resoudreMusiques, verifierPlanSansErreur } from "./ressources.ts";
 import { preparerSousTitres } from "./sous-titres.ts";
+import { preparerTextes } from "./textes.ts";
 
 const ECART_DUREE_TOLERE = 0.1;
 const ECART_VOLUME_TOLERE = 1;
@@ -225,16 +226,17 @@ export async function exporterVideo(
   };
 
   const sousTitres = await preparerSousTitres(config.creations, projet, plan, format);
+  const textes = await preparerTextes(contexte.racineDepot, config.creations, plan);
   const temporaire = join(dossier, "travail", "rendu", `export-${sortie}-${randomUUID()}`);
   await mkdir(temporaire, { recursive: true });
   try {
     const fichierTemporaire = join(temporaire, "export.mp4");
     try {
-      await rendre(ffmpeg, entrees, profil(true), temporaire, fichierTemporaire, outils, sousTitres);
+      await rendre(ffmpeg, entrees, profil(true), temporaire, fichierTemporaire, outils, sousTitres, textes);
     } catch (erreur) {
       if (outils.signal.aborted) throw erreur;
       outils.progression(0, "Nouvel essai sans accélération matérielle du décodage");
-      await rendre(ffmpeg, entrees, profil(false), temporaire, fichierTemporaire, outils, sousTitres);
+      await rendre(ffmpeg, entrees, profil(false), temporaire, fichierTemporaire, outils, sousTitres, textes);
     }
 
     outils.progression(1, "Vérification du fichier exporté");

@@ -464,7 +464,7 @@ export function EditeurPlan({ projet, version, initial, proxies, bibliotheque, s
         <strong>Sous-titres incrustés</strong> <span className="note">mot à mot, avec le style des Paramètres → Sous-titres (police de ta bibliothèque)</span>
       </label>
 
-      <Habillage plan={plan} editable={editable} bibliotheque={bibliotheque} positionVideo={positionVideo} changer={changer} />
+      <Habillage plan={plan} editable={editable} vertical={estCategorieVerticale(projet.metadata.categorie)} bibliotheque={bibliotheque} positionVideo={positionVideo} changer={changer} />
 
       {plan.musiques.length > 0 && (
         <>

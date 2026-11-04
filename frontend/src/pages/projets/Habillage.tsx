@@ -1,39 +1,69 @@
 import {
   APPARITIONS_TEXTE,
+  FONDS_TEXTE,
+  LIBELLES_APPARITION,
+  LIBELLES_FOND,
   POSITIONS_TEXTE,
   TEXTE_PAR_DEFAUT,
   type ApparitionTexte,
   type Bruitage,
   type ElementBibliotheque,
+  type FondTexte,
+  type Parametres,
   type PlanMontage,
   type PositionTexte,
+  type StyleTextes,
   type TexteEcran,
 } from "@editeur/shared";
-import { useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { lireJson, urlFichier } from "../../api.ts";
 import { ChampTemps, nomFichier, temps } from "./ChampsPlan.tsx";
 
-const LIBELLES_APPARITION: Record<ApparitionTexte, string> = { pop: "pop", fondu: "fondu", aucune: "sans effet" };
 const TYPES_BRUITAGE = new Set(["son", "ambiance"]);
+const ApercuTexte = lazy(() => import("./ApercuTexte.tsx"));
 
 interface ProprietesHabillage {
   plan: PlanMontage;
   editable: boolean;
+  vertical: boolean;
   bibliotheque: ElementBibliotheque[];
   positionVideo: () => number;
   changer: (transformation: (copie: PlanMontage) => PlanMontage) => void;
 }
 
-function TextesEcran({ plan, editable, positionVideo, changer }: Omit<ProprietesHabillage, "bibliotheque">) {
+function useStyleTextes(bibliotheque: ElementBibliotheque[]): StyleTextes | null {
+  const [parametres, setParametres] = useState<Parametres | null>(null);
+  useEffect(() => {
+    lireJson<Parametres>("/api/parametres")
+      .then(setParametres)
+      .catch(() => setParametres(null));
+  }, []);
+  if (parametres === null) return null;
+  const { couleur, couleurAccent, police } = parametres.sousTitres;
+  const asset = bibliotheque.find((element) => element.asset.id === police)?.asset;
+  return { couleur, couleurAccent, police: asset === undefined ? null : urlFichier(`bibliotheque/${asset.chemin}`) };
+}
+
+function TextesEcran({ plan, editable, vertical, bibliotheque, positionVideo, changer }: ProprietesHabillage) {
+  const style = useStyleTextes(bibliotheque);
+  const [apercu, setApercu] = useState<number | null>(null);
   const modifier = (index: number, changement: Partial<TexteEcran>) =>
     changer((copie) => ({ ...copie, textes: copie.textes.map((texte, i) => (i === index ? { ...texte, ...changement } : texte)) }));
+  const texteApercu = apercu === null ? undefined : plan.textes[apercu];
   return (
     <>
       <h3>Textes à l'écran</h3>
-      <p className="note">Un titre ou un mot fort posé sur l'image, à un instant de la vidéo finale, avec la police des sous-titres.</p>
+      <p className="note">
+        Un titre ou un mot fort posé sur l'image, à un instant de la vidéo finale, animé avec la police des sous-titres. Un mot entre astérisques (*mot*) prend la
+        couleur d'accent. 👁 montre l'animation.
+      </p>
       {plan.textes.length > 0 && (
         <ul className="liste-musiques">
           {plan.textes.map((texte, index) => (
-            <li key={index}>
+            <li key={index} className={apercu === index ? "ligne-selectionnee" : undefined}>
+              <button type="button" className="bouton bouton-discret" title="Voir l'animation" onClick={() => setApercu(apercu === index ? null : index)}>
+                👁
+              </button>
               <input type="text" value={texte.texte} maxLength={80} disabled={!editable} onChange={(evenement) => modifier(index, { texte: evenement.target.value })} />
               <span className="bornes">
                 <ChampTemps actif={editable} pas={0.1} valeur={texte.debut} surChangement={(debut) => modifier(index, { debut })} />→
@@ -49,7 +79,7 @@ function TextesEcran({ plan, editable, positionVideo, changer }: Omit<Proprietes
               <label>
                 <ChampTemps actif={editable} pas={1} valeur={texte.taillePourcent} surChangement={(taille) => modifier(index, { taillePourcent: Math.min(25, Math.max(3, taille)) })} /> %
               </label>
-              <label title="Décoché : couleur d'accent des sous-titres">
+              <label title="Décoché : couleur du texte des sous-titres">
                 <input
                   type="checkbox"
                   checked={texte.couleur !== null}
@@ -66,6 +96,13 @@ function TextesEcran({ plan, editable, positionVideo, changer }: Omit<Proprietes
                   </option>
                 ))}
               </select>
+              <select value={texte.fond} disabled={!editable} onChange={(evenement) => modifier(index, { fond: evenement.target.value as FondTexte })}>
+                {FONDS_TEXTE.map((fond) => (
+                  <option key={fond} value={fond}>
+                    {LIBELLES_FOND[fond]}
+                  </option>
+                ))}
+              </select>
               {editable && (
                 <button type="button" className="bouton bouton-discret" title="Retirer ce texte" onClick={() => changer((copie) => ({ ...copie, textes: copie.textes.filter((_, i) => i !== index) }))}>
                   ✕
@@ -75,6 +112,17 @@ function TextesEcran({ plan, editable, positionVideo, changer }: Omit<Proprietes
           ))}
         </ul>
       )}
+      {texteApercu !== undefined &&
+        (style === null ? (
+          <p className="note">Chargement du style des textes…</p>
+        ) : (
+          <>
+            {style.police === null && <p className="note">Aucune police choisie dans Paramètres → Sous-titres : l'aperçu utilise une police système.</p>}
+            <Suspense fallback={<p className="note">Chargement de l&apos;aperçu…</p>}>
+              <ApercuTexte texte={texteApercu} style={style} vertical={vertical} />
+            </Suspense>
+          </>
+        ))}
       {editable && (
         <button
           type="button"

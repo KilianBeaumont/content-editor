@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rectangleCadre, schemaPropositionPlan, situer } from "./plans.ts";
+import { rectangleCadre, schemaPropositionPlan, situer, morceauxTexte } from "./plans.ts";
 
 describe("rectangle de cadrage", () => {
   it("place une fenêtre 9:16 dans une image 16:9, sans sortir de l'image", () => {
@@ -28,5 +28,16 @@ describe("rectangle de cadrage", () => {
     expect(plan.segments[0]).toMatchObject({ decalageImage: 0, cadrage: null });
     expect(plan.plansDeCoupe).toEqual([]);
     expect(situer(plan.segments, 1)).toEqual({ segment: "s1", source: "rushes/a.mp4", tempsSource: 1 });
+  });
+});
+
+describe("morceauxTexte", () => {
+  it("met en valeur les mots entre astérisques", () => {
+    expect(morceauxTexte("Trois *outils* indispensables")).toEqual([
+      { texte: "Trois ", accent: false },
+      { texte: "outils", accent: true },
+      { texte: " indispensables", accent: false },
+    ]);
+    expect(morceauxTexte("Prix : 5 * 3")).toEqual([{ texte: "Prix : 5  3", accent: false }]);
   });
 });

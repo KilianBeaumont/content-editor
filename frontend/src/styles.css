@@ -1567,3 +1567,15 @@ input[type="file"] {
   display: block;
   margin-bottom: 4px;
 }
+
+.apercu-texte {
+  max-width: 480px;
+  margin: 8px 0 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: linear-gradient(160deg, #4a5d70, #1b232c);
+}
+
+.apercu-texte-vertical {
+  max-width: 240px;
+}

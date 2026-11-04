@@ -4,6 +4,7 @@
   "type": "module",
   "workspaces": [
     "shared",
+    "animations",
     "backend",
     "frontend"
   ],
@@ -14,7 +15,7 @@
     "dev": "concurrently -n backend,frontend -c blue,magenta \"npm run dev -w @editeur/backend\" \"npm run dev -w @editeur/frontend\"",
     "build": "npm run build -w @editeur/frontend",
     "start": "npm run start -w @editeur/backend",
-    "check": "tsc -p shared && tsc -p backend && tsc -p frontend && eslint .",
+    "check": "tsc -p shared && tsc -p animations && tsc -p backend && tsc -p frontend && eslint .",
     "test": "vitest run"
   },
   "devDependencies": {

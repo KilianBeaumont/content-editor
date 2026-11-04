@@ -531,3 +531,9 @@ Dépôts étudiés (clonés dans `../inspiration`). L'étude complète, avec ce 
 - **Sous-titres** : uniquement avec les polices de l'utilisateur, déposées dans la bibliothèque (étiquette dédiée), jamais une police système.
 - **Extraits d'une vidéo longue** : chaque extrait retenu devient un projet de catégorie `court` (ou `extrait-recit` pour la chaîne Récits) lié au projet long (`metadata.parent`). Il partage ses rushes par lien physique (copie à défaut), ainsi que leurs proxys, planches et transcriptions, et suit le cycle complet d'un projet.
 - **Montage des formats courts** : le plan devra savoir produire les techniques repérées dans les références (cadrage 9:16 par segment, zoom progressif, zoom brusque « loupe », fond flou, boucle).
+
+### Décisions prises (2026-11-04, étape 3.9)
+
+- **Textes à l'écran avec Remotion** : les composants animés vivent dans le workspace `animations/` (React + Remotion), utilisés à la fois par l'aperçu en direct de l'éditeur (`@remotion/player`) et par le rendu. Chaque texte est rendu en clip transparent (ProRes 4444) aux dimensions et à la cadence de la sortie, puis incrusté par ffmpeg à son instant ; le reste du montage reste en ffmpeg. En HDR, les clips sont placés dans l'espace HLG comme les sources SDR.
+- **Sous-titres** : restent en ASS (libass) pour l'instant ; ils pourront passer à Remotion plus tard avec le même mécanisme.
+- **Remotion** : version fixée pour tous les paquets `remotion` et `@remotion/*`, licence gratuite (usage personnel), sans clé de licence ni télémétrie.

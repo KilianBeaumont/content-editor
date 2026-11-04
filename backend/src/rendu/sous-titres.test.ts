@@ -112,16 +112,4 @@ describe("sous-titres", () => {
     expect(ass).toContain("Dialogue: 0,0:00:00.60,0:00:01.35,Accroche,,0,0,0,,{\\an5\\pos(540,864)\\fscx70");
     expect(ass).toContain("Dialogue: 0,0:00:02.80,0:00:03.35,Defaut,,0,0,0,,{\\an5\\pos(540,1344)}{\\c&H003BD4FF&}ÇA");
   });
-
-  it("pose les textes à l'écran avec leur style, leur place et leur apparition", () => {
-    const textes = [
-      { texte: "3 outils", debut: 0, fin: 2.5, position: "haut" as const, taillePourcent: 10, couleur: null, apparition: "pop" as const },
-      { texte: "{fin}", debut: 5, fin: 6, position: "centre" as const, taillePourcent: 20, couleur: "#FF0000", apparition: "fondu" as const },
-    ];
-    const ass = genererAss([], { largeur: 1080, hauteur: 1920 }, REGLAGES, "Ma Police", textes);
-    expect(ass).toContain("Style: Texte1,Ma Police,192,&H003BD4FF&");
-    expect(ass).toContain("Style: Texte2,Ma Police,384,&H000000FF&");
-    expect(ass).toContain("Dialogue: 1,0:00:00.00,0:00:02.50,Texte1,,0,0,0,,{\\an5\\pos(540,384)\\fscx70\\fscy70\\t(0,120,\\fscx112\\fscy112)\\t(120,220,\\fscx100\\fscy100)}3 outils");
-    expect(ass).toContain("Dialogue: 1,0:00:05.00,0:00:06.00,Texte2,,0,0,0,,{\\an5\\pos(540,960)\\fad(200,200)}fin");
-  });
 });

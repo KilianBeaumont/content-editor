@@ -56,7 +56,7 @@ Phase 3 (plan de montage et aperçu), pour un vlog d'abord.
 | 3.6 | Rendu de l'aperçu basse résolution depuis les proxys (coupes décalées, plans de coupe, musique, volume normalisé) | ✅ |
 | 3.7 | Lecteur et commentaires horodatés, repères sur la barre de lecture, comparaison des versions | ✅ |
 | 3.8 | Boucle de versions (`integrer-retours`) et validation de la version | ✅ |
-| 3.9 | Textes à l'écran et composants animés (Remotion) | après la première boucle |
+| 3.9 | Textes à l'écran animés avec Remotion (mot à mot, glisse, machine à écrire, pop, étiquettes), aperçu animé dans l'éditeur | ✅ |
 
 Phase 4 (export final).
 
@@ -92,7 +92,7 @@ Les phases suivantes (podcast, statistiques) viendront après.
    - **whisper.cpp**, pour la transcription :
      - Windows (carte NVIDIA) : télécharger `whisper-bin-win-cuda-12.4.0-x64.zip` sur la page des versions de https://github.com/ggml-org/whisper.cpp (dernier build `bNNNN` qui contient des fichiers), le décompresser dans `outils/whisper/bin/` à côté du dépôt ;
      - Mac : `brew install whisper-cpp` (accéléré par Metal).
-2. Double-cliquer sur le lanceur (voir « Lancer l'outil ») : la première fois, il installe tout ce qu'il faut.
+2. Double-cliquer sur le lanceur (voir « Lancer l'outil ») : la première fois, il installe tout ce qu'il faut. Le premier rendu qui contient des textes à l'écran télécharge en plus un navigateur de rendu pour Remotion (environ 100 Mo, une seule fois : il faut être connecté à internet).
 3. Ouvrir l'écran **Paramètres**.
 4. Section **Cette machine** :
    - **Dossier creations** : l'emplacement de tes créations. Par défaut `../creations`, à côté du dépôt. S'il n'existe pas, il est créé avec toute l'arborescence quand tu enregistres.
@@ -355,7 +355,14 @@ L'aperçu et l'export appliquent le cadrage (à partir des proxys pour l'aperçu
 
 Claude les propose d'après le guide de style et les références d'inspiration (avec mesure) ; tu les ajustes dans l'éditeur du plan :
 - **Transition** (menu en haut de la colonne **Image** de chaque segment) : **coupe** (par défaut), **flash blanc** (0,15 s, pour un temps fort ou une révélation) ou **fondu du noir** (0,3 s, pour une ouverture ou un changement de lieu).
-- **Textes à l'écran** : un titre ou un mot fort, avec la police des sous-titres. Pour chacun : le texte, le début et la fin dans la vidéo finale (en secondes), la place (haut, centre, bas), la taille (en % de la hauteur), la couleur (décochée : couleur d'accent des sous-titres) et l'apparition (pop, fondu, sans effet). **+ Texte à la position du lecteur** en ajoute un à l'instant où le lecteur est arrêté (lis d'abord un segment avec ▶). En bas, un texte risque de chevaucher les sous-titres : l'outil le signale.
+- **Textes à l'écran** : un titre ou un mot fort, animé avec la police des sous-titres (rendu par Remotion). Pour chacun :
+  - le texte : un mot entre astérisques (`Trois *outils* indispensables`) prend la couleur d'accent ;
+  - le début et la fin dans la vidéo finale (en secondes), la place (haut, centre, bas) et la taille (en % de la hauteur ; elle est réduite d'office si un mot ne tient pas dans la largeur) ;
+  - la couleur (décochée : couleur du texte des sous-titres) ;
+  - l'animation : **pop** (jaillit avec un léger rebond), **mot à mot**, **glisse** (monte en douceur), **machine à écrire**, **fondu** ou **sans effet** ; le texte disparaît en douceur à la fin ;
+  - le fond : **sans fond** (contour et ombre), **étiquette sombre** (lisible sur une image chargée) ou **étiquette couleur** (couleur d'accent).
+
+  👁 montre l'animation en boucle juste sous la liste, avec ta police, pendant que tu règles. **+ Texte à la position du lecteur** en ajoute un à l'instant où le lecteur est arrêté (lis d'abord un segment avec ▶). En bas, un texte risque de chevaucher les sous-titres : l'outil le signale. Chaque texte ajoute quelques secondes au rendu de l'aperçu et de l'export.
 - **Bruitages** : un son ponctuel de la bibliothèque (type **Son ponctuel**, ou **Ambiance**) posé à un instant de la vidéo finale, avec son volume. Choisis le son dans la liste, puis **+ Bruitage à la position du lecteur**. Il faut d'abord ajouter tes whoosh, pop et impacts à la Bibliothèque.
 
 Pour un format court, Claude cherche aussi une **fin en boucle** : une dernière phrase qui s'enchaîne avec la première, pour que la vidéo reparte sans qu'on le remarque. Il l'explique dans la stratégie du plan.
@@ -577,6 +584,9 @@ Pour une vidéo verticale pensée pour TikTok, Reels et Shorts dès le tournage 
 | « Valide d'abord une version de la vidéo longue » (extraits) | Les extraits sont tirés de la version validée : onglet **4. Aperçu**, valider une version |
 | « Cet extrait a déjà son projet » | Ouvre-le avec **Ouvrir le format court**, ou propose d'autres extraits |
 | « Choisis la police des sous-titres et des textes à l'écran : Paramètres → Sous-titres » | Ajoute ta police à la Bibliothèque (type Police), puis choisis-la dans Paramètres → Sous-titres incrustés ; ou décoche **Sous-titres incrustés** et retire les textes à l'écran du plan |
+| La tâche reste sur « Téléchargement du navigateur de rendu » ou échoue pendant ce téléchargement | Le premier rendu avec des textes télécharge un navigateur pour Remotion : vérifier la connexion internet, puis **Relancer** |
+| Une tâche échoue sur « Animation du texte … » | Relancer ; si cela se répète, simplifier le texte (caractères spéciaux) ou vérifier que la police est un TTF ou OTF valide |
+| L'aperçu animé (👁) n'utilise pas ta police | Aucune police choisie dans Paramètres → Sous-titres : l'aperçu prend une police système, et le rendu refusera de partir tant qu'elle n'est pas choisie |
 | « Bruitage introuvable dans la bibliothèque : … » | Le son n'existe plus ou n'est pas de type Son ponctuel ou Ambiance : le corriger dans la Bibliothèque, ou retirer le bruitage du plan |
 | « Le bruitage … tombe après la fin de la vidéo » ou « Texte … : commence après la fin de la vidéo » | Les instants sont comptés dans la vidéo finale : avancer le bruitage ou le texte, ou le retirer |
 | Le bouton **+ Bruitage à la position du lecteur** n'apparaît pas | Aucun son dans la Bibliothèque : ajouter un asset de type **Son ponctuel** (whoosh, pop, impact) |
@@ -622,5 +632,7 @@ Pour une vidéo verticale pensée pour TikTok, Reels et Shorts dès le tournage 
 | `npm run build` puis `npm start` | Mode normal |
 | `npm run check` | Vérifier les types et le style (aucun `any`) |
 | `npm test` | Lancer les tests |
+
+Le dépôt a quatre parties : `shared/` (types et règles communs), `animations/` (composants Remotion, utilisés à la fois par l'aperçu animé de l'interface et par le rendu), `backend/` et `frontend/`. Remotion est utilisé sous sa licence gratuite, réservée aux particuliers et aux petites structures (https://remotion.dev/license) : c'est le cas de cet outil personnel.
 
 Organisation du travail : chaque étape est vérifiée dans l'interface, puis commitée et poussée directement sur `main`.

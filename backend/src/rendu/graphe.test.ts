@@ -11,6 +11,7 @@ import {
   filtreLoudnorm,
   formatApercu,
   grapheAudio,
+  grapheIncrustations,
   grapheVideo,
   lireMesureLoudnorm,
   fenetre,
@@ -146,6 +147,19 @@ describe("graphes", () => {
     expect(filtreTransition("fondu")).toBe(",setpts=PTS-STARTPTS,fade=t=in:st=0:d=0.3");
     const args = argumentsClipVideo(src(null), 2, 60, APERCU, [], "v001.mp4", null, "flash");
     expect(args[args.indexOf("-vf") + 1]).toContain("fade=t=in:st=0:d=0.15:color=white,tpad=stop_mode=clone");
+  });
+
+  it("incruste les textes animés transparents à leur instant, en SDR comme en HLG", () => {
+    const textes = [{ chemin: "texte01.mov", position: 1.5, duree: 2 }];
+    const sdr = grapheIncrustations(APERCU, textes, 3, "[vs]");
+    expect(sdr.entrees).toEqual(["-i", "texte01.mov"]);
+    expect(sdr.filtre).toBe("[3:v]format=yuva420p,setpts=PTS-STARTPTS+1.5/TB[t0];[vs][t0]overlay=eof_action=pass:enable='between(t,1.5,3.5)'[vt0]");
+    expect(sdr.sortie).toBe("[vt0]");
+    const hdr = grapheIncrustations({ ...APERCU, hdr: true }, textes, 2, "[v]");
+    expect(hdr.filtre).toContain("[2:v]split[tc0][ta0];[ta0]alphaextract[tm0];[tc0]setparams=");
+    expect(hdr.filtre).toContain("[th0][tm0]alphamerge,format=yuva420p10le,setpts=PTS-STARTPTS+1.5/TB[t0]");
+    expect(hdr.filtre).toContain("overlay=eof_action=pass:format=yuv420p10:");
+    expect(grapheIncrustations(APERCU, [], 2, "[v]")).toEqual({ entrees: [], filtre: "", sortie: "[v]" });
   });
 
   it("superpose les plans de coupe à leur place", () => {

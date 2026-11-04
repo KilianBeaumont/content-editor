@@ -203,7 +203,7 @@ describe("habillage", () => {
   });
 
   it("vérifie les textes à l'écran : bornes, fin de vidéo, place des sous-titres", () => {
-    const texte = (debut: number, fin: number, position: "haut" | "bas" = "haut") => ({ texte: "Titre", debut, fin, position, taillePourcent: 10, couleur: null, apparition: "pop" as const });
+    const texte = (debut: number, fin: number, position: "haut" | "bas" = "haut") => ({ texte: "Titre", debut, fin, position, taillePourcent: 10, couleur: null, apparition: "pop" as const, fond: "aucun" as const });
     const problemes = validerPlan(plan({ sousTitres: true, textes: [texte(0, 2), texte(3, 2), texte(19, 22), texte(25, 26), texte(1, 2, "bas")] }), sources());
     expect(messages(problemes)).toEqual([
       "erreur - Texte 2 (« Titre ») : la fin doit venir après le début.",

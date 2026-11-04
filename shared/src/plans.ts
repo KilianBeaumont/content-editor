@@ -46,8 +46,40 @@ export type Transition = (typeof TRANSITIONS)[number];
 export const POSITIONS_TEXTE = ["haut", "centre", "bas"] as const;
 export type PositionTexte = (typeof POSITIONS_TEXTE)[number];
 
-export const APPARITIONS_TEXTE = ["pop", "fondu", "aucune"] as const;
+export const APPARITIONS_TEXTE = ["pop", "mot-a-mot", "glisse", "machine", "fondu", "aucune"] as const;
 export type ApparitionTexte = (typeof APPARITIONS_TEXTE)[number];
+
+export const LIBELLES_APPARITION: Record<ApparitionTexte, string> = {
+  pop: "pop",
+  "mot-a-mot": "mot à mot",
+  glisse: "glisse",
+  machine: "machine à écrire",
+  fondu: "fondu",
+  aucune: "sans effet",
+};
+
+export const FONDS_TEXTE = ["aucun", "sombre", "accent"] as const;
+export type FondTexte = (typeof FONDS_TEXTE)[number];
+
+export const LIBELLES_FOND: Record<FondTexte, string> = { aucun: "sans fond", sombre: "étiquette sombre", accent: "étiquette couleur" };
+
+export interface StyleTextes {
+  couleur: string;
+  couleurAccent: string;
+  police: string | null;
+}
+
+export interface MorceauTexte {
+  texte: string;
+  accent: boolean;
+}
+
+export function morceauxTexte(texte: string): MorceauTexte[] {
+  return texte
+    .split(/(\*[^*]+\*)/)
+    .filter((morceau) => morceau !== "")
+    .map((morceau) => (/^\*[^*]+\*$/.test(morceau) ? { texte: morceau.slice(1, -1), accent: true } : { texte: morceau.replace(/\*/g, ""), accent: false }));
+}
 
 export interface TexteEcran {
   texte: string;
@@ -57,6 +89,7 @@ export interface TexteEcran {
   taillePourcent: number;
   couleur: string | null;
   apparition: ApparitionTexte;
+  fond: FondTexte;
 }
 
 export interface Bruitage {
@@ -124,7 +157,7 @@ export interface PlanMontage extends PropositionPlan {
   modifieLe: string | null;
 }
 
-export const TEXTE_PAR_DEFAUT: Omit<TexteEcran, "texte" | "debut" | "fin"> = { position: "haut", taillePourcent: 10, couleur: null, apparition: "pop" };
+export const TEXTE_PAR_DEFAUT: Omit<TexteEcran, "texte" | "debut" | "fin"> = { position: "haut", taillePourcent: 10, couleur: null, apparition: "pop", fond: "aucun" };
 
 export interface ProblemePlan {
   niveau: "erreur" | "avertissement";
@@ -331,13 +364,16 @@ export const schemaPropositionPlan = z.object({
   textes: z
     .array(
       z.object({
-        texte: z.string().min(1).max(80).describe("Le texte affiché, court (un à cinq mots) : titre, chiffre, mot-clé."),
+        texte: z.string().min(1).max(80).describe("Le texte affiché, court (un à cinq mots) : titre, chiffre, mot-clé. Un mot entre astérisques (*mot*) prend la couleur d'accent."),
         debut: z.number().min(0).describe("Apparition sur la vidéo finale, en secondes."),
         fin: z.number().min(0).describe("Disparition sur la vidéo finale, en secondes."),
         position: z.enum(POSITIONS_TEXTE).describe("haut, centre ou bas de l'image (le bas est aussi la zone des sous-titres)."),
         taillePourcent: z.number().min(3).max(25).describe("Hauteur du texte en % de la hauteur de l'image (8 à 14 pour un titre)."),
-        couleur: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().describe("Couleur #RRVVBB, ou null pour la couleur d'accent des sous-titres."),
-        apparition: z.enum(APPARITIONS_TEXTE).describe("pop : grossit brièvement en apparaissant ; fondu ; aucune."),
+        couleur: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().describe("Couleur #RRVVBB, ou null pour la couleur du texte des sous-titres."),
+        apparition: z
+          .enum(APPARITIONS_TEXTE)
+          .describe("pop : jaillit avec un léger rebond ; mot-a-mot : les mots arrivent un par un ; glisse : monte en douceur ; machine : lettre par lettre ; fondu ; aucune."),
+        fond: z.enum(FONDS_TEXTE).default("aucun").describe("aucun ; sombre : étiquette sombre arrondie derrière le texte (lisible partout) ; accent : étiquette de la couleur d'accent."),
       }),
     )
     .default([])

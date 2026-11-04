@@ -11,6 +11,7 @@ import {
   decouper,
   filtreLoudnorm,
   grapheAudio,
+  grapheIncrustations,
   grapheVideo,
   lireMesureLoudnorm,
   type MesureLoudnorm,
@@ -20,6 +21,7 @@ import {
   type SourceImage,
 } from "./graphe.ts";
 import type { SousTitresRendu } from "./sous-titres.ts";
+import { rendreTextes, type TextesRendu } from "./textes.ts";
 
 export interface ProfilRendu {
   image: ProfilImage;
@@ -38,7 +40,7 @@ export interface EntreesRendu {
   bruitages: BruitageRendu[];
 }
 
-const PARTS = { clips: 0.55, melange: 0.6, mesure: 0.65 };
+const PARTS = { clips: 0.45, textes: 0.6, melange: 0.65, mesure: 0.7 };
 const CONTIGU = 0.02;
 
 export function segmentsContigus(avant: SegmentPlan | undefined, apres: SegmentPlan | undefined): boolean {
@@ -68,6 +70,7 @@ export async function rendre(
   sortie: string,
   outils: OutilsTache,
   sousTitres: SousTitresRendu | null = null,
+  textes: TextesRendu | null = null,
 ): Promise<void> {
   const { plan } = entrees;
   const total = dureePlan(plan);
@@ -92,7 +95,14 @@ export async function rendre(
   await writeFile(join(temporaire, "videos.txt"), videos.map((nom) => `file '${nom}'`).join("\n"), "utf8");
   await writeFile(join(temporaire, "audios.txt"), audios.map((nom) => `file '${nom}'`).join("\n"), "utf8");
 
-  outils.progression(PARTS.clips, "Mélange de la voix, de la musique et des bruitages");
+  const incrustations =
+    textes === null
+      ? []
+      : await rendreTextes(textes, profil.image.format, profil.image.ips, total, temporaire, outils, (fraction, etape) =>
+          outils.progression(PARTS.clips + fraction * (PARTS.textes - PARTS.clips), etape),
+        );
+
+  outils.progression(PARTS.textes, "Mélange de la voix, de la musique et des bruitages");
   const melange = join(temporaire, "melange.wav");
   const audio = grapheAudio(total, entrees.musiques, entrees.bruitages);
   await executerFfmpeg(
@@ -125,6 +135,11 @@ export async function rendre(
     filtreVideo = `${filtreVideo};[v]ass=sous-titres.ass:fontsdir=polices[vs]`;
     sortieVideo = "[vs]";
   }
+  const textesGraphe = grapheIncrustations(profil.image, incrustations, 2 + coupes.length, sortieVideo);
+  if (incrustations.length > 0) {
+    filtreVideo = `${filtreVideo};${textesGraphe.filtre}`;
+    sortieVideo = textesGraphe.sortie;
+  }
   try {
   await executerFfmpeg(
     ffmpeg,
@@ -139,6 +154,7 @@ export async function rendre(
       "-i",
       melange,
       ...video.entrees,
+      ...textesGraphe.entrees,
       "-filter_complex",
       `${filtreVideo};[1:a]${filtreLoudnorm(profil.loudness, mesure)},aresample=48000[a]`,
       "-map",
@@ -158,7 +174,7 @@ export async function rendre(
       "+faststart",
       sortie,
     ],
-    { duree: total, action: "Assemblage", cwd: dossierSousTitres ?? temporaire, surProgression: (fraction) => outils.progression(PARTS.mesure + fraction * (1 - PARTS.mesure)) },
+    { duree: total, action: "Assemblage", cwd: dossierSousTitres ?? undefined, surProgression: (fraction) => outils.progression(PARTS.mesure + fraction * (1 - PARTS.mesure)) },
     outils,
   );
   } finally {

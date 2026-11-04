@@ -1,0 +1,19 @@
+{
+  "name": "@editeur/animations",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/composants.ts",
+    "./compositions": "./src/compositions.ts"
+  },
+  "dependencies": {
+    "@editeur/shared": "*",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "4.0.536"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0"
+  }
+}

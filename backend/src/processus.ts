@@ -1,4 +1,9 @@
-import { spawn } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
+
+function ignorerErreursFlux(enfant: ChildProcess): void {
+  enfant.stdout?.on("error", () => undefined);
+  enfant.stderr?.on("error", () => undefined);
+}
 
 export interface OptionsProcessus {
   delaiMs: number;
@@ -24,6 +29,7 @@ export function executer(commande: string, args: string[], options: OptionsProce
     let sortie = "";
     let erreurs = "";
     let delaiDepasse = false;
+    ignorerErreursFlux(enfant);
     enfant.stdout.setEncoding("utf8").on("data", (morceau: string) => (sortie += morceau));
     enfant.stderr.setEncoding("utf8").on("data", (morceau: string) => (erreurs += morceau));
 
@@ -74,6 +80,7 @@ export function lancer(commande: string, args: string[], options: OptionsLanceme
         }
       };
     };
+    ignorerErreursFlux(enfant);
     enfant.stdout.setEncoding("utf8").on("data", lire("sortie"));
     enfant.stderr.setEncoding("utf8").on("data", lire("erreurs"));
 

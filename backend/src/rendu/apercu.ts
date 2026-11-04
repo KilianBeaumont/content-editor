@@ -13,6 +13,7 @@ import { encodageIntermediaire, formatApercu, IMAGES_PAR_SECONDE_APERCU, LOUDNES
 import { rendre } from "./moteur.ts";
 import { resoudreBruitages, resoudreMusiques, verifierPlanSansErreur } from "./ressources.ts";
 import { preparerSousTitres } from "./sous-titres.ts";
+import { preparerTextes } from "./textes.ts";
 
 const ECART_DUREE_TOLERE = 0.15;
 
@@ -56,6 +57,7 @@ export async function rendreApercu(contexte: Contexte, id: string, version: stri
   const encodage = encodageIntermediaire("apercu", IMAGES_PAR_SECONDE_APERCU);
   const total = dureePlan(plan);
   const sousTitres = await preparerSousTitres(config.creations, projet, plan, format);
+  const textes = await preparerTextes(contexte.racineDepot, config.creations, plan);
   const temporaire = join(dossier, "travail", "rendu", `${version}-${randomUUID()}`);
   await mkdir(temporaire, { recursive: true });
   try {
@@ -74,6 +76,7 @@ export async function rendreApercu(contexte: Contexte, id: string, version: stri
       sortie,
       outils,
       sousTitres,
+      textes,
     );
 
     outils.progression(1, "Vérification de l'aperçu");
