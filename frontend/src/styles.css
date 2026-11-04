@@ -313,6 +313,10 @@ label.bouton {
   background: transparent;
 }
 
+.bouton-discret.bouton-principal {
+  background: var(--accent);
+}
+
 .bouton-danger {
   color: var(--erreur);
   border-color: color-mix(in srgb, var(--erreur) 40%, transparent);
